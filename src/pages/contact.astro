@@ -1,0 +1,160 @@
+---
+import { actions } from 'astro:actions';
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import { ArrowUpRight, Mail, Phone, MapPin } from 'lucide-react';
+import { getSettings, listContent } from '../lib/repository';
+import { formToken } from '../lib/spam';
+const s = getSettings();
+const fleet = listContent('fleet', true);
+const result = Astro.getActionResult(actions.quote);
+if (result?.data?.success) return Astro.redirect('/contact?sent=1', 303);
+const success = Astro.url.searchParams.get('sent') === '1';
+const selected = Astro.url.searchParams.get('vehicle') || '';
+const fields = [
+  ['fullName', 'Nama lengkap', 'text', 'name'],
+  ['company', 'Nama perusahaan', 'text', 'organization'],
+  ['phone', 'WhatsApp / telepon', 'tel', 'tel'],
+  ['email', 'Email', 'email', 'email'],
+  ['pickup', 'Lokasi muat', 'text', 'off'],
+  ['destination', 'Tujuan pengiriman', 'text', 'off'],
+  ['cargo', 'Jenis muatan', 'text', 'off'],
+  ['weight', 'Perkiraan berat (contoh: 5 ton)', 'text', 'off'],
+] as const;
+---
+
+<PublicLayout
+  title="Hubungi Kami & Minta Penawaran"
+  description="Ceritakan kebutuhan trucking Anda. Kirim detail muatan, lokasi, dan kendaraan untuk meminta penawaran transportasi."
+>
+  <PageHero
+    label="Hubungi Kami"
+    title="Perjalanan yang baik dimulai dari percakapan."
+    description="Ceritakan kebutuhan pengiriman Anda. Kami akan membantu menyusun pilihan armada dan rencana transportasi."
+  />
+  <section class="section">
+    <div class="wrap split" style="grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)">
+      <aside data-motion="group">
+        <div class="eyebrow">MARI TERHUBUNG</div>
+        <h2 data-motion-item>
+          Ada muatan
+          <br />
+          yang perlu bergerak?
+        </h2>
+        <p data-motion-item class="prose-block" style="margin-block:24px">
+          Isi formulir atau hubungi kami langsung. Semakin lengkap informasinya, semakin tepat
+          rencana yang dapat kami siapkan.
+        </p>
+        <div data-motion-item style="display:grid;gap:32px;margin-block:40px">
+          {[
+            {
+              Icon: Phone,
+              label: 'Telepon',
+              value: s.phone,
+              href: `tel:${s.phone.replace(/[^+\d]/g, '')}`,
+            },
+            { Icon: Mail, label: 'Email', value: s.email, href: `mailto:${s.email}` },
+            { Icon: MapPin, label: 'Kantor', value: s.address, href: s.mapsUrl },
+          ].map(({ Icon, label, value, href }) => (
+            <div style="display:flex;gap:16px">
+              <Icon size={22} />
+              <div>
+                <span class="micro-label">{label}</span>
+                <p style="font-size:13px;white-space:pre-line;margin-top:8px">
+                  {href ? <a href={href}>{value}</a> : value}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <a href={`https://wa.me/${s.whatsapp}`} class="text-link">
+          Hubungi via WhatsApp
+          <ArrowUpRight size={18} />
+        </a>
+        {s.demoMode && (
+          <p class="notice" style="margin-top:32px">
+            Kontak pada website ini adalah contoh. Permintaan yang dikirim tersimpan di CMS demo.
+          </p>
+        )}
+      </aside>
+      <div class="form-card">
+        <h2>Minta penawaran.</h2>
+        {success && (
+          <div class="form-result" role="status">
+            <strong>Terima kasih. Permintaan Anda berhasil dikirim.</strong>
+            <p>
+              Tim kami akan meninjau kebutuhan Anda dan menghubungi melalui detail kontak yang
+              diberikan.
+            </p>
+          </div>
+        )}
+        {result?.error && (
+          <div class="form-result error" role="alert">
+            {result.error.message.startsWith('Failed to validate')
+              ? 'Periksa kembali data formulir Anda. Semua kolom bertanda * wajib diisi dengan benar.'
+              : result.error.message}
+          </div>
+        )}
+        <form method="POST" action={actions.quote} class="form-grid">
+          <input type="hidden" name="token" value={formToken()} />
+          <div
+            style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"
+            aria-hidden="true"
+          >
+            <label for="website">Website</label>
+            <input id="website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          {fields.map(([name, label, type, autocomplete]) => (
+            <div class="form-field">
+              <label for={name}>{label} *</label>
+              <input
+                id={name}
+                name={name}
+                type={type}
+                autocomplete={autocomplete}
+                required
+                minlength={name === 'weight' ? 1 : 2}
+                maxlength={name === 'phone' ? 30 : 250}
+              />
+            </div>
+          ))}
+          <div class="form-field full">
+            <label for="vehicle">Pilihan kendaraan (opsional)</label>
+            <select id="vehicle" name="vehicle">
+              <option value="">Bantu saya memilih kendaraan</option>
+              {fleet.map((f) => (
+                <option value={f.title} selected={selected === f.title}>
+                  {f.title} · {f.capacity}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div class="form-field full">
+            <label for="message">Detail tambahan (opsional)</label>
+            <textarea
+              id="message"
+              name="message"
+              maxlength="3000"
+              placeholder="Dimensi muatan, jadwal pengiriman, kebutuhan penanganan…"
+            ></textarea>
+          </div>
+          <p class="full" style="font-size:11px;color:#64736c;margin:0">
+            Data Anda digunakan untuk menanggapi permintaan ini dan hanya dapat diakses admin
+            perusahaan. Jangan kirim data sensitif yang tidak diperlukan.
+          </p>
+          <button type="submit" class="cta full">
+            Kirim Permintaan
+            <ArrowUpRight size={20} />
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+  <style>
+    @media (max-width: 800px) {
+      .split {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</PublicLayout>

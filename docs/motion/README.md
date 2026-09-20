@@ -1,26 +1,25 @@
-# Public scroll motion
+# Automatic, one-time scroll reveals
 
-The public Astro layout loads `src/scripts/scroll-motion.ts`. [GSAP ScrollTrigger](https://gsap.com/docs/v3/Plugins/ScrollTrigger/) and GSAP are dynamically imported; no React island is added. Markup renders fully visible before enhancement and remains usable when scripts fail. Admin routes do not load this module.
+The public Astro layout loads `src/scripts/scroll-motion.ts`. GSAP and ScrollTrigger are dynamically imported without adding React islands. Server-rendered content remains visible if JavaScript is disabled or loading fails.
 
-- Desktop scrub: 0.6 seconds. Mobile/tablet scrub: 0.25 seconds.
-- Hero: photo zoom 1–1.15 and a separate text translation; an additional 80vh pin when eligible.
-- Homepage fleet: staggered cards and image emphasis during a 100vh pin. The grid is preserved.
-- Pins require width ≥1024px, height ≥760px, and a scene shorter than the viewport with 16px clearance. Taller content uses flowing reveals.
-- Flowing headings/copy, card groups, statistics, CTA and the schematic route follow scroll progress in both directions. Statistics retain their CMS values.
-- Mobile/tablet translation is at most 24px and photo zoom at most 1.05.
-- Font completion and viewport changes rebuild/revert the GSAP context. Image loads refresh geometry. Direct section links are repositioned after pin spacing is established.
-- Reduced motion skips animation and pinning by default. A visible “Aktifkan animasi” control lets visitors explicitly opt into scroll motion without changing device settings; “Matikan animasi” restores the static view. The choice lasts for the current browser tab via session storage. Changing the preference live also cleans up the existing context. Contact form fields have no animated ancestor.
+Scroll animation starts automatically. There is no activation button and old session choices are ignored. Per the current requested behavior, the public scroll reveals also run when the browser requests reduced motion; decorative CSS animations still follow the device preference.
 
-## Verification
+- The hero gently zooms once when it enters the viewport.
+- Headings, paragraphs, cards, statistics and CTA reveal on entry, then remain fully visible when scrolling up.
+- The route draws once and its city markers remain visible afterward.
+- Scrolling is normal document scrolling, without pinned scenes or reversible scrub timelines.
+- Mobile/tablet translation is at most 24px and image zoom at most 1.05.
+- A per-page WeakSet remembers started scenes across viewport/font rebuilds, so resizing does not hide previously revealed content. A new page visit can play the reveals again.
+- Direct anchors and fast scrolling finish passed scenes. Contact fields remain stationary.
 
-`pnpm build && pnpm test` runs the production server against a separate temporary database. `tests/motion.spec.ts` covers matching transforms and pixel comparison after scrolling back, pin eligibility, repeated resizing, all seven public pages at 375/768/1440px, rapid scrolling, reduced motion, disabled JavaScript, failed animation chunk loading, keyboard skip links, direct anchors, stable form input, and empty/variable/oversized fleet records.
+## Verification and evidence
 
-The same suite regenerates:
+`tests/motion.spec.ts` covers automatic activation with reduced motion and an old disabled preference, persistent visibility after scrolling upward and resizing, all seven routes at 375/768/1440px, keyboard/direct-anchor navigation, stable contact fields, unavailable scripts, and empty/changing/oversized CMS content.
 
-- `hero-desktop.png`: mid-progress hero.
-- `fleet-desktop.png`: late-progress pinned fleet.
-- `home-mobile.png`: flowing mobile layout.
-- `reduced-motion-enabled.png`: live development preview after explicit activation with reduced motion enabled.
-- `scroll-down-up.webm`: continuous scroll down to coverage and back up.
+Current evidence:
 
-The video and screenshots use isolated demo content. Run `pnpm check`, `pnpm format:check`, and `pnpm test:unit` for the remaining checks. Browser automation uses Chromium; Safari/Firefox and physical-device testing are not included in this verification.
+- `automatic-desktop.png`: automatic animation with reduced motion enabled and no control button.
+- `once-mobile.png`: previously revealed content stays revealed after a resize.
+- `scroll-once.webm`: scrolling down and back up without reversing the reveals.
+
+Other images and the older `scroll-down-up.webm` document earlier iterations. Tests use isolated demo data and Chromium. Run `pnpm build`, `pnpm test`, `pnpm check`, and `pnpm format:check` to verify the application.

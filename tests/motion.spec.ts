@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
 import Database from 'better-sqlite3';
-import sharp from 'sharp';
 import { mkdirSync, copyFileSync } from 'node:fs';
 
 const routes = ['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'];
@@ -41,55 +40,6 @@ function near(a: Awaited<ReturnType<typeof position>>, b: typeof a) {
     );
 }
 
-test('desktop scenes pin and scroll progress reverses to the same visual state', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await ready(page);
-  await expect(page.locator('[data-motion-pinned]')).toHaveCount(2);
-  const heroTop = await documentTop(page, '.pin-spacer');
-  await scroll(page, heroTop + 300);
-  const first = await position(page, '.hero-photo');
-  await page.waitForTimeout(1500);
-  const before = await sharp(await page.screenshot())
-    .removeAlpha()
-    .raw()
-    .toBuffer();
-  await scroll(page, heroTop + 650);
-  expect((await position(page, '.hero-photo')).scale).toBeGreaterThan(first.scale + 0.03);
-  expect(Math.abs((await page.locator('[data-motion="hero"]').boundingBox())!.y)).toBeLessThan(1);
-  await scroll(page, heroTop + 300);
-  near(await position(page, '.hero-photo'), first);
-  const after = await sharp(await page.screenshot())
-    .removeAlpha()
-    .raw()
-    .toBuffer();
-  expect(before.length).toBe(after.length);
-  const meanDifference =
-    before.reduce((sum, value, i) => sum + Math.abs(value - after[i]), 0) / before.length;
-  expect(meanDifference, 'round-trip pixel difference (0–255)').toBeLessThan(1);
-  mkdirSync('docs/motion', { recursive: true });
-  await page.screenshot({ path: 'docs/motion/hero-desktop.png' });
-  const fleetStart = await documentTop(page, '#armada');
-  await scroll(page, fleetStart + 350);
-  const fleet = await position(page, '#armada [data-motion-item]');
-  await scroll(page, fleetStart + 850);
-  expect(Math.abs((await page.locator('#armada').boundingBox())!.y)).toBeLessThan(1);
-  expect((await position(page, '#armada [data-motion-item]')).opacity).toBeGreaterThan(
-    fleet.opacity,
-  );
-  await page.screenshot({ path: 'docs/motion/fleet-desktop.png' });
-  await scroll(page, fleetStart + 350);
-  near(await position(page, '#armada [data-motion-item]'), fleet);
-  const mapTop = await documentTop(page, '[data-motion="route"]');
-  await scroll(page, mapTop - 650);
-  const route = await position(page, '[data-motion-path]');
-  await scroll(page, mapTop - 300);
-  expect((await position(page, '[data-motion-path]')).dash).toBeLessThan(route.dash);
-  await scroll(page, mapTop - 650);
-  near(await position(page, '[data-motion-path]'), route);
-});
-
 for (const width of [375, 768, 1440]) {
   test(`all seven pages remain usable during fast two-way scroll at ${width}px`, async ({
     page,
@@ -121,112 +71,6 @@ for (const width of [375, 768, 1440]) {
   });
 }
 
-test('responsive pins rebuild cleanly and mobile travel stays within limits', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await ready(page);
-  for (const [width, height, count] of [
-    [375, 812, 0],
-    [1440, 650, 0],
-    [1440, 1000, 2],
-    [768, 1024, 0],
-    [1440, 1000, 2],
-  ]) {
-    await page.setViewportSize({ width, height });
-    await page.waitForTimeout(400);
-    await expect(page.locator('.pin-spacer')).toHaveCount(count);
-    await expect(page.locator('.pin-spacer .pin-spacer')).toHaveCount(0);
-  }
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.waitForTimeout(400);
-  const card = await position(page, '.service-tile');
-  expect(card.y).toBeLessThanOrEqual(24);
-  await scroll(page, 1200);
-  expect((await position(page, '.hero-photo')).scale).toBeLessThanOrEqual(1.05);
-});
-
-for (const mode of ['reduced', 'no-js'] as const) {
-  test(`${mode}: all public pages keep static content and links`, async ({ browser }) => {
-    const context = await browser.newContext({
-      javaScriptEnabled: mode !== 'no-js',
-      reducedMotion: 'reduce',
-      viewport: { width: 1440, height: 1000 },
-    });
-    const page = await context.newPage();
-    for (const route of routes) {
-      await page.goto(`http://localhost:4322${route}`);
-      if (mode === 'reduced')
-        await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
-      await expect(page.locator('.pin-spacer')).toHaveCount(0);
-      expect(
-        await page
-          .locator('[data-motion], [data-motion-item]')
-          .evaluateAll((elements) =>
-            elements.every(
-              (el) =>
-                getComputedStyle(el).opacity === '1' && getComputedStyle(el).transform === 'none',
-            ),
-          ),
-      ).toBe(true);
-      await expect(page.locator('h1')).toBeVisible();
-    }
-    await page.locator('[name="fullName"]').fill('Keyboard visitor');
-    await expect(page.locator('[name="fullName"]')).toHaveValue('Keyboard visitor');
-    await context.close();
-  });
-}
-
-test('hash links, keyboard focus, live reduced motion and stable contact form', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await ready(page, '/#wingbox');
-  await expect(page.locator('#wingbox')).toBeInViewport();
-  await expect(page.locator('#wingbox')).toHaveCSS('opacity', '1');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await ready(page, '/contact');
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Enter');
-  await expect(page.locator('main')).toBeFocused();
-  const input = page.locator('[name="fullName"]');
-  await input.fill('Scroll test');
-  await scroll(page, 700);
-  expect(
-    await input.evaluate((el) => {
-      for (let parent: Element | null = el; parent; parent = parent.parentElement)
-        if (getComputedStyle(parent).transform !== 'none') return false;
-      return true;
-    }),
-  ).toBe(true);
-  await expect(input).toHaveValue('Scroll test');
-});
-
-test('empty and changed CMS card counts initialize without phantom pins', async ({ page }) => {
-  const db = new Database(process.env.DATABASE_PATH!);
-  const records = db.prepare('SELECT id, published FROM fleet').all() as {
-    id: number;
-    published: number;
-  }[];
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  try {
-    db.prepare('UPDATE fleet SET published=0').run();
-    await ready(page);
-    await expect(page.locator('[data-motion-pinned="fleet"]')).toHaveCount(0);
-    for (const count of [1, 2, 3]) {
-      db.prepare('UPDATE fleet SET published=1 WHERE id=?').run(records[count - 1].id);
-      await ready(page);
-      await expect(page.locator('#armada [data-motion-item]')).toHaveCount(count);
-      await expect(page.locator('[data-motion-pinned="fleet"]')).toHaveCount(1);
-    }
-  } finally {
-    for (const record of records)
-      db.prepare('UPDATE fleet SET published=? WHERE id=?').run(record.published, record.id);
-    db.close();
-  }
-});
-
 test('record a continuous down-up motion preview', async ({ browser }) => {
   test.setTimeout(60000);
   const context = await browser.newContext({
@@ -246,7 +90,7 @@ test('record a continuous down-up motion preview', async ({ browser }) => {
   const video = page.video()!;
   await context.close();
   mkdirSync('docs/motion', { recursive: true });
-  copyFileSync(await video.path(), 'docs/motion/scroll-down-up.webm');
+  copyFileSync(await video.path(), 'docs/motion/scroll-once.webm');
 });
 
 test('failed animation chunk keeps the server-rendered page usable', async ({ page }) => {
@@ -259,57 +103,131 @@ test('failed animation chunk keeps the server-rendered page usable', async ({ pa
   await expect(page).toHaveURL(/\/contact$/);
 });
 
-test('oversized CMS scenes fall back to flowing cards', async ({ page }) => {
-  const db = new Database(process.env.DATABASE_PATH!);
-  const record = db
-    .prepare(
-      'SELECT id, short_description FROM fleet WHERE published=1 ORDER BY sort_order LIMIT 1',
-    )
-    .get() as { id: number; short_description: string };
-  try {
-    db.prepare('UPDATE fleet SET short_description=? WHERE id=?').run(
-      'Deskripsi armada yang panjang. '.repeat(120),
-      record.id,
-    );
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    await ready(page);
-    await expect(page.locator('[data-motion-pinned="fleet"]')).toHaveCount(0);
-    expect((await page.locator('#armada').boundingBox())!.height).toBeGreaterThan(1000);
-    await page.locator('#armada .capacity a').first().click();
-    await expect(page).toHaveURL(/\/contact\?vehicle=/);
-  } finally {
-    db.prepare('UPDATE fleet SET short_description=? WHERE id=?').run(
-      record.short_description,
-      record.id,
-    );
-    db.close();
+test('reveals play once and stay visible after scrolling up and resizing', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await ready(page);
+  await expect(page.locator('[data-motion-control]')).toHaveCount(0);
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await page.waitForTimeout(1900);
+  const hero = await position(page, '.hero-photo');
+  expect(hero.scale).toBeCloseTo(1.15, 2);
+  for (const selector of [
+    '[data-motion="heading"]',
+    '.service-tile',
+    '.fleet-card',
+    '[data-motion="route"]',
+  ]) {
+    const top = await documentTop(page, selector);
+    await scroll(page, top - 650);
+    await page.waitForTimeout(900);
+    const sample = selector === '[data-motion="route"]' ? '[data-motion-path]' : selector;
+    const revealed = await position(page, sample);
+    expect(revealed.opacity).toBe(1);
+    expect(revealed.y).toBe(0);
+    if (sample === '[data-motion-path]') expect(revealed.dash).toBe(0);
+    await scroll(page, 0);
+    near(await position(page, sample), revealed);
+    await scroll(page, top - 650);
+    near(await position(page, sample), revealed);
   }
+  await scroll(page, 0);
+  near(await position(page, '.hero-photo'), hero);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.waitForTimeout(500);
+  for (const selector of ['.service-tile', '.fleet-card']) {
+    const state = await position(page, selector);
+    expect(state.opacity).toBe(1);
+    expect(state.y).toBe(0);
+  }
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await page.screenshot({ path: 'docs/motion/once-mobile.png' });
 });
 
-test('reduced-motion visitors can explicitly enable, retain and disable scroll animations', async ({
+test('animations start automatically with reduced motion and old disabled preference', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/');
-  await expect(page.locator('main')).toHaveAttribute('data-motion-reason', 'reduced-motion');
-  const enable = page.getByRole('button', { name: 'Aktifkan animasi' });
-  await enable.click();
-  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
-  await expect(page.locator('.pin-spacer')).toHaveCount(2);
-  expect((await position(page, '.service-tile')).y).toBeGreaterThan(0);
-  await scroll(page, 600);
-  expect((await position(page, '.hero-photo')).scale).toBeGreaterThan(1.05);
-  await page.reload();
-  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
-  await page.getByRole('button', { name: 'Matikan animasi' }).click();
-  await expect(page.locator('main')).toHaveAttribute('data-motion-reason', 'user-disabled');
-  await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  expect((await position(page, '.hero-photo')).scale).toBe(1);
-  expect((await position(page, '.hero-photo')).y).toBe(0);
-  await scroll(page, 1000);
-  expect((await position(page, '.hero-photo')).scale).toBe(1);
-  await page.reload();
-  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
-  await expect(enable).toBeVisible();
+  await page.addInitScript(() => sessionStorage.setItem('lintas-scroll-motion', 'disabled'));
+  await page.setViewportSize({ width: 1920, height: 917 });
+  await ready(page);
+  await expect(page.getByRole('button', { name: /animasi/i })).toHaveCount(0);
+  await page.waitForTimeout(1900);
+  expect((await position(page, '.hero-photo')).scale).toBeCloseTo(1.15, 2);
+  const top = await documentTop(page, '.service-tile');
+  await scroll(page, top - 650);
+  await page.waitForTimeout(500);
+  expect((await position(page, '.service-tile')).opacity).toBe(1);
+  await scroll(page, 0);
+  expect((await position(page, '.service-tile')).opacity).toBe(1);
+  await page.screenshot({ path: 'docs/motion/automatic-desktop.png' });
+});
+
+test('no JavaScript keeps all pages visible; hash links and contact inputs remain usable', async ({
+  browser,
+  page,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const staticPage = await context.newPage();
+  for (const route of routes) {
+    await staticPage.goto(`http://localhost:4322${route}`);
+    await expect(staticPage.locator('h1')).toBeVisible();
+    await expect(staticPage.locator('[data-motion-control], .pin-spacer')).toHaveCount(0);
+    expect(
+      await staticPage
+        .locator('[data-motion-item]')
+        .evaluateAll((elements) => elements.every((el) => getComputedStyle(el).opacity === '1')),
+    ).toBe(true);
+  }
+  await context.close();
+  await ready(page, '/#wingbox');
+  await expect(page.locator('#wingbox')).toBeInViewport();
+  await ready(page, '/contact');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+  const input = page.locator('[name="fullName"]');
+  await input.fill('One-time animation');
+  await scroll(page, 700);
+  await expect(input).toHaveValue('One-time animation');
+  expect(
+    await input.evaluate((el) => {
+      for (let parent: Element | null = el; parent; parent = parent.parentElement)
+        if (getComputedStyle(parent).transform !== 'none') return false;
+      return true;
+    }),
+  ).toBe(true);
+});
+
+test('empty, changing and oversized CMS content remains usable', async ({ page }) => {
+  const db = new Database(process.env.DATABASE_PATH!);
+  const records = db.prepare('SELECT id, published, short_description FROM fleet').all() as {
+    id: number;
+    published: number;
+    short_description: string;
+  }[];
+  try {
+    db.prepare('UPDATE fleet SET published=0').run();
+    await ready(page);
+    await expect(page.locator('#armada [data-motion-item]')).toHaveCount(0);
+    for (const count of [1, 2, 3]) {
+      db.prepare('UPDATE fleet SET published=1 WHERE id=?').run(records[count - 1].id);
+      await ready(page);
+      await expect(page.locator('#armada [data-motion-item]')).toHaveCount(count);
+    }
+    db.prepare('UPDATE fleet SET short_description=? WHERE id=?').run(
+      'Deskripsi armada panjang. '.repeat(120),
+      records[0].id,
+    );
+    await ready(page);
+    await page.locator('#armada .capacity a').first().click();
+    await expect(page).toHaveURL(/\/contact\?vehicle=/);
+  } finally {
+    for (const row of records)
+      db.prepare('UPDATE fleet SET published=?, short_description=? WHERE id=?').run(
+        row.published,
+        row.short_description,
+        row.id,
+      );
+    db.close();
+  }
 });

@@ -1158,9 +1158,6 @@
   opacity: 1 !important;
   transform: none !important;
 }
-[data-motion-pinned] {
-  isolation: isolate;
-}
 .fleet-card [data-motion-photo] {
   transition: none;
 }
@@ -1173,34 +1170,4 @@
     opacity: 1 !important;
     clip-path: none !important;
   }
-}
-
-.motion-control:not([hidden]) {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 30;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  max-width: calc(100vw - 32px);
-  padding: 12px 16px;
-  background: var(--ink);
-  color: white;
-  border: 1px solid #52645c;
-  box-shadow: 0 4px 24px #142c2426;
-  font-size: 12px;
-}
-.motion-control button {
-  min-height: 44px;
-  padding: 8px 12px;
-  background: var(--lime);
-  color: var(--ink);
-  font-weight: 800;
-  cursor: pointer;
-}
-.motion-control button:focus-visible {
-  outline: 2px solid white;
-  outline-offset: 4px;
 }

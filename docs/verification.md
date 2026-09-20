@@ -50,14 +50,8 @@ Refactoring UI diagnostic: **9/10**. Hierarchy, grayscale readability, whitespac
 - Inquiries are managed in the private inbox; there is no automated email delivery or external CRM. Content is plain text.
 - Better Auth logs an informational warning in localhost tests because proxy IP headers are deliberately not trusted. The application's persistent limiter still uses the adapter address. Production uses the documented trusted Nginx `X-Real-IP` setup.
 
-## Cinematic scroll update
+## Automatic scroll reveal update
 
-Public pages now use a shared Astro-loaded GSAP/ScrollTrigger module for reversible scroll progress. Eligible desktop hero and fleet scenes pin; mobile, short screens and oversized scenes remain in normal document flow. Reduced motion and unavailable JavaScript preserve static content, and contact fields remain stationary.
+Public pages use a shared Astro-loaded GSAP/ScrollTrigger module. Animations now start automatically and reveal each scene once per page visit. Scrolling up or resizing preserves previously revealed content. The earlier reversible pinning and manual activation control have been removed. Scroll reveals run even with the browser's reduced-motion preference, as explicitly requested; decorative CSS motion still follows the device preference.
 
-Verification completed for this update:
-
-- 9 existing application browser tests passed, including CMS CRUD, authentication, uploads and quotation persistence.
-- 12 motion browser scenarios passed, including reversal with screenshot pixel comparison, all seven routes at 375/768/1440px, resize, fast scrolling, hash links, keyboard navigation, empty/variable/oversized CMS content, script failure and static fallbacks. The focused interaction checks were rerun after fixing focus-induced button movement.
-- 7 unit/maintenance tests passed.
-- Type checking reported zero errors/warnings/hints; formatting and the production build passed.
-- Chromium screenshots and a 20-second down/up recording are saved in `docs/motion/`. See [motion notes and evidence](motion/README.md).
+The production browser suite covers public layouts, CMS flows and one-time scroll behavior, including automatic activation, static no-JavaScript fallback, direct links, stable forms, and empty/changing/oversized CMS content. Current screenshots and a down/up recording are described in [motion notes and evidence](motion/README.md).

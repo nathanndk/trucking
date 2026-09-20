@@ -1,52 +1,15 @@
-/** Public-only progressive enhancement. The server-rendered document is the static fallback. */
+/** Public-only enhancement: reveal each scene once per page visit. */
 export function mountScrollMotion() {
   const main = document.querySelector<HTMLElement>('main#main');
   if (!main) return () => {};
   const root: HTMLElement = main;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const control = document.querySelector<HTMLElement>('[data-motion-control]');
-  const toggle = control?.querySelector<HTMLButtonElement>('button');
-  const status = control?.querySelector<HTMLElement>('[data-motion-status]');
-  const preferenceKey = 'lintas-scroll-motion';
-  let preference: 'system' | 'enabled' | 'disabled' = 'system';
-  try {
-    const saved = sessionStorage.getItem(preferenceKey);
-    if (saved === 'enabled' || saved === 'disabled') preference = saved;
-  } catch {
-    // The current page can still remember a choice when browser storage is unavailable.
-  }
-  const wantsMotion = () =>
-    preference === 'enabled' || (preference === 'system' && !reduced.matches);
-
-  function updateControl() {
-    if (!control || !toggle || !status) return;
-    control.hidden = !reduced.matches && preference === 'system';
-    const active = root.dataset.motionState === 'ready';
-    toggle.textContent = active ? 'Matikan animasi' : 'Aktifkan animasi';
-    toggle.setAttribute('aria-pressed', String(active));
-    status.textContent = active
-      ? 'Animasi scroll aktif'
-      : reduced.matches && preference === 'system'
-        ? 'Perangkat Anda mengurangi animasi'
-        : 'Animasi scroll nonaktif';
-  }
-
-  function changePreference() {
-    preference = root.dataset.motionState === 'ready' ? 'disabled' : 'enabled';
-    try {
-      sessionStorage.setItem(preferenceKey, preference);
-    } catch {
-      // Keep the in-memory choice for this page.
-    }
-    void rebuild();
-  }
+  const played = new WeakSet<Element>();
   let context: gsap.Context | undefined;
   let engine: Awaited<ReturnType<typeof loadEngine>> | undefined;
   let revision = 0;
   let disposed = false;
   let resizeTimer = 0;
   let refreshFrame = 0;
-  let initialHashHandled = false;
   const all = <T extends Element = HTMLElement>(selector: string, parent: ParentNode = root) =>
     Array.from(parent.querySelectorAll<T>(selector));
 
@@ -59,163 +22,104 @@ export function mountScrollMotion() {
     return { gsap, ScrollTrigger };
   }
 
-  function reset() {
-    context?.revert();
-    context = undefined;
-    all('[data-motion-pinned]').forEach((el) => el.removeAttribute('data-motion-pinned'));
-  }
-
   function followHash() {
     if (!location.hash) return;
-    let target: HTMLElement | null;
     try {
-      target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (target && root.contains(target)) target.scrollIntoView({ behavior: 'instant' });
+      engine?.ScrollTrigger.update();
     } catch {
-      return;
+      // A malformed anchor must not prevent the rest of the page from working.
     }
-    if (!target || !root!.contains(target)) return;
-    const scene = target.closest<HTMLElement>('[data-motion-pinned]');
-    const trigger = scene && engine?.ScrollTrigger.getAll().find((t) => t.trigger === scene);
-    if (trigger)
-      window.scrollTo({ top: target === scene ? trigger.start : trigger.end, behavior: 'instant' });
-    else target.scrollIntoView({ block: 'start', behavior: 'instant' });
-    engine?.ScrollTrigger.update();
   }
 
   async function rebuild() {
     const ticket = ++revision;
-    reset();
+    context?.revert();
+    context = undefined;
     if (disposed) return;
-    if (!wantsMotion()) {
-      if (toggle) toggle.disabled = false;
-      delete document.documentElement.dataset.scrollMotion;
-      root.dataset.motionState = 'static';
-      root.dataset.motionReason = preference === 'disabled' ? 'user-disabled' : 'reduced-motion';
-      updateControl();
-      return;
-    }
+    // Scroll reveals are automatic, including on devices requesting reduced motion.
+    // Decorative CSS motion continues to follow the device preference independently.
     document.documentElement.dataset.scrollMotion = 'enabled';
-    delete root.dataset.motionReason;
-    if (toggle) toggle.disabled = true;
     try {
       engine ??= await loadEngine();
       if (disposed || ticket !== revision) return;
       const { gsap, ScrollTrigger } = engine;
       const desktop = innerWidth >= 1024;
-      const scrub = desktop ? 0.6 : 0.25;
       const distance = desktop ? 64 : 24;
-      const pinAllowed = desktop && innerHeight >= 760;
       context = gsap.context(() => {}, root);
       context.add(() => {
-        // Pins are created first, in document order, so following triggers include their spacing.
-        const hero = root!.querySelector<HTMLElement>('[data-motion="hero"]');
-        if (hero) {
-          const pin = pinAllowed && hero.offsetHeight <= innerHeight - 16;
-          if (pin) {
-            hero.dataset.motionPinned = 'hero';
-            // Fill the held frame so its spacer never appears as an empty strip.
-            gsap.set(hero, { minHeight: innerHeight });
+        function reveal(element: HTMLElement, timeline: gsap.core.Timeline) {
+          if (played.has(element)) {
+            timeline.progress(1);
+            return;
           }
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: hero,
-              start: 'top top',
-              end: () => (pin ? `+=${innerHeight * 0.8}` : 'bottom top'),
-              pin,
-              pinSpacing: true,
-              scrub,
-              invalidateOnRefresh: true,
+          ScrollTrigger.create({
+            trigger: element,
+            start: 'top 85%',
+            end: 'bottom top',
+            once: true,
+            animation: timeline,
+            toggleActions: 'play none none none',
+            onEnter: () => played.add(element),
+            onEnterBack: () => {
+              played.add(element);
+              timeline.play();
+            },
+            onLeave: () => {
+              // Fast scrolling and direct anchors must leave passed content fully visible.
+              played.add(element);
+              timeline.progress(1);
             },
           });
-          timeline.to(
-            hero.querySelector('.hero-photo'),
-            { scale: desktop ? 1.15 : 1.05, y: desktop ? -24 : -8, ease: 'none', duration: 1 },
-            0,
-          );
-          timeline.to(
-            hero.querySelector('.hero-content'),
-            { y: desktop ? -40 : -16, ease: 'none', duration: 1 },
-            0,
-          );
         }
-        const fleet = root!.querySelector<HTMLElement>('[data-motion="fleet-scene"]');
-        const fleetCards = fleet ? all<HTMLElement>('[data-motion-item]', fleet) : [];
-        if (fleet && fleetCards.length && pinAllowed && fleet.offsetHeight <= innerHeight - 16) {
-          fleet.dataset.motionPinned = 'fleet';
-          const scene = gsap.timeline({
-            scrollTrigger: {
-              trigger: fleet,
-              start: 'top top',
-              end: () => `+=${innerHeight}`,
-              pin: true,
-              pinSpacing: true,
-              scrub,
-              invalidateOnRefresh: true,
-            },
+        const hero = root.querySelector<HTMLElement>('[data-motion="hero"]');
+        if (hero) {
+          const timeline = gsap.timeline({ paused: true });
+          timeline.to(hero.querySelector('.hero-photo'), {
+            scale: desktop ? 1.15 : 1.05,
+            y: desktop ? -24 : -8,
+            duration: 1.8,
+            ease: 'power2.out',
           });
-          fleetCards.forEach((card, i) => {
-            scene.fromTo(
-              card,
-              { y: 64, opacity: 0.25 },
-              { y: 0, opacity: 1, duration: 0.65, ease: 'none' },
-              i * 0.3,
-            );
-            const image = card.querySelector('img');
-            if (image)
-              scene.fromTo(
-                image,
-                { scale: 1.12 },
-                { scale: 1, duration: 0.8, ease: 'none' },
-                i * 0.3,
-              );
-          });
+          reveal(hero, timeline);
         }
         for (const element of all<HTMLElement>('[data-motion="heading"], [data-motion="copy"]')) {
+          if (element.getBoundingClientRect().top + scrollY < innerHeight * 0.85) {
+            played.add(element);
+            continue;
+          }
           const heading = element.dataset.motion === 'heading';
-          // First-viewport headings are already readable in the SSR response.
-          const initiallyVisible =
-            element.getBoundingClientRect().top + scrollY < innerHeight * 0.85;
-          if (initiallyVisible) continue;
-          gsap.fromTo(
+          const timeline = gsap.timeline({ paused: true });
+          timeline.fromTo(
             element,
             {
               y: heading ? distance * 0.75 : distance * 0.4,
-              opacity: heading ? 0.15 : 0.35,
+              opacity: 0.15,
               ...(heading ? { clipPath: 'inset(100% 0 0 0)' } : {}),
             },
             {
               y: 0,
               opacity: 1,
               ...(heading ? { clipPath: 'inset(0% 0 0 0)' } : {}),
-              ease: 'none',
-              scrollTrigger: {
-                trigger: element,
-                start: 'top 85%',
-                end: 'top 40%',
-                scrub,
-                invalidateOnRefresh: true,
-              },
+              duration: 0.85,
+              ease: 'power3.out',
             },
           );
+          reveal(element, timeline);
         }
         for (const group of all<HTMLElement>('[data-motion="group"]')) {
-          if (group.closest('[data-motion-pinned="fleet"]')) continue;
-          const items = all<HTMLElement>(':scope > [data-motion-item]', group);
-          items.forEach((item, i) => {
-            const offset = desktop ? (i % 3) * 5 : 0;
-            const timeline = gsap.timeline({
-              scrollTrigger: {
-                trigger: item,
-                start: `top ${85 - offset}%`,
-                end: `top ${40 - offset}%`,
-                scrub,
-                invalidateOnRefresh: true,
-              },
-            });
+          all<HTMLElement>(':scope > [data-motion-item]', group).forEach((item, i) => {
+            const timeline = gsap.timeline({ paused: true, delay: desktop ? (i % 3) * 0.12 : 0 });
             timeline.fromTo(
               item,
               { y: distance, opacity: 0.25 },
-              { y: 0, opacity: 1, ease: 'none', duration: 1 },
+              {
+                y: 0,
+                opacity: 1,
+                ease: 'power3.out',
+                duration: 0.9,
+              },
               0,
             );
             const photo = item.querySelector<HTMLElement>('[data-motion-photo]');
@@ -223,60 +127,62 @@ export function mountScrollMotion() {
               timeline.fromTo(
                 photo,
                 { scale: desktop ? 1.12 : 1.05 },
-                { scale: 1, ease: 'none', duration: 1 },
+                {
+                  scale: 1,
+                  duration: 1.1,
+                  ease: 'power2.out',
+                },
                 0,
               );
+            reveal(item, timeline);
           });
         }
         for (const map of all<HTMLElement>('[data-motion="route"]')) {
           const route = map.querySelector<SVGPathElement>('[data-motion-path]');
           if (!route) continue;
           const length = route.getTotalLength();
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: map,
-              start: 'top 85%',
-              end: 'top 30%',
-              scrub,
-              invalidateOnRefresh: true,
-            },
-          });
+          const timeline = gsap.timeline({ paused: true });
           timeline.fromTo(
             route,
             { strokeDasharray: length, strokeDashoffset: length },
-            { strokeDashoffset: 0, duration: 1, ease: 'none' },
+            {
+              strokeDashoffset: 0,
+              duration: 1.4,
+              ease: 'power2.inOut',
+            },
             0,
           );
-          all<SVGGElement>('[data-motion-marker]', map).forEach((marker, i, markers) => {
+          all<SVGGElement>('[data-motion-marker]', map).forEach((marker, i) => {
             timeline.fromTo(
               marker,
               { opacity: 0.1, y: desktop ? 12 : 8 },
-              { opacity: 1, y: 0, duration: 0.2, ease: 'none' },
-              i / Math.max(markers.length, 1),
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.35,
+                ease: 'power2.out',
+              },
+              i * 0.18,
             );
           });
+          reveal(map, timeline);
         }
       });
       ScrollTrigger.refresh();
-      root!.dataset.motionState = 'ready';
-      updateControl();
-      if (!initialHashHandled) {
-        initialHashHandled = true;
-        followHash();
-      }
+      root.dataset.motionState = 'ready';
+      delete root.dataset.motionReason;
+      followHash();
     } catch {
-      reset();
-      root!.dataset.motionState = 'static';
+      context?.revert();
+      context = undefined;
+      root.dataset.motionState = 'static';
       root.dataset.motionReason = 'load-error';
       delete document.documentElement.dataset.scrollMotion;
-      updateControl();
-    } finally {
-      if (toggle && ticket === revision) toggle.disabled = false;
     }
   }
 
   function scheduleRebuild() {
-    window.clearTimeout(resizeTimer);
+    clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => void rebuild(), 200);
   }
   function refresh() {
@@ -286,13 +192,10 @@ export function mountScrollMotion() {
   function visibilityRestored(event: PageTransitionEvent) {
     if (event.persisted) scheduleRebuild();
   }
-  toggle?.addEventListener('click', changePreference);
   window.addEventListener('resize', scheduleRebuild, { passive: true });
   window.addEventListener('hashchange', followHash);
   window.addEventListener('pageshow', visibilityRestored);
-  reduced.addEventListener('change', scheduleRebuild);
   root.addEventListener('load', refresh, true);
-  // Font metrics affect whether a scene fits. Start after fonts settle, even on a slow connection.
   void Promise.race([
     document.fonts.ready,
     new Promise((resolve) => setTimeout(resolve, 1200)),
@@ -307,14 +210,11 @@ export function mountScrollMotion() {
     revision++;
     clearTimeout(resizeTimer);
     cancelAnimationFrame(refreshFrame);
-    reset();
+    context?.revert();
     window.removeEventListener('resize', scheduleRebuild);
     window.removeEventListener('hashchange', followHash);
     window.removeEventListener('pageshow', visibilityRestored);
-    reduced.removeEventListener('change', scheduleRebuild);
     root.removeEventListener('load', refresh, true);
-    toggle?.removeEventListener('click', changePreference);
-    if (control) control.hidden = true;
     delete document.documentElement.dataset.scrollMotion;
     delete root.dataset.motionReason;
     delete root.dataset.motionState;

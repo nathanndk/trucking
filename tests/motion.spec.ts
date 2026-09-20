@@ -285,3 +285,31 @@ test('oversized CMS scenes fall back to flowing cards', async ({ page }) => {
     db.close();
   }
 });
+
+test('reduced-motion visitors can explicitly enable, retain and disable scroll animations', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('main')).toHaveAttribute('data-motion-reason', 'reduced-motion');
+  const enable = page.getByRole('button', { name: 'Aktifkan animasi' });
+  await enable.click();
+  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
+  await expect(page.locator('.pin-spacer')).toHaveCount(2);
+  expect((await position(page, '.service-tile')).y).toBeGreaterThan(0);
+  await scroll(page, 600);
+  expect((await position(page, '.hero-photo')).scale).toBeGreaterThan(1.05);
+  await page.reload();
+  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
+  await page.getByRole('button', { name: 'Matikan animasi' }).click();
+  await expect(page.locator('main')).toHaveAttribute('data-motion-reason', 'user-disabled');
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  expect((await position(page, '.hero-photo')).scale).toBe(1);
+  expect((await position(page, '.hero-photo')).y).toBe(0);
+  await scroll(page, 1000);
+  expect((await position(page, '.hero-photo')).scale).toBe(1);
+  await page.reload();
+  await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
+  await expect(enable).toBeVisible();
+});

@@ -9,7 +9,7 @@ The public Astro layout loads `src/scripts/scroll-motion.ts`. [GSAP ScrollTrigge
 - Flowing headings/copy, card groups, statistics, CTA and the schematic route follow scroll progress in both directions. Statistics retain their CMS values.
 - Mobile/tablet translation is at most 24px and photo zoom at most 1.05.
 - Font completion and viewport changes rebuild/revert the GSAP context. Image loads refresh geometry. Direct section links are repositioned after pin spacing is established.
-- Reduced motion skips animation and pinning. Changing the preference live also cleans up the existing context. Contact form fields have no animated ancestor.
+- Reduced motion skips animation and pinning by default. A visible “Aktifkan animasi” control lets visitors explicitly opt into scroll motion without changing device settings; “Matikan animasi” restores the static view. The choice lasts for the current browser tab via session storage. Changing the preference live also cleans up the existing context. Contact form fields have no animated ancestor.
 
 ## Verification
 
@@ -20,6 +20,7 @@ The same suite regenerates:
 - `hero-desktop.png`: mid-progress hero.
 - `fleet-desktop.png`: late-progress pinned fleet.
 - `home-mobile.png`: flowing mobile layout.
+- `reduced-motion-enabled.png`: live development preview after explicit activation with reduced motion enabled.
 - `scroll-down-up.webm`: continuous scroll down to coverage and back up.
 
 The video and screenshots use isolated demo content. Run `pnpm check`, `pnpm format:check`, and `pnpm test:unit` for the remaining checks. Browser automation uses Chromium; Safari/Firefox and physical-device testing are not included in this verification.

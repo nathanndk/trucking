@@ -4,6 +4,42 @@ export function mountScrollMotion() {
   if (!main) return () => {};
   const root: HTMLElement = main;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const control = document.querySelector<HTMLElement>('[data-motion-control]');
+  const toggle = control?.querySelector<HTMLButtonElement>('button');
+  const status = control?.querySelector<HTMLElement>('[data-motion-status]');
+  const preferenceKey = 'lintas-scroll-motion';
+  let preference: 'system' | 'enabled' | 'disabled' = 'system';
+  try {
+    const saved = sessionStorage.getItem(preferenceKey);
+    if (saved === 'enabled' || saved === 'disabled') preference = saved;
+  } catch {
+    // The current page can still remember a choice when browser storage is unavailable.
+  }
+  const wantsMotion = () =>
+    preference === 'enabled' || (preference === 'system' && !reduced.matches);
+
+  function updateControl() {
+    if (!control || !toggle || !status) return;
+    control.hidden = !reduced.matches && preference === 'system';
+    const active = root.dataset.motionState === 'ready';
+    toggle.textContent = active ? 'Matikan animasi' : 'Aktifkan animasi';
+    toggle.setAttribute('aria-pressed', String(active));
+    status.textContent = active
+      ? 'Animasi scroll aktif'
+      : reduced.matches && preference === 'system'
+        ? 'Perangkat Anda mengurangi animasi'
+        : 'Animasi scroll nonaktif';
+  }
+
+  function changePreference() {
+    preference = root.dataset.motionState === 'ready' ? 'disabled' : 'enabled';
+    try {
+      sessionStorage.setItem(preferenceKey, preference);
+    } catch {
+      // Keep the in-memory choice for this page.
+    }
+    void rebuild();
+  }
   let context: gsap.Context | undefined;
   let engine: Awaited<ReturnType<typeof loadEngine>> | undefined;
   let revision = 0;
@@ -49,10 +85,18 @@ export function mountScrollMotion() {
   async function rebuild() {
     const ticket = ++revision;
     reset();
-    if (disposed || reduced.matches) {
-      root!.dataset.motionState = 'static';
+    if (disposed) return;
+    if (!wantsMotion()) {
+      if (toggle) toggle.disabled = false;
+      delete document.documentElement.dataset.scrollMotion;
+      root.dataset.motionState = 'static';
+      root.dataset.motionReason = preference === 'disabled' ? 'user-disabled' : 'reduced-motion';
+      updateControl();
       return;
     }
+    document.documentElement.dataset.scrollMotion = 'enabled';
+    delete root.dataset.motionReason;
+    if (toggle) toggle.disabled = true;
     try {
       engine ??= await loadEngine();
       if (disposed || ticket !== revision) return;
@@ -215,6 +259,7 @@ export function mountScrollMotion() {
       });
       ScrollTrigger.refresh();
       root!.dataset.motionState = 'ready';
+      updateControl();
       if (!initialHashHandled) {
         initialHashHandled = true;
         followHash();
@@ -222,6 +267,11 @@ export function mountScrollMotion() {
     } catch {
       reset();
       root!.dataset.motionState = 'static';
+      root.dataset.motionReason = 'load-error';
+      delete document.documentElement.dataset.scrollMotion;
+      updateControl();
+    } finally {
+      if (toggle && ticket === revision) toggle.disabled = false;
     }
   }
 
@@ -236,6 +286,7 @@ export function mountScrollMotion() {
   function visibilityRestored(event: PageTransitionEvent) {
     if (event.persisted) scheduleRebuild();
   }
+  toggle?.addEventListener('click', changePreference);
   window.addEventListener('resize', scheduleRebuild, { passive: true });
   window.addEventListener('hashchange', followHash);
   window.addEventListener('pageshow', visibilityRestored);
@@ -262,6 +313,10 @@ export function mountScrollMotion() {
     window.removeEventListener('pageshow', visibilityRestored);
     reduced.removeEventListener('change', scheduleRebuild);
     root.removeEventListener('load', refresh, true);
+    toggle?.removeEventListener('click', changePreference);
+    if (control) control.hidden = true;
+    delete document.documentElement.dataset.scrollMotion;
+    delete root.dataset.motionReason;
     delete root.dataset.motionState;
   };
 }

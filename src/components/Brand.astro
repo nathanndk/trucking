@@ -1,0 +1,23 @@
+---
+import { ArrowUpRight } from 'lucide-react';
+interface Props {
+  name?: string;
+  logo?: string;
+  href?: string;
+}
+const { name = 'LINTAS', logo, href = '/' } = Astro.props;
+---
+
+<a href={href} class="brand" aria-label={`${name} — Beranda`}>
+  {logo ? (
+    <img src={logo} alt="" width="42" height="42" />
+  ) : (
+    <span class="brand-icon">
+      <ArrowUpRight size={30} strokeWidth={3} />
+    </span>
+  )}
+  <span>
+    <span class="brand-word">{name}</span>
+    <small>LOGISTICS & TRANSPORT</small>
+  </span>
+</a>

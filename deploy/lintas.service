@@ -1,0 +1,24 @@
+[Unit]
+Description=Lintas logistics website and CMS
+After=network.target
+
+[Service]
+Type=simple
+User=lintas
+Group=lintas
+WorkingDirectory=/srv/lintas/current
+EnvironmentFile=/etc/lintas.env
+ExecStart=/usr/bin/node /srv/lintas/current/dist/server/entry.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/lintas
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

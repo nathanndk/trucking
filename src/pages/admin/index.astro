@@ -1,0 +1,120 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { ArrowUpRight, Package, Truck, FolderKanban, Building2, Inbox } from 'lucide-react';
+import { db } from '../../db';
+import { inquiries } from '../../db/schema';
+import { desc, count, eq } from 'drizzle-orm';
+import { tables, getSettings } from '../../lib/repository';
+const counts = [
+  { name: 'Services', key: 'services', Icon: Package },
+  { name: 'Fleet', key: 'fleet', Icon: Truck },
+  { name: 'Projects', key: 'projects', Icon: FolderKanban },
+  { name: 'Clients', key: 'clients', Icon: Building2 },
+].map((i) => ({
+  ...i,
+  count: db
+    .select({ value: count() })
+    .from(tables[i.key as keyof typeof tables])
+    .get()!.value,
+}));
+const newCount = db
+  .select({ value: count() })
+  .from(inquiries)
+  .where(eq(inquiries.status, 'new'))
+  .get()!.value;
+const latest = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).limit(5).all();
+const s = getSettings();
+---
+
+<AdminLayout
+  title="Overview"
+  description="Your website at a glance. Keep content fresh and follow up on new requests."
+>
+  <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    {[...counts, { name: 'New inquiries', key: 'inquiries', Icon: Inbox, count: newCount }].map(
+      ({ name, key, Icon, count: n }) => (
+        <a href={`/admin/${key}`}>
+          <Card className="h-full">
+            <CardContent className="pt-6">
+              <div class="flex items-center justify-between text-muted-foreground">
+                <span class="text-xs">{name}</span>
+                <Icon size={18} />
+              </div>
+              <p class="mt-5 text-3xl font-semibold tracking-tight">{n}</p>
+            </CardContent>
+          </Card>
+        </a>
+      ),
+    )}
+  </div>
+  <div class="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+    <Card>
+      <CardHeader>
+        <div class="flex items-center justify-between">
+          <CardTitle>Recent inquiries</CardTitle>
+          <a href="/admin/inquiries" class="text-xs font-semibold">
+            View all ↗
+          </a>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {latest.length ? (
+          latest.map((item) => (
+            <a
+              href="/admin/inquiries"
+              class="flex items-center justify-between gap-4 border-t py-4"
+            >
+              <div>
+                <p class="text-sm font-semibold">{item.fullName}</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  {item.pickup} → {item.destination}
+                </p>
+              </div>
+              <Badge>{item.status}</Badge>
+            </a>
+          ))
+        ) : (
+          <div class="rounded-lg bg-muted p-8 text-center">
+            <Inbox className="mx-auto mb-3 text-muted-foreground" size={28} />
+            <p class="text-sm font-semibold">Ready for your next opportunity</p>
+            <p class="mt-2 text-xs text-muted-foreground">
+              Quotation requests from your contact page will appear here.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick actions</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {[
+          ['/admin/services', 'Update your services'],
+          ['/admin/fleet', 'Manage fleet information'],
+          ['/admin/settings', 'Edit company details'],
+          ['/', 'Visit public website'],
+        ].map(([href, text]) => (
+          <a
+            href={href}
+            class="flex items-center justify-between rounded-lg border p-4 text-sm hover:bg-muted"
+          >
+            {text}
+            <ArrowUpRight size={16} />
+          </a>
+        ))}
+      </CardContent>
+    </Card>
+  </div>
+  {s.demoMode && (
+    <div class="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+      <h2 class="text-sm font-semibold text-amber-950">Demo content is active</h2>
+      <p class="mt-2 text-sm leading-relaxed text-amber-900">
+        Replace sample contacts, projects, client logos, company history, and fleet information
+        before launch. Turn off demo notices in Settings after verification.
+      </p>
+    </div>
+  )}
+</AdminLayout>

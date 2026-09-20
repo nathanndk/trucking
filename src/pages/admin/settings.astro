@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import SettingsForm from '../../components/admin/SettingsForm';
+import { getSettings } from '../../lib/repository';
+---
+
+<AdminLayout
+  title="Settings"
+  description="Manage your company profile, contact information, and website identity."
+>
+  <SettingsForm settings={getSettings()} client:load />
+</AdminLayout>

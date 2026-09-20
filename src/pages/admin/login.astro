@@ -1,0 +1,57 @@
+---
+import '../../styles/global.css';
+import Brand from '../../components/Brand.astro';
+import Login from '../../components/admin/Login';
+if (Astro.locals.admin) return Astro.redirect('/admin', 303);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Admin sign in · Lintas CMS</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen bg-muted">
+    <main class="grid min-h-screen lg:grid-cols-2">
+      <section class="relative hidden overflow-hidden bg-primary p-16 text-white lg:flex lg:flex-col lg:justify-between">
+        <img
+          src="/images/hero.jpg"
+          alt=""
+          class="absolute inset-0 h-full w-full object-cover opacity-25"
+        />
+        <div class="relative">
+          <span class="text-xs tracking-widest text-[#c9f36a]">LINTAS / CONTENT WORKSPACE</span>
+        </div>
+        <div class="relative">
+          <h1 class="text-5xl font-semibold leading-tight tracking-tight">
+            Keep your business
+            <br />
+            moving forward.
+          </h1>
+          <p class="mt-6 max-w-sm text-sm leading-relaxed text-white/80">
+            One place for your website content, fleet information, and new opportunities.
+          </p>
+        </div>
+        <p class="relative text-xs text-white/70">
+          Private access · Authorized administrators only
+        </p>
+      </section>
+      <section class="flex items-center justify-center px-6 py-16">
+        <div class="w-full max-w-sm">
+          <Brand />
+          <div class="mb-8 mt-12">
+            <h2 class="text-3xl font-bold tracking-tight">Welcome back.</h2>
+            <p class="mt-3 text-sm text-muted-foreground">Sign in to manage your website.</p>
+          </div>
+          <Login client:load />
+          <a href="/" class="mt-8 block text-center text-xs font-medium text-muted-foreground">
+            ← Back to website
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

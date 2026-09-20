@@ -1,0 +1,20 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Inquiries from '../../components/admin/Inquiries';
+import { db } from '../../db';
+import { inquiries } from '../../db/schema';
+import { desc } from 'drizzle-orm';
+const items = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).all();
+---
+
+<AdminLayout
+  title="Inquiries"
+  description="Review quotation requests and track your follow-up progress."
+>
+  {Astro.url.searchParams.get('saved') === '1' && (
+    <p role="status" class="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">
+      Inquiry status updated.
+    </p>
+  )}
+  <Inquiries items={items} client:load />
+</AdminLayout>

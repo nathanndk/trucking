@@ -1,0 +1,19 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ContentManager from '../../components/admin/ContentManager';
+import { collections, contentConfig, type Collection } from '../../lib/content-config';
+import { listContent } from '../../lib/repository';
+const collection = Astro.params.collection as Collection;
+if (!collections.includes(collection)) return Astro.redirect('/404');
+const config = contentConfig[collection];
+const items = listContent(collection);
+---
+
+<AdminLayout title={config.label} description={config.description}>
+  <ContentManager
+    collection={collection}
+    items={items}
+    saved={Astro.url.searchParams.get('saved') === '1'}
+    client:load
+  />
+</AdminLayout>

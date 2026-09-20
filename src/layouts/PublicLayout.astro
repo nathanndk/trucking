@@ -1,0 +1,171 @@
+---
+import '../styles/global.css';
+import { ArrowUpRight, Menu } from 'lucide-react';
+import Brand from '../components/Brand.astro';
+import { getSettings } from '../lib/repository';
+import { origin } from '../lib/env';
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const s = getSettings();
+const pathname = Astro.url.pathname;
+const nav = [
+  ['/', 'Beranda'],
+  ['/about', 'Tentang Kami'],
+  ['/services', 'Layanan'],
+  ['/fleet', 'Armada'],
+  ['/coverage', 'Jangkauan'],
+  ['/projects', 'Proyek'],
+];
+const canonical = new URL(pathname, origin).href;
+const structured = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: s.legalName,
+  url: origin,
+  description: s.shortDescription,
+  ...(s.logo ? { logo: new URL(s.logo, origin).href } : {}),
+  ...(!s.demoMode ? { telephone: s.phone, email: s.email, address: s.address } : {}),
+}).replaceAll('<', '\\u003c');
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} | {s.companyName} Logistics</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} | ${s.companyName} Logistics`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:image" content={new URL('/images/hero.jpg', origin).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#142b28" />
+    <link rel="icon" href={s.favicon || '/favicon.svg'} />
+    <script is:inline type="application/ld+json" set:html={structured}></script>
+  </head>
+  <body class="marketing">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:z-50 focus:bg-white focus:p-4"
+    >
+      Langsung ke konten
+    </a>
+    <div class="topbar">
+      <div class="wrap">
+        <span>INDONESIA, CONNECTED. &nbsp; / &nbsp; ROAD FREIGHT SOLUTIONS</span>
+        <span>
+          {s.email} &nbsp; · &nbsp; {s.phone}
+        </span>
+      </div>
+    </div>
+    <header class="navbar">
+      <div class="wrap nav-inner">
+        <Brand name={s.companyName} logo={s.logo} />
+        <nav class="desktop-nav" aria-label="Navigasi utama">
+          {nav.map(([href, label]) => (
+            <a href={href} aria-current={pathname === href ? 'page' : undefined}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <a href="/contact" class="cta">
+          {s.ctaText}
+          <ArrowUpRight size={17} />
+        </a>
+        <details class="mobile-nav">
+          <summary aria-label="Buka navigasi">
+            <Menu size={26} />
+          </summary>
+          <nav aria-label="Navigasi seluler">
+            {[...nav, ['/contact', 'Hubungi Kami']].map(([href, label]) => (
+              <a href={href} aria-current={pathname === href ? 'page' : undefined}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        </details>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div>
+            <Brand name={s.companyName} logo={s.logo} />
+            <p>{s.shortDescription}</p>
+          </div>
+          <div>
+            <h3>JELAJAHI</h3>
+            <ul>
+              {nav.slice(1).map(([href, label]) => (
+                <li>
+                  <a href={href}>{label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3>TERHUBUNG</h3>
+            <ul>
+              <li>
+                <a href="/contact">Minta penawaran</a>
+              </li>
+              <li>
+                <a href={`mailto:${s.email}`}>Email kami</a>
+              </li>
+              <li>
+                <a href={`https://wa.me/${s.whatsapp}`}>WhatsApp</a>
+              </li>
+              {s.instagram && (
+                <li>
+                  <a href={s.instagram} rel="noopener noreferrer">
+                    Instagram
+                  </a>
+                </li>
+              )}
+              {s.linkedin && (
+                <li>
+                  <a href={s.linkedin} rel="noopener noreferrer">
+                    LinkedIn
+                  </a>
+                </li>
+              )}
+            </ul>
+          </div>
+          <div>
+            <h3>KANTOR KAMI</h3>
+            <p style="margin-top:0;white-space:pre-line">{s.address}</p>
+            <p>
+              <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>
+            </p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>
+            © {new Date().getFullYear()} {s.legalName}.
+          </span>
+          <span>
+            {s.demoMode
+              ? 'Website demo · profil, proyek, dan klien adalah ilustrasi.'
+              : 'Menghubungkan bisnis. Menggerakkan Indonesia.'}
+          </span>
+          <a href="/admin/login">Admin ↗</a>
+        </div>
+      </div>
+    </footer>
+    <script>
+      import { mountScrollMotion } from '../scripts/scroll-motion';
+      const dispose = mountScrollMotion();
+      if (import.meta.hot) import.meta.hot.dispose(dispose);
+    </script>
+  </body>
+</html>

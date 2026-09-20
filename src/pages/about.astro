@@ -1,0 +1,139 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { getSettings } from '../lib/repository';
+import { ShieldCheck, Handshake, Compass } from 'lucide-react';
+const s = getSettings();
+---
+
+<PublicLayout
+  title="Tentang Kami"
+  description={`Kenali ${s.companyName}: visi, misi, nilai, dan komitmen kami dalam transportasi darat Indonesia.`}
+>
+  <PageHero
+    label="Tentang Kami"
+    title="Bergerak dengan tujuan. Tumbuh bersama Anda."
+    description={s.tagline}
+  />
+  <section class="section">
+    <div class="wrap split">
+      <img
+        src="/images/fleet.jpg"
+        alt="Ilustrasi kendaraan dan kegiatan transportasi darat"
+        width="1000"
+        height="750"
+        style="width:100%;aspect-ratio:1.2;object-fit:cover"
+      />
+      <div>
+        <div class="eyebrow">PERJALANAN KAMI · {s.established}</div>
+        <h2 data-motion="heading">
+          Mitra di setiap
+          <br />
+          perjalanan bisnis.
+        </h2>
+        <p data-motion="copy" class="prose-block" style="margin-top:24px">
+          {s.about}
+        </p>
+        {s.demoMode && (
+          <div class="notice" style="margin-top:24px">
+            Profil dan tahun berdiri adalah data demonstrasi. Ganti dengan informasi resmi
+            perusahaan sebelum peluncuran.
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+  <section class="section dark-section">
+    <div class="wrap split">
+      <div>
+        <div class="eyebrow">VISI KAMI</div>
+        <h2 data-motion="heading">
+          Arah yang jelas.
+          <br />
+          Tujuan bersama.
+        </h2>
+        <p data-motion="copy" class="prose-block" style="margin-top:24px;color:#c5d1c8">
+          {s.vision}
+        </p>
+      </div>
+      <div>
+        <div class="eyebrow">MISI KAMI</div>
+        {s.mission
+          .split('\n')
+          .filter(Boolean)
+          .map((m, i) => (
+            <div style="padding:24px 0;border-bottom:1px solid #486050;display:flex;gap:24px">
+              <span style="color:#c9f36a">0{i + 1}</span>
+              <p style="margin:0;font-size:14px">{m}</p>
+            </div>
+          ))}
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap">
+      <div class="eyebrow">NILAI YANG MENGGERAKKAN KAMI</div>
+      <h2 data-motion="heading">
+        Prinsip yang tetap.
+        <br />
+        Di jalan yang terus berubah.
+      </h2>
+      <div class="why-grid" data-motion="group">
+        {[
+          {
+            Icon: ShieldCheck,
+            title: 'Tanggung jawab',
+            text: 'Merencanakan penanganan barang dan keselamatan perjalanan secara bertanggung jawab.',
+          },
+          {
+            Icon: Handshake,
+            title: 'Keterbukaan',
+            text: 'Komunikasi yang jelas mengenai kebutuhan, cakupan layanan, dan kesepakatan pengiriman.',
+          },
+          {
+            Icon: Compass,
+            title: 'Ketepatan rencana',
+            text: 'Menyelaraskan pilihan kendaraan, rute, dan jadwal dengan kebutuhan bisnis.',
+          },
+        ].map(({ Icon, title, text }) => (
+          <article class="why-item" data-motion-item>
+            <Icon size={28} />
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+      <div class="stats" data-motion="group">
+        {s.statistics.map((stat) => (
+          <div class="stat" data-motion-item>
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section coverage-section">
+    <div class="wrap split">
+      <div>
+        <div class="eyebrow">KESELAMATAN & LEGALITAS</div>
+        <h2 data-motion="heading">
+          Kepercayaan perlu
+          <br />
+          dasar yang kuat.
+        </h2>
+      </div>
+      <div>
+        <p data-motion="copy" class="prose-block">
+          Setiap kebutuhan transportasi perlu didukung kendaraan yang sesuai, prosedur penanganan
+          yang jelas, dan dokumen pengiriman yang lengkap.
+        </p>
+        <p data-motion="copy" class="prose-block" style="margin-top:24px">
+          {s.credentials}
+        </p>
+      </div>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

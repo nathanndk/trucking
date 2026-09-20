@@ -1,0 +1,40 @@
+---
+import { ArrowUpRight } from 'lucide-react';
+import type { ContentRecord } from '../../lib/content-config';
+const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
+---
+
+<div class="fleet-grid" data-motion="group">
+  {items.map((item) => (
+    <article class="fleet-card" data-motion-item id={item.slug}>
+      <div class="image">
+        <img
+          data-motion-photo
+          src={item.image || '/images/fleet.jpg'}
+          alt={`Ilustrasi armada ${item.title}`}
+          loading="lazy"
+          width="640"
+          height="450"
+        />
+      </div>
+      <div class="info">
+        <span class="micro-label">{item.vehicleType}</span>
+        <h3>{item.title}</h3>
+        <p>{full ? item.description : item.shortDescription}</p>
+        {full && item.specifications && <p class="prose-block">{item.specifications}</p>}
+        <div class="capacity">
+          <span>{item.capacity}</span>
+          <a
+            href={`/contact?vehicle=${encodeURIComponent(item.title)}`}
+            aria-label={`Minta penawaran ${item.title}`}
+          >
+            <ArrowUpRight size={20} />
+          </a>
+        </div>
+      </div>
+    </article>
+  ))}
+</div>
+{!items.length && (
+  <p class="empty-public">Informasi armada sedang diperbarui. Silakan hubungi tim kami.</p>
+)}

@@ -1,0 +1,33 @@
+---
+import { Truck, Package, Warehouse, Container, Route, Handshake } from 'lucide-react';
+import type { ContentRecord } from '../../lib/content-config';
+const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
+const icons: Record<string, typeof Truck> = {
+  Truck,
+  Package,
+  Warehouse,
+  Container,
+  Route,
+  Handshake,
+};
+---
+
+<div class="services-grid" data-motion="group">
+  {items.map((item, i) => {
+    const Icon = icons[item.icon || 'Truck'] || Truck;
+    return (
+      <article class="service-tile" data-motion-item id={item.slug}>
+        <span class="tile-num">{String(i + 1).padStart(2, '0')}</span>
+        <Icon />
+        <h3>{item.title}</h3>
+        <p>{full ? item.description : item.shortDescription}</p>
+        {full && (
+          <a href="/contact" class="text-link" style="margin-top:24px;color:#c9f36a">
+            Diskusikan kebutuhan Anda <span aria-hidden="true">↗</span>
+          </a>
+        )}
+      </article>
+    );
+  })}
+</div>
+{items.length === 0 && <p>Layanan sedang diperbarui. Hubungi tim kami untuk informasi.</p>}

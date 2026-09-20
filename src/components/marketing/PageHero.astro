@@ -1,0 +1,20 @@
+---
+const { title, label, description } = Astro.props as {
+  title: string;
+  label: string;
+  description: string;
+};
+---
+
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb">
+      <a href="/">Beranda</a>
+      <span>/</span>
+      <span>{label}</span>
+    </div>
+    <div class="eyebrow">{label}</div>
+    <h1 data-motion="heading">{title}</h1>
+    <p data-motion="copy">{description}</p>
+  </div>
+</section>

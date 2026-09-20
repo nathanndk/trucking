@@ -1,0 +1,252 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import Spotlight from '../components/marketing/Spotlight.astro';
+import Marquee from '../components/marketing/Marquee.astro';
+import CTA from '../components/marketing/CTA.astro';
+import FleetGrid from '../components/marketing/FleetGrid.astro';
+import ServiceGrid from '../components/marketing/ServiceGrid.astro';
+import ProjectGrid from '../components/marketing/ProjectGrid.astro';
+import RouteMap from '../components/marketing/RouteMap.astro';
+import {
+  ArrowUpRight,
+  ArrowRight,
+  ShieldCheck,
+  Route,
+  Headphones,
+  ClipboardCheck,
+} from 'lucide-react';
+import { getSettings, listContent } from '../lib/repository';
+const s = getSettings();
+const services = listContent('services', true);
+const fleet = listContent('fleet', true);
+const areas = listContent('coverage', true);
+const projects = listContent('projects', true);
+const clients = listContent('clients', true);
+---
+
+<PublicLayout title="Solusi Trucking & Logistik Indonesia" description={s.shortDescription}>
+  <section class="hero" data-motion="hero">
+    <img
+      class="hero-photo"
+      src="/images/hero-1920.webp"
+      srcset="/images/hero-768.webp 768w, /images/hero-1280.webp 1280w, /images/hero-1920.webp 1920w"
+      sizes="100vw"
+      alt="Truk angkutan darat di perjalanan"
+      width="1920"
+      height="1280"
+      fetchpriority="high"
+    />
+    <Spotlight />
+    <div class="wrap hero-content">
+      <div class="eyebrow">YOUR CARGO. OUR COMMITMENT.</div>
+      <h1>
+        Menghubungkan bisnis.
+        <br />
+        <span>
+          Menggerakkan
+          <br />
+          Indonesia.
+        </span>
+      </h1>
+      <p>{s.shortDescription}</p>
+      <div class="hero-actions">
+        <a href="/contact" class="cta">
+          {s.ctaText}
+          <ArrowUpRight size={18} />
+        </a>
+        <a href="/services" class="cta line">
+          Jelajahi Layanan
+          <ArrowRight size={18} />
+        </a>
+      </div>
+    </div>
+    <div class="hero-note">DARI TITIK MUAT, HINGGA TUJUAN TERAKHIR.</div>
+  </section>
+  <div class="trust-strip">
+    <div class="wrap">
+      <span>
+        <ShieldCheck />
+        Keselamatan sebagai prioritas
+      </span>
+      <span>
+        <Route />
+        Rute yang direncanakan dengan baik
+      </span>
+      <span>
+        <Headphones />
+        Komunikasi di setiap perjalanan
+      </span>
+    </div>
+  </div>
+  <section class="section">
+    <div class="wrap">
+      <div class="intro-grid">
+        <div>
+          <div class="eyebrow">01 / TENTANG LINTAS</div>
+          <h2 data-motion="heading">
+            Lebih dari pengiriman.
+            <br />
+            Bagian dari perjalanan
+            <br />
+            bisnis Anda.
+          </h2>
+        </div>
+        <div class="intro-copy" data-motion="copy">
+          <p>{s.about}</p>
+          <a class="text-link" href="/about">
+            Kenali perusahaan kami
+            <ArrowUpRight size={18} />
+          </a>
+        </div>
+      </div>
+      <div class="stats" data-motion="group">
+        {s.statistics.map((stat) => (
+          <div class="stat" data-motion-item>
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
+          </div>
+        ))}
+      </div>
+      {s.demoMode && (
+        <p class="micro-label" style="margin-top:24px;font-size:9px">
+          Profil dan angka di atas merupakan konten demonstrasi.
+        </p>
+      )}
+    </div>
+  </section>
+  <section class="section dark-section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">02 / LAYANAN KAMI</div>
+          <h2 data-motion="heading">
+            Setiap muatan,
+            <br />
+            solusi yang tepat.
+          </h2>
+        </div>
+        <a href="/services" class="text-link">
+          Semua layanan
+          <ArrowUpRight size={18} />
+        </a>
+      </div>
+      <ServiceGrid items={services.slice(0, 3)} />
+    </div>
+  </section>
+  <section class="section" id="armada" data-motion="fleet-scene">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">03 / PILIHAN ARMADA</div>
+          <h2 data-motion="heading">
+            Siap untuk
+            <br />
+            kebutuhan Anda.
+          </h2>
+        </div>
+        <p data-motion="copy">
+          Dari distribusi kota hingga angkutan antarpulau. Temukan kendaraan yang sesuai dengan
+          karakter muatan Anda.
+        </p>
+      </div>
+      <FleetGrid items={fleet.slice(0, 3)} />
+      <div style="margin-top:32px">
+        <a href="/fleet" class="text-link">
+          Lihat pilihan armada
+          <ArrowUpRight size={18} />
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="section coverage-section">
+    <div class="wrap coverage-grid">
+      <div>
+        <div class="eyebrow">04 / JANGKAUAN OPERASIONAL</div>
+        <h2 data-motion="heading">
+          Jarak bukan
+          <br />
+          penghalang.
+        </h2>
+        <p data-motion="copy">
+          Hubungkan bisnis Anda dengan pusat industri dan perdagangan. Diskusikan rute dan jadwal
+          pengiriman bersama tim kami.
+        </p>
+        <div class="chips">
+          {areas.slice(0, 5).map((a) => (
+            <span>{a.title}</span>
+          ))}
+        </div>
+        <a href="/coverage" class="text-link">
+          Jelajahi jangkauan kami
+          <ArrowUpRight size={18} />
+        </a>
+      </div>
+      <RouteMap cities={areas.map((a) => a.title)} />
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap">
+      <div class="eyebrow">05 / ALASAN MEMILIH KAMI</div>
+      <h2 data-motion="heading">
+        Kepercayaan dibangun
+        <br />
+        di setiap kilometer.
+      </h2>
+      <div class="why-grid" data-motion="group">
+        {[
+          {
+            Icon: ShieldCheck,
+            title: 'Keselamatan lebih dulu',
+            text: 'Pemilihan armada dan penanganan muatan yang sesuai menjadi dasar setiap rencana pengiriman.',
+          },
+          {
+            Icon: ClipboardCheck,
+            title: 'Terencana, dari awal',
+            text: 'Kebutuhan, rute, dan jadwal dibicarakan sebelum kendaraan bergerak. Anda tahu apa yang diharapkan.',
+          },
+          {
+            Icon: Headphones,
+            title: 'Mudah diajak bicara',
+            text: 'Satu jalur komunikasi untuk mendiskusikan kebutuhan, perubahan jadwal, dan informasi pengiriman.',
+          },
+        ].map(({ Icon, title, text }) => (
+          <article class="why-item" data-motion-item>
+            <Icon size={28} />
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">06 / CERITA PERJALANAN</div>
+          <h2 data-motion="heading">
+            Mengantarkan lebih
+            <br />
+            dari sekadar barang.
+          </h2>
+        </div>
+        <a href="/projects" class="text-link">
+          Lihat proyek
+          <ArrowUpRight size={18} />
+        </a>
+      </div>
+      <ProjectGrid items={projects.slice(0, 2)} />
+    </div>
+  </section>
+  {clients.length > 0 && (
+    <section class="logo-section">
+      <div class="wrap">
+        <div class="label">
+          {s.demoMode ? 'ILUSTRASI MITRA BISNIS' : 'BERSAMA MITRA BISNIS KAMI'}
+        </div>
+        <Marquee items={clients} />
+      </div>
+    </section>
+  )}
+  <CTA text={s.ctaText} />
+</PublicLayout>

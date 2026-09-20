@@ -1,0 +1,60 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ServiceGrid from '../components/marketing/ServiceGrid.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { listContent } from '../lib/repository';
+const items = listContent('services', true);
+---
+
+<PublicLayout
+  title="Layanan Trucking & Distribusi"
+  description="Jelajahi pilihan full truck load, distribusi antarkota, angkutan kontainer, dan transportasi untuk kebutuhan bisnis Anda."
+>
+  <PageHero
+    label="Layanan"
+    title="Kebutuhan berbeda. Komitmen yang sama."
+    description="Dari pengiriman satu kali hingga distribusi rutin, temukan solusi transportasi yang sesuai dengan bisnis Anda."
+  />
+  <section class="section dark-section">
+    <div class="wrap">
+      <ServiceGrid items={items} full />
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap">
+      <div class="eyebrow">CARA KAMI BEKERJA</div>
+      <h2 data-motion="heading">
+        Dari percakapan pertama
+        <br />
+        ke rencana pengiriman.
+      </h2>
+      <div class="why-grid" data-motion="group">
+        {[
+          [
+            '01',
+            'Ceritakan kebutuhan',
+            'Sampaikan jenis muatan, dimensi, titik muat, tujuan, dan jadwal yang diinginkan.',
+          ],
+          [
+            '02',
+            'Susun rencana',
+            'Kami membantu menentukan kendaraan dan menyiapkan penawaran sesuai kebutuhan.',
+          ],
+          [
+            '03',
+            'Konfirmasi & bergerak',
+            'Setelah detail disepakati, pengiriman dijalankan sesuai rencana dan koordinasi bersama.',
+          ],
+        ].map(([n, t, d]) => (
+          <article class="why-item" data-motion-item>
+            <span class="micro-label">{n}</span>
+            <h3 style="margin-top:16px">{t}</h3>
+            <p>{d}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <CTA />
+</PublicLayout>

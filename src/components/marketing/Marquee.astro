@@ -1,0 +1,57 @@
+---
+// Magic UI Marquee adapted to Astro: no hydration, hidden duplicates, reduced motion.
+import type { ContentRecord } from '../../lib/content-config';
+const { items } = Astro.props as { items: ContentRecord[] };
+---
+
+<div class="marquee-clip" aria-label="Mitra bisnis">
+  <div class="marquee-track">
+    {[0, 1].map((repeat) => (
+      <div class="marquee-group" aria-hidden={repeat === 1 ? 'true' : undefined}>
+        {items.map((c) => (
+          <div>
+            {c.image ? (
+              <img src={c.image} alt={repeat === 1 ? '' : c.title} width="180" height="56" />
+            ) : (
+              <span>{c.title}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
+<style>
+  .marquee-group {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    flex-shrink: 0;
+  }
+  .marquee-track {
+    gap: 48px;
+    animation-name: logos;
+  }
+  @keyframes logos {
+    to {
+      transform: translateX(calc(-50% - 24px));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-clip {
+      overflow: visible;
+      mask-image: none;
+    }
+    .marquee-track {
+      width: 100%;
+      animation: none;
+    }
+    .marquee-group {
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .marquee-group[aria-hidden='true'] {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,31 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import FleetGrid from '../components/marketing/FleetGrid.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { listContent, getSettings } from '../lib/repository';
+const items = listContent('fleet', true);
+const s = getSettings();
+---
+
+<PublicLayout
+  title="Armada & Kapasitas Kendaraan"
+  description="Kenali pilihan kendaraan trucking, kapasitas muatan, dan spesifikasi untuk menentukan armada yang sesuai."
+>
+  <PageHero
+    label="Armada"
+    title="Kendaraan yang tepat. Perjalanan yang terencana."
+    description="Setiap muatan punya karakter. Kami membantu memilih armada berdasarkan berat, dimensi, penanganan, dan akses lokasi."
+  />
+  <section class="section">
+    <div class="wrap">
+      <FleetGrid items={items} full />
+      <div class="notice" style="margin-top:32px">
+        {s.demoMode ? 'Foto dan spesifikasi armada adalah ilustrasi. ' : ''}Kapasitas aktual
+        mengikuti dimensi muatan, kondisi rute, dan batas legal. Ketersediaan kendaraan dikonfirmasi
+        saat penawaran.
+      </div>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

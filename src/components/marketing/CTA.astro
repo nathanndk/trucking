@@ -1,0 +1,21 @@
+---
+import { ArrowUpRight } from 'lucide-react';
+const { text = 'Minta Penawaran' } = Astro.props;
+---
+
+<section class="cta-band">
+  <div class="wrap" data-motion="group">
+    <div data-motion-item>
+      <div class="eyebrow">MARI BERGERAK BERSAMA</div>
+      <h2>
+        Muatan Anda.
+        <br />
+        Komitmen kami.
+      </h2>
+    </div>
+    <a href="/contact" class="cta dark" data-motion-item>
+      {text}
+      <ArrowUpRight size={20} />
+    </a>
+  </div>
+</section>

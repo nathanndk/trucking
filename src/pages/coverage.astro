@@ -1,0 +1,65 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import RouteMap from '../components/marketing/RouteMap.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { MapPin } from 'lucide-react';
+import { listContent, getSettings } from '../lib/repository';
+const items = listContent('coverage', true);
+const s = getSettings();
+---
+
+<PublicLayout
+  title="Jangkauan Operasional"
+  description="Temukan area layanan transportasi darat dan diskusikan rute pengiriman bisnis Anda bersama tim kami."
+>
+  <PageHero
+    label="Jangkauan"
+    title="Menghubungkan titik. Membuka peluang."
+    description="Jaringan perjalanan untuk kebutuhan distribusi Anda. Hubungi kami untuk memastikan rute, akses lokasi, dan jadwal."
+  />
+  <section class="section coverage-section">
+    <div class="wrap coverage-grid">
+      <div>
+        <div class="eyebrow">KORIDOR PERJALANAN</div>
+        <h2 data-motion="heading">
+          Dari pusat industri
+          <br />
+          ke tujuan Anda.
+        </h2>
+        <p>
+          Cakupan operasional dapat berbeda menurut jenis kendaraan dan muatan. Daftar di bawah
+          adalah titik layanan yang tersedia untuk didiskusikan.
+        </p>
+        {s.demoMode && (
+          <p class="notice">
+            Area layanan di bawah adalah data demo, bukan klaim jaringan operasional nyata.
+          </p>
+        )}
+      </div>
+      <RouteMap cities={items.map((i) => i.title)} />
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 data-motion="heading">Area layanan.</h2>
+        <p>Tujuan Anda belum tercantum? Tim kami siap membantu memeriksa kemungkinan rute.</p>
+      </div>
+      <div class="area-grid" data-motion="group">
+        {items.map((item) => (
+          <article class="area-card" data-motion-item>
+            <MapPin size={24} />
+            <h3>{item.title}</h3>
+            <span class="micro-label">{item.province}</span>
+            <p>{item.description}</p>
+          </article>
+        ))}
+      </div>
+      {!items.length && (
+        <p class="empty-public">Hubungi kami untuk informasi area layanan terbaru.</p>
+      )}
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

@@ -1,0 +1,62 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ProjectGrid from '../components/marketing/ProjectGrid.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { listContent, getSettings } from '../lib/repository';
+const items = listContent('projects', true);
+const clients = listContent('clients', true);
+const s = getSettings();
+---
+
+<PublicLayout
+  title="Proyek & Mitra Bisnis"
+  description="Kenali contoh kebutuhan distribusi, angkutan kontainer, dan transportasi industri yang dapat kami bantu rencanakan."
+>
+  <PageHero
+    label="Proyek & Klien"
+    title="Setiap perjalanan punya cerita."
+    description="Di balik setiap muatan, ada bisnis yang terus bergerak. Lihat bagaimana kebutuhan transportasi diterjemahkan menjadi rencana."
+  />
+  <section class="section">
+    <div class="wrap">
+      {s.demoMode && (
+        <div class="notice" style="margin-bottom:40px">
+          Semua proyek dan nama klien berikut bersifat fiktif untuk demonstrasi. Publikasikan proyek
+          nyata hanya setelah mendapat izin klien.
+        </div>
+      )}
+      <ProjectGrid items={items} full />
+    </div>
+  </section>
+  <section class="section dark-section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">MITRA PERJALANAN</div>
+          <h2 data-motion="heading">Tumbuh bersama.</h2>
+        </div>
+      </div>
+      <div class="area-grid" data-motion="group">
+        {clients.map((c) => (
+          <div style="padding:24px;border:1px solid #486050">
+            {c.website ? (
+              <a href={c.website} rel="noopener noreferrer">
+                {c.image ? (
+                  <img src={c.image} alt={c.title} width="240" height="80" loading="lazy" />
+                ) : (
+                  <span>{c.title}</span>
+                )}
+              </a>
+            ) : c.image ? (
+              <img src={c.image} alt={c.title} width="240" height="80" loading="lazy" />
+            ) : (
+              <span>{c.title}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

@@ -1,0 +1,55 @@
+---
+interface Props {
+  cities?: string[];
+}
+const { cities = ['Jakarta', 'Bandung', 'Semarang', 'Surabaya', 'Denpasar'] } = Astro.props;
+---
+
+<div
+  class="coverage-art"
+  data-motion="route"
+  role="img"
+  aria-label={`Ilustrasi koridor pengiriman. Area: ${cities.join(', ')}. Bukan peta geografis.`}
+>
+  <svg viewBox="0 0 620 290" fill="none" aria-hidden="true">
+    <path
+      d="M20 72 53 90 78 92 105 124 140 132 165 149 200 152 220 161 259 164 278 176 319 180 349 174 375 185 401 191 420 206 451 215 478 204 480 189 453 173 431 150 410 140 373 132 350 125 331 133 308 126 279 136 256 115 230 111 204 102 175 108 143 95 115 96 86 77 60 76 40 59Z"
+      fill="#ccdabd"
+      stroke="#a6ba92"
+      stroke-width="1.5"
+    />
+    <path d="m497 205 21-8 32 15 21 7-14 14-36-6Z" fill="#ccdabd" stroke="#a6ba92" />
+    <path
+      data-motion-path
+      d="M99 107 Q173 100 225 140 T363 153 T530 217"
+      stroke="#365b30"
+      stroke-width="2"
+      stroke-dasharray="5 6"
+    />
+    {[
+      { x: 99, y: 107, t: 'JAKARTA', dy: -25 },
+      { x: 164, y: 136, t: 'BANDUNG', dy: 36 },
+      { x: 279, y: 151, t: 'SEMARANG', dy: -32 },
+      { x: 405, y: 175, t: 'SURABAYA', dy: -26 },
+      { x: 530, y: 217, t: 'BALI', dy: 38 },
+    ].map((p) => (
+      <g data-motion-marker>
+        <circle cx={p.x} cy={p.y} r="13" fill="#c9f36a" fill-opacity=".65" />
+        <circle cx={p.x} cy={p.y} r="5" fill="#25442f" />
+        <text
+          x={p.x}
+          y={p.y + p.dy}
+          fill="#344e32"
+          text-anchor="middle"
+          font-size="10"
+          font-family="sans-serif"
+          font-weight="700"
+          letter-spacing="1"
+        >
+          {p.t}
+        </text>
+      </g>
+    ))}
+  </svg>
+  <small>Ilustrasi koridor Jawa–Bali • konfirmasi cakupan untuk rute Anda</small>
+</div>

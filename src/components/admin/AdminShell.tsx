@@ -5,11 +5,9 @@ import {
   FolderKanban,
   Inbox,
   LayoutDashboard,
-  MapPin,
   Newspaper,
   Package,
   Settings,
-  Truck,
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -40,8 +38,6 @@ import Logout from './Logout';
 const links = [
   { href: '/admin', label: 'Overview', Icon: LayoutDashboard },
   { href: '/admin/services', label: 'Services', Icon: Package },
-  { href: '/admin/fleet', label: 'Fleet', Icon: Truck },
-  { href: '/admin/coverage', label: 'Coverage', Icon: MapPin },
   { href: '/admin/projects', label: 'Projects', Icon: FolderKanban },
   { href: '/admin/clients', label: 'Clients', Icon: Building2 },
   { href: '/admin/articles', label: 'Articles', Icon: Newspaper },

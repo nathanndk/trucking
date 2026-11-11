@@ -34,8 +34,6 @@ const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p
 const adminRoutes = [
   '/admin',
   '/admin/services',
-  '/admin/fleet',
-  '/admin/coverage',
   '/admin/projects',
   '/admin/clients',
   '/admin/articles',
@@ -121,7 +119,7 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length);
   expect(sitemapXml).toContain('/en/services</loc>');
   expect(sitemapXml).not.toContain('/fleet');
-  // Fleet and coverage stay in the CMS but are hidden from the public website.
+  // Fleet and coverage were removed from the website and the CMS.
   for (const hidden of ['/fleet', '/coverage', '/en/fleet'])
     expect((await request.get(hidden)).status()).toBe(404);
   for (const action of [
@@ -207,6 +205,15 @@ test('admin login, all protected routes, responsive navigation and logout', asyn
       await expect(menu).toBeHidden();
     }
   }
+  // The CMS only manages what the public website shows.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/admin');
+  const sidebar = page.locator('[data-slot="sidebar"]');
+  await expect(sidebar.getByRole('link', { name: 'Services' })).toBeVisible();
+  for (const removed of ['Fleet', 'Coverage'])
+    await expect(sidebar.getByRole('link', { name: removed })).toHaveCount(0);
+  for (const removed of ['/admin/fleet', '/admin/coverage'])
+    expect((await page.request.get(removed)).status()).toBe(404);
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
   await page.goto('/admin/settings');
@@ -217,17 +224,9 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
   adminSession,
 }, testInfo) => {
   await page.context().addCookies(adminSession);
-  // The last entry is the public page a published record appears on (null: hidden collection).
+  // The last entry is the public page a published record appears on.
   for (const [collection, singular, titleLabel, extras, route] of [
     ['services', 'service', 'Title', {}, '/services'],
-    [
-      'fleet',
-      'vehicle',
-      'Vehicle name',
-      { 'Vehicle type': 'Heavy duty', Capacity: '10 ton' },
-      null,
-    ],
-    ['coverage', 'service area', 'City', { Province: 'Jawa Barat' }, null],
     [
       'projects',
       'project',
@@ -257,12 +256,10 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
       .getByLabel('Description', { exact: true })
       .fill('A verified test record for end-to-end acceptance.');
     await dialog.getByLabel('Sort order').fill('999');
-    if (collection !== 'coverage') {
-      await dialog
-        .locator('input[type=file]')
-        .setInputFiles(path.resolve('public/images/genesis/service-trucking-640.webp'));
-      await expect(dialog.getByAltText(/preview/)).toBeVisible();
-    }
+    await dialog
+      .locator('input[type=file]')
+      .setInputFiles(path.resolve('public/images/genesis/service-trucking-640.webp'));
+    await expect(dialog.getByAltText(/preview/)).toBeVisible();
     if (collection === 'services') {
       await page.setViewportSize({ width: 375, height: 812 });
       await expect
@@ -291,19 +288,15 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
       expect(image.headers()['content-type']).toBe('image/webp');
     }
     db.close();
-    if (route) expect(await publicHtml()).not.toContain(title);
+    expect(await publicHtml()).not.toContain(title);
     await page.getByRole('button', { name: `Actions for ${title}` }).click();
     await page.getByRole('menuitem', { name: 'Publish', exact: true }).click();
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    if (route) {
-      expect(await publicHtml()).toContain(title);
-      expect(await publicHtml()).not.toContain(`${title} in English`);
-      expect(await publicHtml('/en')).toContain(`${title} in English`);
-    } else {
-      expect((await page.request.get(`/${collection}`)).status()).toBe(404);
-    }
+    expect(await publicHtml()).toContain(title);
+    expect(await publicHtml()).not.toContain(`${title} in English`);
+    expect(await publicHtml('/en')).toContain(`${title} in English`);
     await page.getByRole('button', { name: title, exact: true }).click();
     await page
       .getByRole('dialog')
@@ -322,7 +315,7 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    if (route) expect(await publicHtml()).not.toContain(`${title} edited`);
+    expect(await publicHtml()).not.toContain(`${title} edited`);
     await page.getByRole('button', { name: `Actions for ${title} edited` }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     // Deleting reloads the list; wait for it so the next navigation cannot race the reload.
@@ -556,7 +549,7 @@ test('invalid mutations and revoked admin roles are rejected by the server', asy
   const upload = await page.request.post('/_actions/upload', {
     headers,
     multipart: {
-      folder: 'fleet',
+      folder: 'services',
       file: {
         name: '../../payload.png',
         mimeType: 'image/png',

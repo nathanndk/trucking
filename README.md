@@ -52,8 +52,6 @@ Every public page also exists in English under `/en` (`/en/about`, `/en/articles
 | `/admin/login`     | Better Auth email/password login                                     |
 | `/admin`           | Overview and recent inquiries                                        |
 | `/admin/services`  | Service CRUD, publication, ordering, images                          |
-| `/admin/fleet`     | Vehicle CRUD (kept in the CMS, hidden from the public website)       |
-| `/admin/coverage`  | Coverage CRUD (kept in the CMS, hidden from the public website)      |
 | `/admin/projects`  | Project CRUD, publication, ordering, images                          |
 | `/admin/clients`   | Client CRUD, publication, ordering, logos                            |
 | `/admin/articles`  | Article CRUD, publication, ordering, images                          |
@@ -76,7 +74,7 @@ Indonesian is the default and has no URL prefix; English lives under `/en` (Astr
 
 The first page a visitor opens follows their location (`src/lib/geo.ts`, applied in `src/middleware.ts`): arriving on an Indonesian URL from outside the site, a visitor whose address is not allocated to Indonesia is redirected (302) to the English version. Addresses are matched locally against `src/lib/geo/indonesia.json`, built from APNIC's public delegation statistics; refresh it with `pnpm geo:update` a few times a year. No visitor data is sent to a third party. When the address carries no location (local development, or a proxy that does not pass `X-Real-IP` with `TRUST_PROXY=true`), the browser's `Accept-Language` decides instead. Links followed inside the site, including the language switch, are always respected, and the last language is remembered for a year in an HTTP-only `lang` cookie. Search engines and link previews are never redirected. Pages also carry `translate="no"` and `<meta name="google" content="notranslate">`, so browsers do not offer machine translation over the hand-written versions.
 
-Fleet and Coverage are switched off for the public website through the `public` flag in `src/lib/content-config.ts`. Their tables and admin screens remain; public pages for them would need to be designed before the flag is turned on.
+The CMS only manages content that the public website shows. The Fleet and Coverage collections from the original template were removed (migration `0002` drops their empty tables); the legacy `vehicle` column on old inquiries is kept.
 
 ## CMS workflow
 
@@ -99,7 +97,7 @@ Browser → Nginx (HTTPS) → Astro Node standalone
                               └─ persistent uploads/
 ```
 
-Schema: `src/db/schema.ts`. SQL migrations and snapshots: `drizzle/`. Tables: `user`, `session`, `account`, `verification`, `site_settings`, `services`, `fleet`, `coverage`, `projects`, `clients`, `articles`, `inquiries`, `media`, and `rate_limit`. Auth has foreign keys and relevant indexes; content has unique slugs and publication/order indexes; inquiries have a status/date index. SQLite enables foreign keys, WAL and a 5-second busy timeout. Dates use millisecond timestamps.
+Schema: `src/db/schema.ts`. SQL migrations and snapshots: `drizzle/`. Tables: `user`, `session`, `account`, `verification`, `site_settings`, `services`, `projects`, `clients`, `articles`, `inquiries`, `media`, and `rate_limit`. Auth has foreign keys and relevant indexes; content has unique slugs and publication/order indexes; inquiries have a status/date index. SQLite enables foreign keys, WAL and a 5-second busy timeout. Dates use millisecond timestamps.
 
 ```sh
 pnpm db:generate   # after an intentional schema change; review generated SQL
@@ -173,7 +171,7 @@ Restore procedure:
 
 ## Scope & extension points
 
-This is a profile/CMS, not an ERP. No customer accounts, dispatch, GPS, billing, or payment services. Coverage coordinates allow adding a real map later; the current diagram is explicitly illustrative. Content uses plain text rather than a rich-text editor. Recovery is an operator command; automated email notifications, MFA, and advanced roles are not configured. Public font and photo assets are local. Third-party UI adaptations and photo sources are recorded in `docs/credits.md`.
+This is a profile/CMS, not an ERP. No customer accounts, dispatch, GPS, billing, or payment services. Content uses plain text rather than a rich-text editor. Recovery is an operator command; automated email notifications, MFA, and advanced roles are not configured. Public font and photo assets are local. Third-party UI adaptations and photo sources are recorded in `docs/credits.md`.
 
 ### Operator password recovery
 

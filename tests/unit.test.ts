@@ -57,7 +57,7 @@ test('reject unsafe URLs, slugs and media paths', () => {
   );
   assert.equal(
     contentInput.safeParse({
-      collection: 'fleet',
+      collection: 'projects',
       title: 'Test',
       slug: 'test',
       published: true,
@@ -166,15 +166,15 @@ test('rate limiter persists counters and rejects requests over threshold', () =>
 });
 test('uploads validate decoded type, size and category, and generate safe WebP', async () => {
   await assert.rejects(() =>
-    saveImage(new File(['<svg/>'], 'bad.png', { type: 'image/png' }), 'fleet'),
+    saveImage(new File(['<svg/>'], 'bad.png', { type: 'image/png' }), 'services'),
   );
   await assert.rejects(() =>
-    saveImage(new File(['test'], 'test.svg', { type: 'image/svg+xml' }), 'fleet'),
+    saveImage(new File(['test'], 'test.svg', { type: 'image/svg+xml' }), 'services'),
   );
   await assert.rejects(() =>
     saveImage(
       new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.png', { type: 'image/png' }),
-      'fleet',
+      'services',
     ),
   );
   await assert.rejects(() =>
@@ -185,9 +185,9 @@ test('uploads validate decoded type, size and category, and generate safe WebP',
     .toBuffer();
   const result = await saveImage(
     new File([new Uint8Array(png)], '../../fake.jpg', { type: 'image/png' }),
-    'fleet',
+    'services',
   );
-  assert.match(result, /^\/media\/fleet\/[a-f0-9-]+\.webp$/);
+  assert.match(result, /^\/media\/services\/[a-f0-9-]+\.webp$/);
   const meta = await sharp(mediaFile(result.slice('/media/'.length))).metadata();
   assert.equal(meta.format, 'webp');
   assert.equal(sqlite.prepare('SELECT count(*) AS n FROM media').get() !== undefined, true);

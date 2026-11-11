@@ -80,7 +80,7 @@ function Editor({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [slug, setSlug] = useState(item?.slug || '');
-  const hasSummary = collection !== 'coverage' && collection !== 'clients';
+  const hasSummary = collection !== 'clients';
   async function save(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
@@ -94,8 +94,6 @@ function Editor({
       published: form.get('published') === 'on',
       sortOrder: Number(form.get('sortOrder')),
     };
-    for (const name of ['latitude', 'longitude'])
-      if (form.has(name)) raw[name] = form.get(name) === '' ? null : Number(form.get(name));
     try {
       const parsed = contentInput.safeParse(raw);
       if (!parsed.success)
@@ -125,14 +123,7 @@ function Editor({
         <div className="grid gap-5 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="title">
-              {collection === 'coverage'
-                ? 'City'
-                : collection === 'clients'
-                  ? 'Client name'
-                  : collection === 'fleet'
-                    ? 'Vehicle name'
-                    : 'Title'}{' '}
-              *
+              {collection === 'clients' ? 'Client name' : 'Title'} *
             </FieldLabel>
             <Input
               id="title"
@@ -233,7 +224,6 @@ function Editor({
                 id={field.name}
                 name={field.name}
                 type={field.type || 'text'}
-                step={field.type === 'number' ? 'any' : undefined}
                 required={field.required}
                 defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
                 maxLength={500}
@@ -369,7 +359,7 @@ export default function ContentManager({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{collection === 'coverage' ? 'City' : 'Name'}</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>
                 <span className="flex items-center gap-2">
@@ -405,9 +395,7 @@ export default function ContentManager({
                       >
                         {item.title}
                       </Button>
-                      <span className="text-xs text-muted-foreground">
-                        {collection === 'coverage' ? item.province : item.slug}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{item.slug}</span>
                     </div>
                   </div>
                 </TableCell>

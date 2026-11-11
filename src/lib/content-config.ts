@@ -1,25 +1,11 @@
-export const collections = [
-  'services',
-  'fleet',
-  'coverage',
-  'projects',
-  'clients',
-  'articles',
-] as const;
+export const collections = ['services', 'projects', 'clients', 'articles'] as const;
 export type Collection = (typeof collections)[number];
 /** Upload folders. The single source for validation, storage and the upload action. */
-export const mediaFolders = [
-  'fleet',
-  'services',
-  'projects',
-  'clients',
-  'articles',
-  'general',
-] as const;
+export const mediaFolders = ['services', 'projects', 'clients', 'articles', 'general'] as const;
 export type Field = {
   name: string;
   label: string;
-  type?: 'textarea' | 'number' | 'url';
+  type?: 'textarea' | 'url';
   required?: boolean;
 };
 export const contentConfig: Record<
@@ -30,8 +16,6 @@ export const contentConfig: Record<
     description: string;
     fields: Field[];
     image: boolean;
-    /** false keeps the collection in the CMS but off the public website. */
-    public: boolean;
   }
 > = {
   services: {
@@ -39,39 +23,13 @@ export const contentConfig: Record<
     singular: 'service',
     description: 'Manage the services your customers can explore.',
     image: true,
-    public: true,
     fields: [],
-  },
-  fleet: {
-    label: 'Fleet',
-    singular: 'vehicle',
-    description: 'Vehicle options and capacities. Not shown on the public website yet.',
-    image: true,
-    public: false,
-    fields: [
-      { name: 'vehicleType', label: 'Vehicle type', required: true },
-      { name: 'capacity', label: 'Capacity', required: true },
-      { name: 'specifications', label: 'Specifications', type: 'textarea' },
-    ],
-  },
-  coverage: {
-    label: 'Coverage',
-    singular: 'service area',
-    description: 'Operational cities and provinces. Not shown on the public website yet.',
-    image: false,
-    public: false,
-    fields: [
-      { name: 'province', label: 'Province', required: true },
-      { name: 'latitude', label: 'Latitude (optional)', type: 'number' },
-      { name: 'longitude', label: 'Longitude (optional)', type: 'number' },
-    ],
   },
   projects: {
     label: 'Projects',
     singular: 'project',
     description: 'Share approved project stories and delivery experience.',
     image: true,
-    public: true,
     fields: [
       { name: 'clientName', label: 'Client name', required: true },
       { name: 'projectYear', label: 'Project year', required: true },
@@ -82,7 +40,6 @@ export const contentConfig: Record<
     singular: 'client',
     description: 'Only publish logos you have permission to display.',
     image: true,
-    public: true,
     fields: [{ name: 'website', label: 'Website (optional)', type: 'url' }],
   },
   articles: {
@@ -90,7 +47,6 @@ export const contentConfig: Record<
     singular: 'article',
     description: 'Publish company news and articles. Newest articles appear first.',
     image: true,
-    public: true,
     fields: [],
   },
 };
@@ -109,12 +65,6 @@ export type ContentRecord = {
   createdAt: Date;
   updatedAt: Date;
   icon?: string;
-  vehicleType?: string;
-  capacity?: string;
-  specifications?: string;
-  province?: string;
-  latitude?: number | null;
-  longitude?: number | null;
   clientName?: string;
   projectYear?: string;
   website?: string;

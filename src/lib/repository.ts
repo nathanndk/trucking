@@ -1,12 +1,10 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { contentConfig, type Collection, type ContentRecord } from './content-config';
+import type { Collection, ContentRecord } from './content-config';
 import type { Locale } from '../i18n';
 export const tables = {
   services: schema.services,
-  fleet: schema.fleet,
-  coverage: schema.coverage,
   projects: schema.projects,
   clients: schema.clients,
   articles: schema.articles,
@@ -44,9 +42,8 @@ function localize(record: ContentRecord, locale: Locale): ContentRecord {
     description: pick(locale, record.description, record.descriptionEn),
   };
 }
-/** Published records in the visitor's language. Collections hidden from the public return nothing. */
+/** Published records in the visitor's language. */
 export function getPublicContent(collection: Collection, locale: Locale): ContentRecord[] {
-  if (!contentConfig[collection].public) return [];
   return listContent(collection, true).map((record) => localize(record, locale));
 }
 export function getPublicBySlug(
@@ -54,7 +51,6 @@ export function getPublicBySlug(
   slug: string,
   locale: Locale,
 ): ContentRecord | undefined {
-  if (!contentConfig[collection].public) return undefined;
   const table = tables[collection];
   const record: ContentRecord | undefined = db
     .select()

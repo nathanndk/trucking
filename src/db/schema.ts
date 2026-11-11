@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 const timestamps = () => ({
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
@@ -83,26 +83,6 @@ export const services = sqliteTable(
   'services',
   { ...content(), icon: text('icon').notNull().default('Truck') },
   (t) => [index('services_publish_order_idx').on(t.published, t.sortOrder)],
-);
-export const fleet = sqliteTable(
-  'fleet',
-  {
-    ...content(),
-    vehicleType: text('vehicle_type').notNull().default(''),
-    capacity: text('capacity').notNull().default(''),
-    specifications: text('specifications').notNull().default(''),
-  },
-  (t) => [index('fleet_publish_order_idx').on(t.published, t.sortOrder)],
-);
-export const coverage = sqliteTable(
-  'coverage',
-  {
-    ...content(),
-    province: text('province').notNull().default(''),
-    latitude: real('latitude'),
-    longitude: real('longitude'),
-  },
-  (t) => [index('coverage_publish_order_idx').on(t.published, t.sortOrder)],
 );
 export const projects = sqliteTable(
   'projects',

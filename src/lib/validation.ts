@@ -41,12 +41,6 @@ export const contentInput = z
     published: z.boolean(),
     sortOrder: z.number().int().min(0).max(100000),
     icon: short.optional(),
-    vehicleType: short.optional(),
-    capacity: short.optional(),
-    specifications: z.string().max(5000).optional(),
-    province: short.optional(),
-    latitude: z.number().min(-90).max(90).nullable().optional(),
-    longitude: z.number().min(-180).max(180).nullable().optional(),
     clientName: short.optional(),
     projectYear: z
       .string()
@@ -55,14 +49,7 @@ export const contentInput = z
     website: webUrl.optional(),
   })
   .superRefine((v, c) => {
-    const fields =
-      v.collection === 'fleet'
-        ? (['vehicleType', 'capacity'] as const)
-        : v.collection === 'coverage'
-          ? (['province'] as const)
-          : v.collection === 'projects'
-            ? (['clientName', 'projectYear'] as const)
-            : [];
+    const fields = v.collection === 'projects' ? (['clientName', 'projectYear'] as const) : [];
     for (const k of fields)
       if (!v[k]?.trim())
         c.addIssue({ code: 'custom', path: [k], message: 'This field is required.' });

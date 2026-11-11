@@ -116,9 +116,7 @@ db.transaction((tx) => {
         image: '/images/genesis/service-coordination-1280.webp',
       },
     ],
-    // No fleet, coverage, project, client or article records were supplied yet.
-    fleet: [],
-    coverage: [],
+    // No project, client or article records were supplied yet.
     projects: [],
     clients: [],
     articles: [],

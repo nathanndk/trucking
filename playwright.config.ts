@@ -30,6 +30,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4322',
     headless: true,
+    // Tests browse as an Indonesian visitor; the language-entry test overrides this.
+    locale: 'id-ID',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

@@ -302,7 +302,10 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     if (route) expect(await publicHtml()).not.toContain(`${title} edited`);
     await page.getByRole('button', { name: `Actions for ${title} edited` }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+    // Deleting reloads the list; wait for it so the next navigation cannot race the reload.
+    const reloaded = page.waitForEvent('load');
     await page.getByRole('button', { name: 'Delete permanently' }).click();
+    await reloaded;
     await expect(page.getByRole('button', { name: `${title} edited`, exact: true })).toHaveCount(0);
     const after = database();
     expect(after.prepare(`SELECT id FROM ${collection} WHERE id=?`).get(record.id)).toBeUndefined();
@@ -406,8 +409,57 @@ test('English pages, language switching and the English quote flow', async ({ pa
   const missing = await page.request.get('/en/not-a-page');
   expect(missing.status()).toBe(404);
   const missingHtml = await missing.text();
-  expect(missingHtml).toContain('<html lang="en">');
+  expect(missingHtml).toContain('<html lang="en"');
   expect(missingHtml).toContain('This page does not exist.');
+});
+test('the first page follows the visitor, and a manual language choice is remembered', async ({
+  browser,
+  page,
+  request,
+}) => {
+  const site = 'http://localhost:4322';
+  // The test server sees every visitor on loopback, which carries no location, so the
+  // browser language stands in for it here. Address lookups are covered by unit tests.
+  const abroad = await browser.newContext({ locale: 'en-US' });
+  const visitor = await abroad.newPage();
+  await visitor.goto(`${site}/services`);
+  await expect(visitor).toHaveURL(`${site}/en/services`);
+  await expect(visitor.locator('html')).toHaveAttribute('translate', 'no');
+  expect(await visitor.locator('meta[name="google"]').getAttribute('content')).toBe('notranslate');
+  // Choosing Indonesian is respected immediately…
+  await visitor.locator('.nav-actions a[hreflang="id"]').click();
+  await expect(visitor).toHaveURL(`${site}/services`);
+  await expect(visitor.locator('html')).toHaveAttribute('lang', 'id');
+  await visitor.locator('.desktop-nav a[href="/about"]').click();
+  await expect(visitor).toHaveURL(`${site}/about`);
+  // …and on the next arrival from outside the site.
+  await visitor.goto(`${site}/`);
+  await expect(visitor).toHaveURL(`${site}/`);
+  // Switching back to English is remembered the same way.
+  await visitor.locator('.nav-actions a[hreflang="en"]').click();
+  await expect(visitor).toHaveURL(`${site}/en`);
+  await visitor.goto(`${site}/contact?container=40ft`);
+  await expect(visitor).toHaveURL(`${site}/en/contact?container=40ft`);
+  await abroad.close();
+  // A visitor browsing in Indonesian stays on the unprefixed pages.
+  await page.goto('/');
+  await expect(page).toHaveURL(`${site}/`);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
+  // Crawlers and link previews are never redirected, so both versions can be indexed.
+  const english = { 'Accept-Language': 'en-US,en;q=0.9' };
+  for (const agent of ['Googlebot/2.1 (+http://www.google.com/bot.html)', 'WhatsApp/2.23'])
+    expect(
+      (
+        await request.get('/', { headers: { ...english, 'User-Agent': agent }, maxRedirects: 0 })
+      ).status(),
+    ).toBe(200);
+  const first = await request.get('/about', { headers: english, maxRedirects: 0 });
+  expect(first.status()).toBe(302);
+  expect(first.headers().location).toBe('/en/about');
+  expect(first.headers()['cache-control']).toBe('no-store');
+  // Only public pages take part.
+  for (const other of ['/sitemap.xml', '/robots.txt', '/admin/login'])
+    expect((await request.get(other, { headers: english, maxRedirects: 0 })).status()).toBe(200);
 });
 test('articles are public only while published, in both languages', async ({ page }) => {
   const db = database();

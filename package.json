@@ -21,6 +21,7 @@
     "test:unit": "node --import tsx --test tests/unit.test.ts tests/maintenance.test.ts",
     "admin:reset": "node --env-file=.env --import tsx scripts/reset-admin.ts",
     "images:optimize": "node scripts/optimize-images.mjs",
+    "geo:update": "node --dns-result-order=ipv4first scripts/update-geo.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

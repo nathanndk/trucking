@@ -17,6 +17,10 @@ The logo and photographs were supplied by PT Genesis Trans Indonesia for this we
 - `7.jpg` shows "Port of Baltimore, USA" signage. It is kept with the sources but not used on the website, because the company operates at Tanjung Priok.
 - `4.jpg` is a portrait photograph padded with white bars; only the photograph itself is used.
 
+## Location data
+
+`src/lib/geo/indonesia.json` lists the IP address ranges allocated to Indonesia. It is derived from the APNIC delegation statistics file (https://ftp.apnic.net/stats/apnic/delegated-apnic-latest) by `scripts/update-geo.mjs`. Allocation country is a registry record, not a measured location, so a small share of visitors may be classified differently from where they are.
+
 ## MIT notice for adapted MIT components
 
 Copyright (c) the respective authors of shadcn/ui and Kibo UI.

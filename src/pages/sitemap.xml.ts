@@ -1,11 +1,10 @@
 import type { APIRoute } from 'astro';
 import { origin } from '../lib/env';
 import { listContent } from '../lib/repository';
-import { locales, localePath } from '../i18n';
-const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+import { locales, localePath, publicPages } from '../i18n';
 export const GET: APIRoute = () => {
   const paths = [
-    ...pages,
+    ...publicPages,
     ...listContent('articles', true).map((article) => `/articles/${article.slug}`),
   ];
   const urls = paths.flatMap((path) =>

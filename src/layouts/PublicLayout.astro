@@ -53,10 +53,12 @@ const structured = JSON.stringify({
 ---
 
 <!doctype html>
-<html lang={t.htmlLang}>
+<html lang={t.htmlLang} translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Each page is written in its own language; stop browsers offering machine translation. -->
+    <meta name="google" content="notranslate" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     {noAlternates ? (

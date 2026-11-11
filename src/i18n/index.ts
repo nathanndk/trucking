@@ -39,3 +39,8 @@ export function formatDate(date: Date, locale: Locale): string {
     timeZone: 'Asia/Jakarta',
   });
 }
+/** Locale-independent paths of the public pages (articles add /articles/<slug>). */
+export const publicPages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+export function isPublicPage(path: string): boolean {
+  return publicPages.includes(path) || /^\/articles\/[a-z0-9-]+$/.test(path);
+}

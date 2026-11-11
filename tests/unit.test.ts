@@ -192,3 +192,56 @@ test('uploads validate decoded type, size and category, and generate safe WebP',
   assert.equal(meta.format, 'webp');
   assert.equal(sqlite.prepare('SELECT count(*) AS n FROM media').get() !== undefined, true);
 });
+test('visitor location: Indonesian addresses, foreign addresses and addresses without a location', async () => {
+  const { isIndonesianIp, preferredLanguage, detectLocale } = await import('../src/lib/geo');
+  const { default: ranges } = await import('../src/lib/geo/indonesia.json');
+  const dotted = (value: number) =>
+    [24, 16, 8, 0].map((shift) => Math.floor(value / 2 ** shift) % 256).join('.');
+  // First and last address of every tenth allocated block, straight from the table.
+  for (let i = 0; i < ranges.v4.length; i += 20) {
+    assert.equal(isIndonesianIp(dotted(ranges.v4[i])), true);
+    assert.equal(isIndonesianIp(dotted(ranges.v4[i + 1])), true);
+  }
+  const prefix = String(ranges.v6[0]).match(/.{4}/g)!.join(':');
+  assert.equal(isIndonesianIp(`${prefix}::1`), true);
+  assert.equal(isIndonesianIp(`${prefix}:0:0:0:abcd`), true);
+  assert.equal(isIndonesianIp(`::ffff:${dotted(ranges.v4[0])}`), true);
+  // Public addresses outside Indonesia.
+  for (const foreign of ['8.8.8.8', '1.1.1.1', '2001:4860:4860::8888', '::ffff:8.8.8.8'])
+    assert.equal(isIndonesianIp(foreign), false, foreign);
+  // Loopback, private networks and junk say nothing about location.
+  for (const unknown of [
+    '127.0.0.1',
+    '10.1.2.3',
+    '172.16.0.9',
+    '192.168.1.20',
+    '100.64.0.1',
+    '169.254.1.1',
+    '::1',
+    'fe80::1%en0',
+    'fd00::1',
+    '::ffff:192.168.0.1',
+    'unknown',
+    '999.1.1.1',
+    '1.2.3',
+    '2001:::1',
+    '',
+  ])
+    assert.equal(isIndonesianIp(unknown), undefined, unknown);
+
+  assert.equal(preferredLanguage('id-ID,id;q=0.9,en;q=0.8'), 'id');
+  assert.equal(preferredLanguage('en-US,en;q=0.9,id;q=0.8'), 'en');
+  assert.equal(preferredLanguage('en;q=0.5, id;q=0.9'), 'id');
+  assert.equal(preferredLanguage('ja,fr;q=0.8'), 'en');
+  assert.equal(preferredLanguage('id;q=0, de'), 'en');
+  assert.equal(preferredLanguage(''), undefined);
+  assert.equal(preferredLanguage(null), undefined);
+
+  // Location wins over the browser language whenever the address has one.
+  assert.equal(detectLocale({ address: dotted(ranges.v4[0]), acceptLanguage: 'en-US' }), 'id');
+  assert.equal(detectLocale({ address: '8.8.8.8', acceptLanguage: 'id-ID' }), 'en');
+  // Without a location the browser language decides; with neither, the site default.
+  assert.equal(detectLocale({ address: '127.0.0.1', acceptLanguage: 'en-US' }), 'en');
+  assert.equal(detectLocale({ address: '127.0.0.1', acceptLanguage: 'id-ID' }), 'id');
+  assert.equal(detectLocale({ address: 'unknown', acceptLanguage: null }), 'id');
+});

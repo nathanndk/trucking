@@ -197,6 +197,7 @@ test('animations start automatically with reduced motion and old disabled prefer
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // A choice stored by an older version of the site (under its demo name) must be ignored.
   await page.addInitScript(() => sessionStorage.setItem('lintas-scroll-motion', 'disabled'));
   await page.setViewportSize({ width: 1920, height: 917 });
   await ready(page);

@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process';
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
 test('maintenance: seed repeatability, admin recovery, media pruning, paired backup restore', async () => {
-  const root = mkdtempSync(path.join(tmpdir(), 'lintas-maintenance-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'genesis-maintenance-'));
   const data = path.join(root, 'data');
   const backup = path.join(root, 'backups');
   const env = {

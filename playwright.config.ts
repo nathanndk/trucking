@@ -3,10 +3,10 @@ import { randomBytes } from 'node:crypto';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-const directory = process.env.LINTAS_TEST_DIR || mkdtempSync(path.join(tmpdir(), 'lintas-e2e-'));
-if (!process.env.LINTAS_TEST_DIR)
+const directory = process.env.GENESIS_TEST_DIR || mkdtempSync(path.join(tmpdir(), 'genesis-e2e-'));
+if (!process.env.GENESIS_TEST_DIR)
   Object.assign(process.env, {
-    LINTAS_TEST_DIR: directory,
+    GENESIS_TEST_DIR: directory,
     DATA_DIR: directory,
     DATABASE_PATH: path.join(directory, 'app.db'),
     BETTER_AUTH_URL: 'http://localhost:4322',

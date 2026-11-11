@@ -122,7 +122,7 @@ Every quote request is stored first, then two emails go out in the background:
 
 If the mail server is down or misconfigured the visitor still sees success, the request stays in the admin, and the server log notes which email failed. The admin dashboard checklist shows when email is not configured.
 
-Setup, with the SMTP account of the domain's mailbox (fill these in `.env`, or `/etc/lintas.env` in production):
+Setup, with the SMTP account of the domain's mailbox (fill these in `.env`, or `/etc/genesis-trans.env` in production):
 
 | Mail host                   | SMTP_HOST                                           | Port / SMTP_SECURE |
 | --------------------------- | --------------------------------------------------- | ------------------ |
@@ -162,23 +162,23 @@ pnpm build
 pnpm start
 ```
 
-`pnpm start` reads `.env`. For systemd use the Node entrypoint directly with an external `EnvironmentFile`, as in `deploy/lintas.service`. The server needs runtime `node_modules`, `dist/server`, `dist/client`, and environment configuration. Retain migration/scripts sources and development tooling in the release if you intend to run maintenance commands from it. Do not build with private secrets copied into public variables. Server runtime reads its configuration from `process.env`.
+`pnpm start` reads `.env`. For systemd use the Node entrypoint directly with an external `EnvironmentFile`, as in `deploy/genesis-trans.service`. The server needs runtime `node_modules`, `dist/server`, `dist/client`, and environment configuration. Retain migration/scripts sources and development tooling in the release if you intend to run maintenance commands from it. Do not build with private secrets copied into public variables. Server runtime reads its configuration from `process.env`.
 
-1. Create an unprivileged `lintas` user. Install a supported Node version and pnpm. Build in a release directory such as `/srv/lintas/releases/<release>`; point `/srv/lintas/current` at it.
-2. Create `/var/lib/lintas/uploads`, owned by `lintas:lintas`, with directory mode 0700. Use `/var/lib/lintas/app.db`. Parent directories must be writable for SQLite WAL/SHM files. Prefer local SSD storage, not a network filesystem.
-3. Copy `deploy/production.env.example` to `/etc/lintas.env`; replace the hostname and secret. Make it readable only by root and the service user (0640 root:lintas). Set `BETTER_AUTH_URL` to the exact canonical HTTPS origin.
+1. Create an unprivileged `genesis-trans` user. Install a supported Node version and pnpm. Build in a release directory such as `/srv/genesis-trans/releases/<release>`; point `/srv/genesis-trans/current` at it.
+2. Create `/var/lib/genesis-trans/uploads`, owned by `genesis-trans:genesis-trans`, with directory mode 0700. Use `/var/lib/genesis-trans/app.db`. Parent directories must be writable for SQLite WAL/SHM files. Prefer local SSD storage, not a network filesystem.
+3. Copy `deploy/production.env.example` to `/etc/genesis-trans.env`; replace the hostname and secret. Make it readable only by root and the service user (0640 root:genesis-trans). Set `BETTER_AUTH_URL` to the exact canonical HTTPS origin.
 4. Run migrations as the service user with that environment. For first installation only, explicitly set `ALLOW_DEMO_SEED=true` to seed, then replace the sample content while access is restricted. Bootstrap the admin with temporary environment credentials. Do not keep the bootstrap password in the service environment.
-5. Install `deploy/lintas.service`, adjust the Node executable path if needed, reload systemd and enable/start the service. The service only has write access to `/var/lib/lintas`; builds and dependencies should be read-only to it. The application uses Better Auth sessions, not Astro's optional file-session API.
+5. Install `deploy/genesis-trans.service`, adjust the Node executable path if needed, reload systemd and enable/start the service. The service only has write access to `/var/lib/genesis-trans`; builds and dependencies should be read-only to it. The application uses Better Auth sessions, not Astro's optional file-session API.
 6. Configure Nginx using `deploy/nginx.conf`. Issue a TLS certificate with your preferred ACME client, then enable the HTTPS block. Validate with `nginx -t` before reloading. Only expose ports 80/443 publicly; port 4321 remains loopback-only. Use one Node process for this SQLite deployment.
 7. Fill in the contact details and any remaining placeholders in Settings, test an actual quote and admin login over HTTPS, verify secure cookies, and set up backups before launch.
 
 The proxy applies a 6 MB request-body limit (covering 5 MB images plus multipart overhead), buffers uploads, and overwrites forwarding headers. Do not configure CDN/public caching for admin, actions, auth, or contact pages. The quote token is generated on every page request. Immutable uploaded files may be cached. A domain/TLS certificate and real company data are deployment inputs; no hosting vendor or paid backend is required.
 
-For production maintenance, load `/etc/lintas.env` into the command environment and use `node --import tsx scripts/migrate.ts` (or seed/bootstrap/prune/backup) from the current release. The pnpm helper scripts intentionally read local `.env` for development. Back up before migrations, stop the service for coordinated data changes, and start it again after a successful migration. Keep the previous release for rollback; restore the matching database snapshot if a migration is incompatible with that release.
+For production maintenance, load `/etc/genesis-trans.env` into the command environment and use `node --import tsx scripts/migrate.ts` (or seed/bootstrap/prune/backup) from the current release. The pnpm helper scripts intentionally read local `.env` for development. Back up before migrations, stop the service for coordinated data changes, and start it again after a successful migration. Keep the previous release for rollback; restore the matching database snapshot if a migration is incompatible with that release.
 
 ## Backup & restore
 
-Back up the database **and** uploads together to a directory outside both the application and persistent data tree, for example `/var/backups/lintas`. Never copy only a live `app.db` file while WAL is active.
+Back up the database **and** uploads together to a directory outside both the application and persistent data tree, for example `/var/backups/genesis-trans`. Never copy only a live `app.db` file while WAL is active.
 
 The included backup command uses SQLite's online backup API and copies uploads, writing a timestamped folder and manifest:
 
@@ -193,7 +193,7 @@ Restore procedure:
 1. Stop the Node service and all maintenance jobs. Preserve the current data directory elsewhere as an emergency rollback.
 2. Restore `app.db` from a chosen snapshot to the configured `DATABASE_PATH`. Restore that same snapshot's `uploads/` to `DATA_DIR/uploads/`. Do not combine dates.
 3. Remove stale `app.db-wal` and `app.db-shm` only while the server is stopped and after the old database has been moved aside. The online-backup output is a complete standalone database.
-4. Restore ownership to `lintas:lintas`, directories to 0700 and data files to 0600. Keep the external environment secret available; it is backed up separately in a secure secrets store, not in the repository.
+4. Restore ownership to `genesis-trans:genesis-trans`, directories to 0700 and data files to 0600. Keep the external environment secret available; it is backed up separately in a secure secrets store, not in the repository.
 5. Check SQLite with `PRAGMA integrity_check`, deploy the matching application release, and apply any newer reviewed migrations if required.
 6. Start the service, test login, view a restored image, and submit/read a test inquiry. A secret change invalidates old sessions and requires signing in again.
 

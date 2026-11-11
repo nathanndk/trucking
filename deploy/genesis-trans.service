@@ -1,0 +1,24 @@
+[Unit]
+Description=PT Genesis Trans Indonesia website and CMS
+After=network.target
+
+[Service]
+Type=simple
+User=genesis-trans
+Group=genesis-trans
+WorkingDirectory=/srv/genesis-trans/current
+EnvironmentFile=/etc/genesis-trans.env
+ExecStart=/usr/bin/node /srv/genesis-trans/current/dist/server/entry.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/genesis-trans
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

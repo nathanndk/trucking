@@ -6,7 +6,7 @@ import path from 'node:path';
 import { randomBytes, createHmac } from 'node:crypto';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import sharp from 'sharp';
-const dir = mkdtempSync(path.join(tmpdir(), 'lintas-unit-'));
+const dir = mkdtempSync(path.join(tmpdir(), 'genesis-unit-'));
 process.env.DATA_DIR = dir;
 process.env.DATABASE_PATH = path.join(dir, 'app.db');
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString('hex');

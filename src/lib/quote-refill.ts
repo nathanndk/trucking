@@ -9,6 +9,7 @@ export const quoteFields = [
   'destination',
   'containerType',
   'message',
+  'marketingOptIn',
 ] as const;
 export type QuoteValues = Partial<Record<(typeof quoteFields)[number], string>>;
 

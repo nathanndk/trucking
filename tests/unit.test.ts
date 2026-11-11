@@ -446,3 +446,37 @@ test('quote emails: team copy with every field, customer confirmation in their l
   delete process.env.SMTP_PORT;
   delete process.env.MAIL_FROM;
 });
+
+test('seo: schema data only carries what is filled in, and result text is cut at a word', async () => {
+  const { organizationSchema, breadcrumbSchema, jsonLd, clip } = await import('../src/lib/seo');
+  const origin = 'https://example.test';
+  const bare = organizationSchema(
+    { legalName: 'PT Uji', companyName: 'Uji', shortDescription: 'Angkutan.' },
+    origin,
+  );
+  for (const key of ['telephone', 'email', 'address', 'sameAs', 'contactPoint', 'logo'])
+    assert.ok(!(key in bare), `${key} must be left out while empty`);
+  const full = organizationSchema(
+    {
+      legalName: 'PT Uji',
+      companyName: 'Uji',
+      shortDescription: 'Angkutan.',
+      phone: '021 1',
+      logo: '/logo.webp',
+      instagram: 'https://instagram.com/uji',
+      linkedin: '',
+    },
+    origin,
+  );
+  assert.equal(full.logo, 'https://example.test/logo.webp');
+  assert.deepEqual(full.sameAs, ['https://instagram.com/uji']);
+  assert.deepEqual(
+    (breadcrumbSchema([{ name: 'Beranda', url: origin }]).itemListElement as object[])[0],
+    { '@type': 'ListItem', position: 1, name: 'Beranda', item: origin },
+  );
+  // Text can never close the script element it is printed in.
+  assert.ok(!jsonLd({ name: '</script><b>' }).includes('<'));
+  assert.equal(clip('  dua\n baris  '), 'dua baris');
+  const long = clip('kata '.repeat(60));
+  assert.ok(long.length <= 155 && long.endsWith('kata…'), long);
+});

@@ -17,6 +17,7 @@ const clients = getPublicContent('clients', locale);
 <PublicLayout
   title={t.projects.title}
   description={fill(t.projects.description, { name: s.legalName })}
+  crumbs={[{ name: t.nav.projects }]}
 >
   <PageHero label={t.nav.projects} title={t.projects.h1} description={t.projects.intro} />
   {projects.length > 0 && (

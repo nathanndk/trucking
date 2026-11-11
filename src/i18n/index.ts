@@ -70,8 +70,16 @@ export function formatDate(date: Date, locale: Locale): string {
     timeZone: 'Asia/Jakarta',
   });
 }
-/** Locale-independent paths of the public pages (articles add /articles/<slug>). */
-export const publicPages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+/** Locale-independent paths of the public pages (articles and services add /<section>/<slug>). */
+export const publicPages = [
+  '/',
+  '/about',
+  '/services',
+  '/projects',
+  '/articles',
+  '/contact',
+  '/privacy',
+];
 export function isPublicPage(path: string): boolean {
-  return publicPages.includes(path) || /^\/articles\/[a-z0-9-]+$/.test(path);
+  return publicPages.includes(path) || /^\/(articles|services)\/[a-z0-9-]+$/.test(path);
 }

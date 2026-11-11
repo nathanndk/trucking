@@ -8,7 +8,8 @@ import { submittedQuote } from './lib/quote-refill';
 const languageCookie = 'lang';
 const publicActions = new Set(['quote']);
 // Search engines and link previews must always receive the page they asked for.
-const crawlers = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|embedly/i;
+const crawlers =
+  /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|embedly|google-inspectiontool|googleother|google-extended|mediapartners-google|lighthouse/i;
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url } = context;
   context.locals.admin = null;

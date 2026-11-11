@@ -56,6 +56,7 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'home.title', label: 'Browser tab title' },
           { key: 'home.h1', label: 'Main heading' },
+          { key: 'home.description', label: 'Search engine description', multiline: true },
           { key: 'home.servicesLink', label: 'Secondary button' },
           { key: 'home.heroAlt', label: 'Photo description' },
         ],
@@ -212,6 +213,7 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'services.quote', label: 'Quote link (Services page)' },
           { key: 'services.quoteShort', label: 'Quote link (Home)' },
+          { key: 'services.more', label: 'Heading above other services (service page)' },
           { key: 'services.empty', label: 'Text while there are none', multiline: true },
         ],
       },
@@ -315,6 +317,7 @@ export const copyPages: CopyPage[] = [
           { key: 'contact.containerType', label: 'Container type field' },
           { key: 'contact.message', label: 'Message field' },
           { key: 'contact.messagePlaceholder', label: 'Message example' },
+          { key: 'contact.marketingOptIn', label: 'Marketing email checkbox' },
           { key: 'contact.privacy', label: 'Privacy note', multiline: true },
           { key: 'contact.submit', label: 'Send button' },
         ],
@@ -349,6 +352,22 @@ export const copyPages: CopyPage[] = [
           { key: 'mail.outro', label: 'Closing text', multiline: true },
           { key: 'mail.signature', label: 'Signature', multiline: true, hint: keep('company') },
         ],
+      },
+    ],
+  },
+  {
+    id: 'privacy',
+    title: 'Privacy and terms',
+    href: '/privacy',
+    sections: [
+      pageHeader('legal', [
+        { key: 'legal.intro', label: 'Introduction', multiline: true },
+        { key: 'legal.description', label: 'Search engine description', multiline: true },
+      ]),
+      {
+        title: 'Sections',
+        note: 'Keep these true to what the site does: one language cookie, no analytics, no notification or location requests.',
+        fields: [...items('legal.sections', 'Section', 6)],
       },
     ],
   },
@@ -392,6 +411,16 @@ export const copyPages: CopyPage[] = [
           { key: 'footer.whatsapp', label: 'WhatsApp label' },
           { key: 'footer.email', label: 'Email label' },
           { key: 'footer.phone', label: 'Phone label' },
+          { key: 'footer.privacy', label: 'Privacy policy link' },
+        ],
+      },
+      {
+        title: 'Cookie notice',
+        note: 'Shown at the bottom of every page until the visitor closes it. The link text is the footer privacy policy link.',
+        fields: [
+          { key: 'consent.text', label: 'Text', multiline: true },
+          { key: 'consent.accept', label: 'Button' },
+          { key: 'consent.label', label: 'Notice name (screen readers)' },
         ],
       },
       {

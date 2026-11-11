@@ -33,7 +33,11 @@ const t = ui(locale);
       </div>
       <CardHeader className="max-sm:gap-1 max-sm:px-0">
         <CardTitle>
-          <h3>{item.title}</h3>
+          <h3>
+            <a class="hover:underline" href={localePath(locale, `/services/${item.slug}`)}>
+              {item.title}
+            </a>
+          </h3>
         </CardTitle>
         <CardDescription className="text-[15px] whitespace-pre-line">
           {item.shortDescription}

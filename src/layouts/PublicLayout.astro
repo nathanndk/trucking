@@ -2,10 +2,18 @@
 import '../styles/global.css';
 import Brand from '../components/Brand.astro';
 import SiteHeader from '../components/site/SiteHeader';
+import CookieNotice from '../components/site/CookieNotice';
 import { Separator } from '../components/ui/separator';
 import { getPublicContent, getPublicSettings, visibleSections } from '../lib/repository';
-import { origin } from '../lib/env';
-import { locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
+import { googleSiteVerification, origin } from '../lib/env';
+import { defaults, locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
+import {
+  breadcrumbSchema,
+  jsonLd,
+  organizationSchema,
+  websiteSchema,
+  type SchemaNode,
+} from '../lib/seo';
 import { ui } from '../lib/copy';
 // Headings use this file on first paint; preloading it avoids a flash of the fallback font.
 import headingFont from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
@@ -16,8 +24,26 @@ interface Props {
   image?: string;
   /** Pages without a counterpart in the other language (the 404 page). */
   noAlternates?: boolean;
+  /**
+   * The trail below Home that leads to this page, as shown above its title. The last entry is
+   * the page itself; earlier ones need the locale-independent path they link to.
+   */
+  crumbs?: { name: string; path?: string }[];
+  /** Publication dates, on article pages. */
+  article?: { published: Date; modified: Date };
+  /** Further schema.org data about this page (a service, an article). */
+  schema?: SchemaNode[];
 }
-const { title, description, image = '/images/genesis/og.jpg', noAlternates = false } = Astro.props;
+const defaultImage = '/images/genesis/og.jpg';
+const {
+  title,
+  description,
+  image = defaultImage,
+  noAlternates = false,
+  crumbs = [],
+  article,
+  schema = [],
+} = Astro.props;
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
 const s = getPublicSettings(locale);
@@ -46,7 +72,7 @@ const current = (target: string) =>
 const servicesMenu = {
   all: t.home.servicesAll,
   items: getPublicContent('services', locale).map((service) => ({
-    href: `${href('/services')}#${service.slug}`,
+    href: href(`/services/${service.slug}`),
     title: service.title,
     text: service.shortDescription,
   })),
@@ -89,17 +115,23 @@ const contacts = [
     href: `mailto:${s.email}`,
   },
 ].filter((contact) => !!contact);
-const structured = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: s.legalName,
-  url: origin,
-  description: s.shortDescription,
-  ...(s.logo ? { logo: absolute(s.logo) } : {}),
-  ...(s.phone ? { telephone: s.phone } : {}),
-  ...(s.email ? { email: s.email } : {}),
-  ...(s.address ? { address: s.address } : {}),
-}).replaceAll('<', '\\u003c');
+const structured = [
+  organizationSchema(s, origin),
+  websiteSchema(s, origin, t.htmlLang),
+  ...(crumbs.length > 0
+    ? [
+        breadcrumbSchema([
+          { name: t.nav.home, url: absolute(href('/')) },
+          ...crumbs.map((crumb) => ({
+            name: crumb.name,
+            url: crumb.path ? absolute(href(crumb.path)) : canonical,
+          })),
+        ]),
+      ]
+    : []),
+  ...schema,
+];
+const verification = googleSiteVerification();
 ---
 
 <!doctype html>
@@ -121,17 +153,42 @@ const structured = JSON.stringify({
         <link rel="alternate" hreflang="x-default" href={absolute(localePath('id', path))} />
       </>
     )}
-    <meta property="og:type" content="website" />
+    {verification && <meta name="google-site-verification" content={verification} />}
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:site_name" content={s.companyName} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={t.ogLocale} />
+    {!noAlternates &&
+      locales
+        .filter((code) => code !== locale)
+        .map((code) => <meta property="og:locale:alternate" content={defaults(code).ogLocale} />)}
     <meta property="og:image" content={absolute(image)} />
+    {image === defaultImage && (
+      <>
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+      </>
+    )}
+    <meta property="og:image:alt" content={title} />
+    {article && (
+      <>
+        <meta property="article:published_time" content={article.published.toISOString()} />
+        <meta property="article:modified_time" content={article.modified.toISOString()} />
+      </>
+    )}
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absolute(image)} />
     <meta name="theme-color" content="#0b2545" />
     <link rel="preload" as="font" type="font/woff2" href={headingFont} crossorigin />
     <link rel="icon" href={s.favicon || '/favicon.png'} />
-    <script is:inline type="application/ld+json" set:html={structured}></script>
+    <link rel="apple-touch-icon" href={s.favicon || '/favicon.png'} />
+    {structured.map((node) => (
+      <script is:inline type="application/ld+json" set:html={jsonLd(node)}></script>
+    ))}
     <slot name="head" />
     <style is:global>
       /* Moving between public pages cross-fades instead of flashing white, and the header
@@ -229,10 +286,21 @@ const structured = JSON.stringify({
         <Separator className="mt-14" />
         <div class="footer-bottom">
           <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
+          <a href={href('/privacy')}>{t.footer.privacy}</a>
           <span>{s.tagline}</span>
         </div>
       </div>
     </footer>
+    <CookieNotice
+      client:idle
+      href={href('/privacy')}
+      labels={{
+        name: t.consent.label,
+        text: t.consent.text,
+        link: t.footer.privacy,
+        accept: t.consent.accept,
+      }}
+    />
     <script>
       import { mountScrollMotion } from '../scripts/scroll-motion';
       const dispose = mountScrollMotion();

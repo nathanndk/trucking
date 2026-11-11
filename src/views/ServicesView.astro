@@ -18,7 +18,11 @@ const items = getPublicContent('services', locale);
 // read; each service is a row with its photo, full description and quote link.
 ---
 
-<PublicLayout title={t.services.title} description={t.services.description}>
+<PublicLayout
+  title={t.services.title}
+  description={t.services.description}
+  crumbs={[{ name: t.nav.services }]}
+>
   <PageHero label={t.nav.services} title={t.services.h1} description={t.services.intro} />
   <section class="section">
     <div class="wrap">
@@ -49,7 +53,9 @@ const items = getPublicContent('services', locale);
                   )}
                 </div>
                 <div class="catalogue-copy">
-                  <h2>{item.title}</h2>
+                  <h2>
+                    <a href={localePath(locale, `/services/${item.slug}`)}>{item.title}</a>
+                  </h2>
                   <p>{item.description || item.shortDescription}</p>
                   <a
                     class={cn(buttonVariants({ variant: 'outline' }), 'mt-6')}

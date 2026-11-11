@@ -3,6 +3,8 @@ export const dataDir = path.resolve(process.env.DATA_DIR || './data');
 export const databasePath = path.resolve(process.env.DATABASE_PATH || path.join(dataDir, 'app.db'));
 export const uploadsDir = path.join(dataDir, 'uploads');
 export const origin = new URL(process.env.BETTER_AUTH_URL || 'http://localhost:4321').origin;
+/** Token from Google Search Console (HTML tag method); empty leaves the tag out. */
+export const googleSiteVerification = () => process.env.GOOGLE_SITE_VERIFICATION || '';
 export function getSecret() {
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32)

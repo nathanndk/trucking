@@ -32,7 +32,17 @@ const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
     { auto: true },
   ],
 });
-const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+const servicePage = '/services/domestic-trucking';
+const pages = [
+  '/',
+  '/about',
+  '/services',
+  servicePage,
+  '/projects',
+  '/articles',
+  '/contact',
+  '/privacy',
+];
 // Every page exists in Indonesian (no prefix) and English (/en).
 const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p}`))];
 const adminRoutes = [
@@ -278,13 +288,21 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   }
   const sitemap = await request.get('/sitemap.xml');
   const sitemapXml = await sitemap.text();
-  // Every public page plus each published article, in both languages.
-  const articles = database();
-  const publishedArticles = (
-    articles.prepare('SELECT COUNT(*) AS n FROM articles WHERE published=1').get() as { n: number }
-  ).n;
-  articles.close();
-  expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length + publishedArticles * 2);
+  // Every public page plus each published service and article, in both languages.
+  const content = database();
+  const published = (table: string) =>
+    (content.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE published=1`).get() as { n: number })
+      .n;
+  // `publicRoutes` already holds one service page per language.
+  const expected = publicRoutes.length - 2 + (published('services') + published('articles')) * 2;
+  content.close();
+  expect(sitemapXml.match(/<url>/g)).toHaveLength(expected);
+  // Each entry names both language versions, and content pages say when they last changed.
+  expect(sitemapXml.match(/hreflang="x-default"/g)).toHaveLength(expected);
+  expect(sitemapXml).toMatch(
+    /<loc>[^<]+\/en\/services\/domestic-trucking<\/loc><lastmod>\d{4}-\d\d-\d\dT[^<]+<\/lastmod><xhtml:link rel="alternate" hreflang="id" href="[^"]+[^n]\/services\/domestic-trucking"\/>/,
+  );
+  expect(sitemap.headers()['cache-control']).toBe('public, max-age=3600');
   expect(sitemapXml).toContain('/en/projects</loc>');
   expect(sitemapXml).toContain('/en/services</loc>');
   expect(sitemapXml).not.toContain('/fleet');
@@ -570,6 +588,103 @@ test('arrow keys move the container choice on the quote form', async ({ page }) 
   await expect(forty).not.toBeChecked();
 });
 
+test('search engines get titles, descriptions and structured data for every kind of page', async ({
+  page,
+  request,
+}) => {
+  const head = async (route: string) => {
+    await page.goto(route);
+    const meta = (selector: string) =>
+      page.locator(`head ${selector}`).first().getAttribute('content');
+    const schema = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(
+      (text) => JSON.parse(text) as Record<string, any>,
+    );
+    return {
+      title: await page.title(),
+      description: (await meta('meta[name="description"]')) ?? '',
+      meta,
+      find: (type: string) => schema.find((node) => node['@type'] === type),
+    };
+  };
+  // Home leads with what people search for, in each language.
+  const home = await head('/');
+  expect(home.title).toBe('Trucking Kontainer Tanjung Priok | Genesis Trans Indonesia');
+  expect(home.description).toMatch(/trucking.*kontainer.*Jakarta.*Tanjung Priok/);
+  expect(await home.meta('meta[property="og:site_name"]')).toBe('Genesis Trans Indonesia');
+  expect(await home.meta('meta[property="og:locale:alternate"]')).toBe('en_US');
+  expect(await home.meta('meta[name="twitter:image"]')).toMatch(/\/images\/genesis\/og\.jpg$/);
+  expect(await home.meta('meta[name="google-site-verification"]')).toBe('e2e-verification');
+  expect(home.find('Organization')).toMatchObject({ areaServed: { name: 'Jakarta' } });
+  expect(home.find('WebSite')).toMatchObject({ inLanguage: 'id' });
+  expect(home.find('BreadcrumbList')).toBeUndefined();
+  expect((await head('/en')).title).toBe('Container Trucking in Jakarta | Genesis Trans Indonesia');
+  // No page title or description is cut off in a search result.
+  for (const route of publicRoutes) {
+    const { title, description } = await head(route);
+    expect(title.length, `${route} title`).toBeLessThanOrEqual(62);
+    expect(description.length, `${route} description`).toBeGreaterThanOrEqual(50);
+    expect(description.length, `${route} description`).toBeLessThanOrEqual(160);
+  }
+
+  // A service page: its own address in both languages, described as a Service.
+  const service = await head(`/en${servicePage}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Domestic Trucking');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    /\/en\/services\/domestic-trucking$/,
+  );
+  await expect(page.locator('link[hreflang="id"]')).toHaveAttribute(
+    'href',
+    /[^n]\/services\/domestic-trucking$/,
+  );
+  expect(service.find('Service')).toMatchObject({ name: 'Domestic Trucking' });
+  expect(
+    service.find('BreadcrumbList')?.itemListElement.map((item: { name: string }) => item.name),
+  ).toEqual(['Home', 'Services', 'Domestic Trucking']);
+  await expect(
+    page.getByRole('link', { name: 'Request a quote for this service' }),
+  ).toHaveAttribute('href', '/en/contact?service=domestic-trucking');
+  // The service cards link to these pages by name.
+  await page.goto('/');
+  await expect(
+    page.locator('.services-grid').getByRole('link', { name: 'Trucking Domestik', exact: true }),
+  ).toHaveAttribute('href', servicePage);
+  expect((await request.get('/services/not-a-service')).status()).toBe(404);
+  // One address per page.
+  const slash = await request.get('/about/', { maxRedirects: 0 });
+  expect(slash.status()).toBe(301);
+  expect(slash.headers().location).toBe('/about');
+
+  // An article: dated, and described as an Article.
+  const article = await head('/articles/e2e-articles');
+  expect(await article.meta('meta[property="og:type"]')).toBe('article');
+  expect(await article.meta('meta[property="article:published_time"]')).toMatch(/^\d{4}-/);
+  expect(article.find('Article')).toMatchObject({ headline: 'E2E articles' });
+  expect(article.find('BreadcrumbList')?.itemListElement).toHaveLength(3);
+});
+
+test('the cookie notice shows until closed, and the privacy page is linked', async ({ page }) => {
+  await page.goto('/');
+  const notice = page.getByRole('complementary', { name: 'Pemberitahuan cookie' });
+  await expect(notice).toBeVisible();
+  await expect(notice.getByRole('link', { name: 'Kebijakan Privasi' })).toHaveAttribute(
+    'href',
+    '/privacy',
+  );
+  await notice.getByRole('button', { name: 'Mengerti' }).click();
+  await expect(notice).toHaveCount(0);
+  // Closed once, it stays closed on other pages and in the other language.
+  await page.goto('/en/privacy');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Privacy policy and terms of use.',
+  );
+  await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Cookie notice' })).toHaveCount(0);
+  await expect(
+    page.getByRole('contentinfo').getByRole('link', { name: 'Privacy Policy' }),
+  ).toHaveAttribute('href', '/en/privacy');
+});
+
 test('a rejected quote request keeps everything the visitor typed', async ({ page }) => {
   await page.goto('/contact');
   await page.locator('#serviceType[role="combobox"]').waitFor();
@@ -587,6 +702,9 @@ test('a rejected quote request keeps everything the visitor typed', async ({ pag
   await page.getByRole('combobox', { name: /Jenis layanan yang dibutuhkan/ }).click();
   await page.getByRole('option', { name: 'Trucking Domestik' }).click();
   await page.getByRole('radio', { name: /40 feet/ }).click();
+  const optIn = page.getByRole('checkbox', { name: /menerima kabar dan penawaran/ });
+  await expect(optIn).not.toBeChecked();
+  await optIn.click();
   // An expired form is refused by the server; the visitor should not have to type it all again.
   await page
     .locator('[name="token"]')
@@ -597,11 +715,16 @@ test('a rejected quote request keeps everything the visitor typed', async ({ pag
     await expect(page.locator(`[name="${name}"]`), name).toHaveValue(value);
   await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
   await expect(page.getByRole('radio', { name: /40 feet/ })).toBeChecked();
+  await expect(optIn).toBeChecked();
   // The refilled form goes through once sent again.
   await page.waitForTimeout(2100);
   await page.getByRole('button', { name: 'Kirim permintaan' }).click();
   await expect(page).toHaveURL(/\/contact\?sent=1$/);
   const db = database();
+  // The ticked marketing consent is stored with the request.
+  expect(
+    db.prepare('SELECT marketing_opt_in FROM inquiries WHERE email=?').get(values.email),
+  ).toEqual({ marketing_opt_in: 1 });
   db.prepare('DELETE FROM inquiries WHERE email=?').run(values.email);
   db.close();
 });
@@ -644,7 +767,10 @@ test('quotation persists privately, appears to admin, and status changes', async
     status: string;
     service_type: string;
     container_type: string;
+    marketing_opt_in: number;
   };
+  // Marketing email is opt-in: untouched means no.
+  expect(row.marketing_opt_in).toBe(0);
   expect(row.status).toBe('new');
   expect(row.service_type).toBe('Angkutan Kontainer');
   expect(row.container_type).toBe('40ft');
@@ -662,6 +788,7 @@ test('quotation persists privately, appears to admin, and status changes', async
   await expect(page.getByRole('dialog')).toContainText(values.message);
   await expect(page.getByRole('dialog')).toContainText('Angkutan Kontainer');
   await expect(page.getByRole('dialog')).toContainText('40ft');
+  await expect(page.getByRole('dialog')).toContainText('Not agreed');
   await page.getByRole('combobox', { name: 'Inquiry status', exact: true }).click();
   await page.getByRole('option', { name: 'Quoted' }).click();
   await page.getByRole('button', { name: 'Update status' }).click();
@@ -866,13 +993,14 @@ test('home: quick quote, services menu and common questions, in both languages',
         'factory-to-port-transportation',
         'customs-clearance-assistance',
         'logistics-shipping-coordination',
-      ].map((slug) => `${text.prefix}/services#${slug}`),
+      ].map((slug) => `${text.prefix}/services/${slug}`),
       `${text.prefix}/services`,
     ]);
     await expect(panel.getByRole('link', { name: text.all })).toBeVisible();
     await panel.getByRole('link', { name: text.service }).click();
-    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services#domestic-trucking$`));
-    await expect(page.locator('#domestic-trucking')).toBeInViewport();
+    // Each service has a page of its own.
+    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services/domestic-trucking$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(text.service);
     // The link itself still opens the Services page.
     await page.goto(text.home);
     await page.locator('astro-island:not([ssr]) .navbar').waitFor();
@@ -966,7 +1094,11 @@ test('the first page follows the visitor, and a manual language choice is rememb
   await expect(page.locator('html')).toHaveAttribute('lang', 'id');
   // Crawlers and link previews are never redirected, so both versions can be indexed.
   const english = { 'Accept-Language': 'en-US,en;q=0.9' };
-  for (const agent of ['Googlebot/2.1 (+http://www.google.com/bot.html)', 'WhatsApp/2.23'])
+  for (const agent of [
+    'Googlebot/2.1 (+http://www.google.com/bot.html)',
+    'Mozilla/5.0 (compatible; Google-InspectionTool/1.0;)',
+    'WhatsApp/2.23',
+  ])
     expect(
       (
         await request.get('/', { headers: { ...english, 'User-Agent': agent }, maxRedirects: 0 })

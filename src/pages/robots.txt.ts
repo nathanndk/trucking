@@ -5,5 +5,5 @@ import { origin } from '../lib/env';
 // X-Robots-Tag: noindex header set in src/middleware.ts.
 export const GET: APIRoute = () =>
   new Response(`User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`, {
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=3600' },
   });

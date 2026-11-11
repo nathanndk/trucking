@@ -25,6 +25,7 @@ export const id = {
     whatsapp: 'WhatsApp',
     email: 'Email',
     phone: 'Telepon',
+    privacy: 'Kebijakan Privasi',
   },
   cta: {
     heading: 'Punya kontainer yang perlu dikirim?',
@@ -81,7 +82,9 @@ export const id = {
     portValue: 'Tanjung Priok, Jakarta',
   },
   home: {
-    title: 'Angkutan Kontainer ke Tanjung Priok',
+    title: 'Trucking Kontainer Tanjung Priok',
+    description:
+      'Jasa trucking dan angkutan kontainer 20 dan 40 feet di Jakarta, dari pabrik atau gudang ke Pelabuhan Tanjung Priok, dengan bantuan customs clearance.',
     h1: 'Dari pabrik ke Tanjung Priok, kontainer Anda kami antar.',
     heroAlt: 'Kapal kontainer bersandar di dermaga pelabuhan, dilihat dari udara',
     servicesLink: 'Lihat layanan',
@@ -135,8 +138,9 @@ export const id = {
     ],
   },
   about: {
-    title: 'Tentang Kami',
-    description: 'Profil, visi, dan misi {name}, perusahaan angkutan kontainer dan logistik.',
+    title: 'Profil Perusahaan Trucking Jakarta',
+    description:
+      'Profil, visi, dan misi {name}, perusahaan trucking dan angkutan kontainer di Jakarta dengan Tanjung Priok sebagai pelabuhan utama.',
     h1: 'Perusahaan angkutan kontainer dan logistik di Jakarta.',
     profileHeading: 'Profil perusahaan',
     imageAlt: 'Tim memeriksa dokumen di area operasional',
@@ -148,14 +152,15 @@ export const id = {
     credentials: 'Legalitas',
   },
   services: {
-    title: 'Layanan',
+    title: 'Jasa Angkutan Kontainer & Trucking',
     description:
-      'Angkutan kontainer 20 dan 40 feet, trucking domestik, angkutan pabrik ke pelabuhan, bantuan customs clearance, dan koordinasi pengiriman.',
+      'Jasa angkutan kontainer 20 dan 40 feet, trucking domestik, angkutan pabrik ke Pelabuhan Tanjung Priok, dan bantuan customs clearance di Jakarta.',
     h1: 'Angkutan kontainer, trucking, dan bantuan kepabeanan.',
     intro:
       'Lima layanan yang saling terhubung, dari pengambilan barang di pabrik sampai kontainer tiba di pelabuhan.',
     quote: 'Minta penawaran layanan ini',
     quoteShort: 'Minta penawaran',
+    more: 'Layanan lainnya',
     empty: 'Daftar layanan sedang diperbarui.',
     stepsHeading: 'Cara memesan',
     steps: [
@@ -175,7 +180,8 @@ export const id = {
   },
   projects: {
     title: 'Proyek dan Klien',
-    description: 'Pengalaman pengiriman {name} dan perusahaan yang bekerja sama dengan kami.',
+    description:
+      'Proyek pengiriman kontainer {name} dan perusahaan yang bekerja sama dengan kami di Jakarta dan Tanjung Priok.',
     h1: 'Proyek dan klien kami.',
     intro: 'Pengalaman pengiriman dan perusahaan yang bekerja sama dengan kami.',
     projectsHeading: 'Proyek',
@@ -184,16 +190,17 @@ export const id = {
   },
   articles: {
     title: 'Artikel dan Berita',
-    description: 'Kabar terbaru dari {name} dan informasi seputar pengiriman kontainer.',
+    description:
+      'Kabar terbaru dari {name} dan informasi seputar trucking, pengiriman kontainer, dan kepabeanan di Tanjung Priok.',
     h1: 'Artikel dan berita perusahaan.',
     intro: 'Kabar terbaru dan informasi seputar pengiriman kontainer.',
     back: 'Semua artikel',
     more: 'Artikel lainnya',
   },
   contact: {
-    title: 'Kontak dan Penawaran',
+    title: 'Minta Penawaran Trucking Kontainer',
     description:
-      'Minta penawaran angkutan kontainer: kirim layanan yang dibutuhkan, asal, tujuan, dan jenis kontainer.',
+      'Minta penawaran trucking kontainer ke Tanjung Priok: kirim layanan yang dibutuhkan, asal, tujuan, dan jenis kontainer. Kami balas lewat WhatsApp atau email.',
     h1: 'Minta penawaran pengiriman.',
     intro: 'Isi detail pengiriman Anda. Kami menghubungi Anda dengan penawarannya.',
     infoHeading: 'Hubungi langsung',
@@ -220,6 +227,7 @@ export const id = {
     messagePlaceholder: 'Jumlah kontainer, jadwal, jenis barang…',
     privacy:
       'Data Anda dipakai untuk menanggapi permintaan ini dan hanya dapat dibuka oleh admin perusahaan.',
+    marketingOptIn: 'Saya bersedia menerima kabar dan penawaran lewat email (opsional).',
     submit: 'Kirim permintaan',
     successTitle: 'Terima kasih. Permintaan Anda berhasil dikirim.',
     successText: 'Tim kami akan menghubungi Anda lewat kontak yang Anda berikan.',
@@ -230,6 +238,44 @@ export const id = {
       CONFLICT: 'Form ini sudah dikirim. Muat ulang halaman untuk permintaan baru.',
       generic: 'Permintaan belum terkirim. Coba lagi.',
     },
+  },
+  consent: {
+    label: 'Pemberitahuan cookie',
+    text: 'Situs ini hanya memakai cookie yang diperlukan untuk mengingat pilihan bahasa Anda. Tidak ada pelacakan atau iklan.',
+    accept: 'Mengerti',
+  },
+  legal: {
+    title: 'Kebijakan Privasi dan Ketentuan',
+    description:
+      'Cara situs ini memakai cookie dan data yang Anda kirim, serta ketentuan penggunaan situs.',
+    h1: 'Kebijakan privasi dan ketentuan penggunaan.',
+    intro: 'Data apa yang kami simpan, untuk apa, dan pilihan yang Anda miliki.',
+    sections: [
+      {
+        title: 'Data yang Anda kirim',
+        text: 'Form penawaran meminta nama, perusahaan, nomor WhatsApp, email, dan detail pengiriman. Data ini dipakai untuk menanggapi permintaan Anda dan hanya dapat dibuka oleh admin perusahaan. Kami tidak menjual data Anda.',
+      },
+      {
+        title: 'Cookie',
+        text: 'Situs ini memakai satu cookie untuk mengingat pilihan bahasa Anda selama satu tahun. Bahasa awal dipilih dari negara asal koneksi atau bahasa browser Anda; pemeriksaan ini dilakukan di server kami. Browser Anda juga mencatat bahwa pemberitahuan cookie sudah ditutup. Situs ini tidak memakai cookie analitik atau iklan.',
+      },
+      {
+        title: 'Email pemasaran',
+        text: 'Kami hanya mengirim kabar dan penawaran lewat email jika Anda mencentang persetujuannya di form penawaran. Anda dapat berhenti kapan saja dengan menghubungi kami.',
+      },
+      {
+        title: 'Notifikasi dan lokasi',
+        text: 'Situs ini tidak meminta izin notifikasi dan tidak meminta akses lokasi perangkat Anda.',
+      },
+      {
+        title: 'Ketentuan penggunaan',
+        text: 'Isi situs ini adalah informasi umum tentang layanan kami. Penawaran harga berlaku setelah dikonfirmasi oleh tim kami. Dengan memakai situs ini, Anda menyetujui kebijakan ini.',
+      },
+      {
+        title: 'Hubungi kami',
+        text: 'Untuk bertanya, atau meminta data Anda diperbaiki atau dihapus, hubungi kami lewat halaman Kontak.',
+      },
+    ],
   },
   notFound: {
     title: 'Halaman Tidak Ditemukan',

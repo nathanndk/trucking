@@ -16,6 +16,8 @@ import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
 import { responsive } from '../lib/images';
+import { origin } from '../lib/env';
+import { articleSchema, clip } from '../lib/seo';
 interface Props {
   article: ContentRecord;
 }
@@ -28,13 +30,28 @@ const paragraphs = article.description
   .split(/\n{2,}/)
   .map((paragraph) => paragraph.trim())
   .filter(Boolean);
-const summary = article.shortDescription || paragraphs[0]?.slice(0, 160) || t.articles.intro;
+const summary = clip(article.shortDescription || paragraphs[0] || t.articles.intro);
+const dates = { published: article.createdAt, modified: article.updatedAt };
+const url = new URL(localePath(locale, `/articles/${article.slug}`), origin).href;
 const others = getPublicContent('articles', locale)
   .filter((other) => other.slug !== article.slug)
   .slice(0, 3);
 ---
 
-<PublicLayout title={article.title} description={summary} image={article.image || undefined}>
+<PublicLayout
+  title={article.title}
+  description={summary}
+  image={article.image || undefined}
+  crumbs={[{ name: t.nav.articles, path: '/articles' }, { name: article.title }]}
+  article={dates}
+  schema={[
+    articleSchema(
+      { title: article.title, description: summary, image: article.image, ...dates },
+      url,
+      origin,
+    ),
+  ]}
+>
   <section class="section article-page">
     <div class="wrap">
       <Breadcrumb>

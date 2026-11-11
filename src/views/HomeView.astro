@@ -39,7 +39,7 @@ const faqStructured = JSON.stringify({
 }).replaceAll('<', '\\u003c');
 ---
 
-<PublicLayout title={t.home.title} description={s.shortDescription}>
+<PublicLayout title={t.home.title} description={t.home.description}>
   <script slot="head" is:inline type="application/ld+json" set:html={faqStructured}></script>
   <section class="hero dark" data-motion="hero">
     <div class="hero-media">

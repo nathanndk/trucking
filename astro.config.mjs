@@ -6,6 +6,8 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   integrations: [react()],
+  // One address per page: /about/ redirects to /about.
+  trailingSlash: 'never',
   // Indonesian is served without a prefix (/about); English lives under /en (/en/about).
   i18n: {
     defaultLocale: 'id',

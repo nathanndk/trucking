@@ -1,0 +1,1 @@
+ALTER TABLE `inquiries` ADD `marketing_opt_in` integer DEFAULT false NOT NULL;

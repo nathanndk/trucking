@@ -347,6 +347,7 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
                   ...(selected.cargo ? [['Cargo', selected.cargo]] : []),
                   ...(selected.weight ? [['Weight', selected.weight]] : []),
                   ...(selected.vehicle ? [['Preferred vehicle', selected.vehicle]] : []),
+                  ['Marketing email', selected.marketingOptIn ? 'Agreed' : 'Not agreed'],
                   ['Received', received(selected.createdAt, true)],
                 ].map(([label, value]) => (
                   <div key={label}>

@@ -168,6 +168,8 @@ export const inquiries = sqliteTable(
     serviceType: text('service_type').notNull().default(''),
     containerType: text('container_type').notNull().default(''),
     message: text('message').notNull().default(''),
+    /** The visitor ticked the marketing email box on the quote form. */
+    marketingOptIn: integer('marketing_opt_in', { mode: 'boolean' }).notNull().default(false),
     status: text('status', { enum: ['new', 'contacted', 'quoted', 'closed'] })
       .notNull()
       .default('new'),

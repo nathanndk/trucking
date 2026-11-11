@@ -10,10 +10,12 @@ import {
 import { GridPattern } from '../ui/grid-pattern';
 import { localePath, toLocale } from '../../i18n';
 import { ui } from '../../lib/copy';
-const { title, label, description } = Astro.props as {
+const { title, label, description, parent } = Astro.props as {
   title: string;
   label: string;
   description: string;
+  /** A section between Home and this page in the trail, e.g. Services above one service. */
+  parent?: { label: string; href: string };
 };
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
@@ -39,6 +41,14 @@ const t = ui(locale);
           <BreadcrumbLink href={localePath(locale, '/')}>{t.nav.home}</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
+        {parent && (
+          <>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={parent.href}>{parent.label}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+          </>
+        )}
         <BreadcrumbItem>
           <BreadcrumbPage>{label}</BreadcrumbPage>
         </BreadcrumbItem>

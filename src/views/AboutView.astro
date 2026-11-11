@@ -30,7 +30,11 @@ const facts = (
 ).filter((fact): fact is { label: string; value: string } => !!fact.value);
 ---
 
-<PublicLayout title={t.about.title} description={fill(t.about.description, { name: s.legalName })}>
+<PublicLayout
+  title={t.about.title}
+  description={fill(t.about.description, { name: s.legalName })}
+  crumbs={[{ name: t.nav.about }]}
+>
   <PageHero label={t.nav.about} title={t.about.h1} description={s.tagline} />
   <section class="section">
     <div class="wrap profile">

@@ -8,6 +8,7 @@ import {
   ChoiceboxItemTitle,
 } from '@/components/kibo-ui/choicebox';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Field,
   FieldDescription,
@@ -34,6 +35,8 @@ export type QuoteFormLabels = {
   message: string;
   messagePlaceholder: string;
   privacy: string;
+  privacyLink: string;
+  marketingOptIn: string;
   submit: string;
   shipmentHeading: string;
   detailsHeading: string;
@@ -55,6 +58,7 @@ export default function QuoteForm({
   selectedService,
   selectedContainer,
   values = {},
+  privacyHref,
   labels,
 }: {
   action: string;
@@ -65,6 +69,7 @@ export default function QuoteForm({
   selectedContainer: string;
   /** What the visitor typed before the server refused the request; filled back in. */
   values?: Partial<Record<string, string>>;
+  privacyHref: string;
   labels: QuoteFormLabels;
 }) {
   const textFields = [
@@ -193,7 +198,19 @@ export default function QuoteForm({
             defaultValue={values.message}
           />
         </Field>
-        <FieldDescription>{labels.privacy}</FieldDescription>
+        <Field orientation="horizontal">
+          <Checkbox
+            id="marketingOptIn"
+            name="marketingOptIn"
+            defaultChecked={!!values.marketingOptIn}
+          />
+          <FieldLabel htmlFor="marketingOptIn" className="font-normal">
+            {labels.marketingOptIn}
+          </FieldLabel>
+        </Field>
+        <FieldDescription>
+          {labels.privacy} <a href={privacyHref}>{labels.privacyLink}</a>
+        </FieldDescription>
         <Button type="submit" size="lg">
           {labels.submit}
         </Button>

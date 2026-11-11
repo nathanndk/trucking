@@ -123,6 +123,8 @@ export const quoteInput = z.object({
     .max(3000)
     .nullish()
     .transform((v) => v ?? ''),
+  /** Optional consent to marketing email; an unticked checkbox sends nothing. */
+  marketingOptIn: z.boolean().default(false),
   website: z
     .string()
     .max(500)

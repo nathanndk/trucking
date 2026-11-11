@@ -275,7 +275,7 @@ test('empty, changing and oversized CMS content remains usable', async ({ page }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
       true,
     );
-    await page.locator('.services-grid .service-tile a').first().click();
+    await page.locator('.services-grid .service-tile a[href*="/contact?service="]').first().click();
     await expect(page).toHaveURL(/\/contact\?service=/);
   } finally {
     for (const row of records)

@@ -18,6 +18,7 @@ if (!process.env.GENESIS_TEST_DIR)
     PORT: '4322',
     TRUST_PROXY: 'false',
     ASTRO_TELEMETRY_DISABLED: '1',
+    GOOGLE_SITE_VERIFICATION: 'e2e-verification',
     // Quote emails are written to this folder instead of being sent.
     MAIL_TRANSPORT: 'json',
     MAIL_OUTBOX: path.join(directory, 'outbox'),

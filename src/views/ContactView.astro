@@ -13,7 +13,7 @@ import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { formToken } from '../lib/spam';
 import type { QuoteValues } from '../lib/quote-refill';
 import { containerTypes } from '../lib/validation';
-import { toLocale } from '../i18n';
+import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
 interface Props {
   /** Error from a submitted quote, passed down by the route file. */
@@ -55,7 +55,7 @@ const contacts = [
 ].filter((contact) => contact.value && !(contact.Icon === MessageCircle && whatsappHref));
 ---
 
-<PublicLayout title={c.title} description={c.description}>
+<PublicLayout title={c.title} description={c.description} crumbs={[{ name: t.nav.contact }]}>
   <PageHero label={t.nav.contact} title={c.h1} description={c.intro} />
   <section class="section">
     <div class="wrap">
@@ -132,6 +132,7 @@ const contacts = [
                 submitted.containerType || Astro.url.searchParams.get('container') || ''
               }
               values={submitted}
+              privacyHref={localePath(locale, '/privacy')}
               labels={{
                 fullName: c.fullName,
                 company: c.company,
@@ -145,6 +146,8 @@ const contacts = [
                 message: c.message,
                 messagePlaceholder: c.messagePlaceholder,
                 privacy: c.privacy,
+                privacyLink: t.footer.privacy,
+                marketingOptIn: c.marketingOptIn,
                 submit: c.submit,
                 shipmentHeading: c.shipmentHeading,
                 detailsHeading: c.detailsHeading,

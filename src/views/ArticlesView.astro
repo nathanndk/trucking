@@ -19,6 +19,7 @@ const [lead, ...rest] = getPublicContent('articles', locale);
 <PublicLayout
   title={t.articles.title}
   description={fill(t.articles.description, { name: s.legalName })}
+  crumbs={[{ name: t.nav.articles }]}
 >
   <PageHero label={t.nav.articles} title={t.articles.h1} description={t.articles.intro} />
   <section class="section">

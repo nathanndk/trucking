@@ -727,6 +727,57 @@
     line-height: 1.65;
     color: var(--foreground);
   }
+  /* One service: its full description beside its photo. */
+  .service-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 64px;
+    align-items: start;
+  }
+  .service-detail-plain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .service-detail-copy {
+    display: grid;
+    gap: 20px;
+    max-width: 62ch;
+    font-size: 17px;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+  .service-detail-photo {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    aspect-ratio: 4 / 3;
+  }
+  .service-detail-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-width: 1023px) {
+    .service-detail {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
+    }
+  }
+
+  /* Privacy and terms: short titled paragraphs in one readable column. */
+  .legal {
+    display: grid;
+    gap: 36px;
+    justify-items: start;
+  }
+  .legal > div {
+    max-width: 68ch;
+  }
+  .legal h2 {
+    font-size: 22px;
+  }
+  .legal p {
+    margin-top: 10px;
+    color: var(--muted-foreground);
+  }
   .cta-inner {
     display: flex;
     flex-wrap: wrap;

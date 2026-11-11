@@ -26,6 +26,7 @@ export const en: Dictionary = {
     whatsapp: 'WhatsApp',
     email: 'Email',
     phone: 'Phone',
+    privacy: 'Privacy Policy',
   },
   cta: {
     heading: 'Have a container to move?',
@@ -90,7 +91,9 @@ export const en: Dictionary = {
     portValue: 'Tanjung Priok, Jakarta',
   },
   home: {
-    title: 'Container Trucking to Tanjung Priok',
+    title: 'Container Trucking in Jakarta',
+    description:
+      'Container trucking in Jakarta for 20 and 40-foot containers, from your factory or warehouse to Tanjung Priok Port, with customs clearance assistance.',
     h1: 'From your factory to Tanjung Priok, we deliver your containers.',
     heroAlt: 'Aerial view of a container ship berthed at a port terminal',
     servicesLink: 'View services',
@@ -143,9 +146,9 @@ export const en: Dictionary = {
     ],
   },
   about: {
-    title: 'About Us',
+    title: 'Container Trucking Company, Jakarta',
     description:
-      'Profile, vision and mission of {name}, a container trucking and logistics company.',
+      'Profile, vision and mission of {name}, a container trucking and logistics company in Jakarta serving Tanjung Priok Port.',
     h1: 'A container trucking and logistics company in Jakarta.',
     profileHeading: 'Company profile',
     imageAlt: 'A team reviewing documents on site',
@@ -157,14 +160,15 @@ export const en: Dictionary = {
     credentials: 'Legal credentials',
   },
   services: {
-    title: 'Services',
+    title: 'Container Trucking Services, Jakarta',
     description:
-      '20 and 40-foot container transport, domestic trucking, factory-to-port haulage, customs clearance assistance and shipping coordination.',
+      '20 and 40-foot container trucking, domestic trucking, factory to Tanjung Priok Port haulage and customs clearance assistance in Jakarta.',
     h1: 'Container transport, trucking and customs assistance.',
     intro:
       'Five connected services, from pickup at your factory to the container arriving at the port.',
     quote: 'Request a quote for this service',
     quoteShort: 'Request a quote',
+    more: 'Other services',
     empty: 'Our service list is being updated.',
     stepsHeading: 'How to order',
     steps: [
@@ -184,7 +188,8 @@ export const en: Dictionary = {
   },
   projects: {
     title: 'Projects and Clients',
-    description: 'Shipping experience of {name} and the companies we work with.',
+    description:
+      'Container shipping projects by {name} and the companies we work with in Jakarta and Tanjung Priok.',
     h1: 'Our projects and clients.',
     intro: 'Our shipping experience and the companies we work with.',
     projectsHeading: 'Projects',
@@ -193,16 +198,17 @@ export const en: Dictionary = {
   },
   articles: {
     title: 'Articles and News',
-    description: 'News from {name} and practical information about container shipping.',
+    description:
+      'News from {name} and practical information about trucking, container shipping and customs at Tanjung Priok.',
     h1: 'Company articles and news.',
     intro: 'Recent news and practical information about container shipping.',
     back: 'All articles',
     more: 'More articles',
   },
   contact: {
-    title: 'Contact and Quotes',
+    title: 'Request a Container Trucking Quote',
     description:
-      'Request a container trucking quote: send the service you need, origin, destination and container type.',
+      'Request a container trucking quote to Tanjung Priok: send the service you need, origin, destination and container type. We reply by WhatsApp or email.',
     h1: 'Request a shipping quote.',
     intro: 'Fill in your shipment details. We will get back to you with a quote.',
     infoHeading: 'Contact us directly',
@@ -229,6 +235,7 @@ export const en: Dictionary = {
     messagePlaceholder: 'Number of containers, schedule, type of goods…',
     privacy:
       'Your details are used to respond to this request and are only visible to company administrators.',
+    marketingOptIn: 'I agree to receive news and offers by email (optional).',
     submit: 'Send request',
     successTitle: 'Thank you. Your request has been sent.',
     successText: 'Our team will contact you using the details you provided.',
@@ -239,6 +246,43 @@ export const en: Dictionary = {
       CONFLICT: 'This form was already sent. Reload the page for a new request.',
       generic: 'Your request was not sent. Please try again.',
     },
+  },
+  consent: {
+    label: 'Cookie notice',
+    text: 'This site only uses the cookie needed to remember your language choice. No tracking, no advertising.',
+    accept: 'Got it',
+  },
+  legal: {
+    title: 'Privacy Policy and Terms',
+    description: 'How this site uses cookies and the details you send, and the terms for using it.',
+    h1: 'Privacy policy and terms of use.',
+    intro: 'What we store, what it is for, and the choices you have.',
+    sections: [
+      {
+        title: 'Details you send',
+        text: 'The quote form asks for your name, company, WhatsApp number, email and shipment details. They are used to respond to your request and are only visible to company administrators. We do not sell your details.',
+      },
+      {
+        title: 'Cookies',
+        text: 'This site uses one cookie to remember your language choice for one year. The first language is chosen from the country of your connection or your browser language; this check runs on our own server. Your browser also records that the cookie notice has been closed. This site uses no analytics or advertising cookies.',
+      },
+      {
+        title: 'Marketing email',
+        text: 'We only send news and offers by email if you tick the box on the quote form. You can stop at any time by contacting us.',
+      },
+      {
+        title: 'Notifications and location',
+        text: 'This site does not ask for notification permission or for access to your device location.',
+      },
+      {
+        title: 'Terms of use',
+        text: 'This site gives general information about our services. A quoted price applies once our team has confirmed it. By using this site you agree to this policy.',
+      },
+      {
+        title: 'Contact us',
+        text: 'To ask a question, or to have your details corrected or deleted, reach us through the Contact page.',
+      },
+    ],
   },
   notFound: {
     title: 'Page Not Found',

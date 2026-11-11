@@ -8,6 +8,27 @@
       "when": 1789917015220,
       "tag": "0000_remarkable_starfox",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794357512688,
+      "tag": "0001_striped_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794363612855,
+      "tag": "0002_skinny_sumo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794364502012,
+      "tag": "0003_slimy_chameleon",
+      "breakpoints": true
     }
   ]
 }

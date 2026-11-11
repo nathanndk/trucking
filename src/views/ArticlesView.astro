@@ -1,0 +1,56 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ArticleIndex from '../components/marketing/ArticleIndex.astro';
+import DateMark from '../components/marketing/DateMark.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { fill, localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+import { responsive } from '../lib/images';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+// The first article (by the order set in the admin) leads; the rest follow as an index.
+// The route answers 404 while nothing is published, so there is always a lead.
+const [lead, ...rest] = getPublicContent('articles', locale);
+---
+
+<PublicLayout
+  title={t.articles.title}
+  description={fill(t.articles.description, { name: s.legalName })}
+>
+  <PageHero label={t.nav.articles} title={t.articles.h1} description={t.articles.intro} />
+  <section class="section">
+    <div class="wrap">
+      {lead && (
+        <>
+          <article class:list={['article-lead', !lead.image && 'article-lead-text']}>
+            {lead.image && (
+              <div class="article-lead-photo" aria-hidden="true">
+                <img
+                  class="photo"
+                  {...responsive(lead.image, '(max-width: 1023px) 100vw, 680px')}
+                  alt=""
+                  width="1280"
+                  height="720"
+                />
+              </div>
+            )}
+            <div class="article-lead-copy">
+              <DateMark date={lead.createdAt} />
+              <h2>
+                <a class="article-row-link" href={localePath(locale, `/articles/${lead.slug}`)}>
+                  {lead.title}
+                </a>
+              </h2>
+              {lead.shortDescription && <p>{lead.shortDescription}</p>}
+            </div>
+          </article>
+          {rest.length > 0 && <ArticleIndex items={rest} />}
+        </>
+      )}
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

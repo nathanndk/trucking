@@ -1,0 +1,8 @@
+---
+import ArticlesView from '../../views/ArticlesView.astro';
+import { visibleSections } from '../../lib/repository';
+// Hidden while nothing is published: the localized 404 page answers instead.
+if (!visibleSections().articles) return new Response(null, { status: 404 });
+---
+
+<ArticlesView />

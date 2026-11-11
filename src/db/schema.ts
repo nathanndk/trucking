@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 const timestamps = () => ({
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
@@ -71,6 +71,9 @@ const content = () => ({
   slug: text('slug').notNull().unique(),
   shortDescription: text('short_description').notNull().default(''),
   description: text('description').notNull().default(''),
+  titleEn: text('title_en').notNull().default(''),
+  shortDescriptionEn: text('short_description_en').notNull().default(''),
+  descriptionEn: text('description_en').notNull().default(''),
   image: text('image').notNull().default(''),
   published: integer('published', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
@@ -80,26 +83,6 @@ export const services = sqliteTable(
   'services',
   { ...content(), icon: text('icon').notNull().default('Truck') },
   (t) => [index('services_publish_order_idx').on(t.published, t.sortOrder)],
-);
-export const fleet = sqliteTable(
-  'fleet',
-  {
-    ...content(),
-    vehicleType: text('vehicle_type').notNull().default(''),
-    capacity: text('capacity').notNull().default(''),
-    specifications: text('specifications').notNull().default(''),
-  },
-  (t) => [index('fleet_publish_order_idx').on(t.published, t.sortOrder)],
-);
-export const coverage = sqliteTable(
-  'coverage',
-  {
-    ...content(),
-    province: text('province').notNull().default(''),
-    latitude: real('latitude'),
-    longitude: real('longitude'),
-  },
-  (t) => [index('coverage_publish_order_idx').on(t.published, t.sortOrder)],
 );
 export const projects = sqliteTable(
   'projects',
@@ -115,6 +98,9 @@ export const clients = sqliteTable(
   { ...content(), website: text('website').notNull().default('') },
   (t) => [index('clients_order_idx').on(t.sortOrder)],
 );
+export const articles = sqliteTable('articles', { ...content() }, (t) => [
+  index('articles_publish_order_idx').on(t.published, t.sortOrder),
+]);
 export const siteSettings = sqliteTable('site_settings', {
   id: integer('id').primaryKey(),
   companyName: text('company_name').notNull(),
@@ -136,11 +122,30 @@ export const siteSettings = sqliteTable('site_settings', {
   logo: text('logo').notNull().default(''),
   favicon: text('favicon').notNull().default(''),
   statistics: text('statistics', { mode: 'json' })
-    .$type<{ value: string; label: string }[]>()
+    .$type<{ value: string; label: string; labelEn?: string }[]>()
     .notNull(),
   credentials: text('credentials').notNull().default(''),
+  taglineEn: text('tagline_en').notNull().default(''),
+  shortDescriptionEn: text('short_description_en').notNull().default(''),
+  aboutEn: text('about_en').notNull().default(''),
+  visionEn: text('vision_en').notNull().default(''),
+  missionEn: text('mission_en').notNull().default(''),
+  ctaTextEn: text('cta_text_en').notNull().default(''),
+  credentialsEn: text('credentials_en').notNull().default(''),
   demoMode: integer('demo_mode', { mode: 'boolean' }).notNull().default(true),
   ...timestamps(),
+});
+/**
+ * Wording an administrator changed on the Page text screen. Keys are dictionary paths
+ * such as "home.h1". A blank value means "use the default text from src/i18n".
+ */
+export const siteCopy = sqliteTable('site_copy', {
+  key: text('key').primaryKey(),
+  id: text('id').notNull().default(''),
+  en: text('en').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 export const inquiries = sqliteTable(
   'inquiries',
@@ -152,9 +157,16 @@ export const inquiries = sqliteTable(
     email: text('email').notNull(),
     pickup: text('pickup').notNull(),
     destination: text('destination').notNull(),
-    cargo: text('cargo').notNull(),
-    weight: text('weight').notNull(),
+    // Legacy columns: no longer collected by the quotation form.
+    cargo: text('cargo')
+      .notNull()
+      .$default(() => ''),
+    weight: text('weight')
+      .notNull()
+      .$default(() => ''),
     vehicle: text('vehicle').notNull().default(''),
+    serviceType: text('service_type').notNull().default(''),
+    containerType: text('container_type').notNull().default(''),
     message: text('message').notNull().default(''),
     status: text('status', { enum: ['new', 'contacted', 'quoted', 'closed'] })
       .notNull()

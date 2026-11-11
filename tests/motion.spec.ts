@@ -1,8 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import Database from 'better-sqlite3';
 import { mkdirSync, copyFileSync } from 'node:fs';
+import path from 'node:path';
 
-const routes = ['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'];
+const routes = ['/', '/about', '/services', '/projects', '/articles', '/contact', '/en'];
 async function ready(page: Page, route = '/') {
   await page.goto(route);
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
@@ -41,7 +42,7 @@ function near(a: Awaited<ReturnType<typeof position>>, b: typeof a) {
 }
 
 for (const width of [375, 768, 1440]) {
-  test(`all seven pages remain usable during fast two-way scroll at ${width}px`, async ({
+  test(`all public pages remain usable during fast two-way scroll at ${width}px`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -65,7 +66,7 @@ for (const width of [375, 768, 1440]) {
       await scroll(page, 0);
       await expect(page.locator('h1')).toBeVisible();
       if (route === '/' && width === 375)
-        await page.screenshot({ path: 'docs/motion/home-mobile.png' });
+        await page.screenshot({ path: test.info().outputPath('home-mobile.png') });
     }
     expect(errors).toEqual([]);
   });
@@ -80,7 +81,7 @@ test('record a continuous down-up motion preview', async ({ browser }) => {
   const page = await context.newPage();
   await page.goto('http://localhost:4322');
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
-  const end = await documentTop(page, '[data-motion="route"]');
+  const end = await documentTop(page, '.cta-band');
   for (let i = 0; i <= 200; i++) {
     const progress = i <= 100 ? i / 100 : (200 - i) / 100;
     await page.evaluate((y) => window.scrollTo(0, y), end * progress);
@@ -89,8 +90,9 @@ test('record a continuous down-up motion preview', async ({ browser }) => {
   await page.waitForTimeout(700);
   const video = page.video()!;
   await context.close();
-  mkdirSync('docs/motion', { recursive: true });
-  copyFileSync(await video.path(), 'docs/motion/scroll-once.webm');
+  const target = test.info().outputPath('scroll-once.webm');
+  mkdirSync(path.dirname(target), { recursive: true });
+  copyFileSync(await video.path(), target);
 });
 
 test('failed animation chunk keeps the server-rendered page usable', async ({ page }) => {
@@ -99,11 +101,11 @@ test('failed animation chunk keeps the server-rendered page usable', async ({ pa
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await expect(page.locator('h1')).toBeVisible();
-  await page.locator('.hero-actions a').first().click();
-  await expect(page).toHaveURL(/\/contact$/);
+  await page.locator('.quick-quote button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/contact\?service=&container=$/);
 });
 
-test('reveals play once and stay visible after scrolling up and resizing', async ({ page }) => {
+test('only the hero moves: content is in place whenever it scrolls into view', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await ready(page);
   await expect(page.locator('[data-motion-control]')).toHaveCount(0);
@@ -111,42 +113,91 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   await page.waitForTimeout(1900);
   const hero = await position(page, '.hero-photo');
   expect(hero.scale).toBeCloseTo(1.15, 2);
-  for (const selector of [
-    '[data-motion="heading"]',
-    '.service-tile',
-    '.fleet-card',
-    '[data-motion="route"]',
-  ]) {
+  for (const selector of ['main section:nth-of-type(3) h2', '.service-tile', '#faq h2']) {
     const top = await documentTop(page, selector);
-    await scroll(page, top - 650);
-    await page.waitForTimeout(900);
-    const sample = selector === '[data-motion="route"]' ? '[data-motion-path]' : selector;
-    const revealed = await position(page, sample);
-    expect(revealed.opacity).toBe(1);
-    expect(revealed.y).toBe(0);
-    if (sample === '[data-motion-path]') expect(revealed.dash).toBe(0);
+    // Sampled the moment it scrolls in: nothing fades or slides into place.
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top - 650);
+    const arrived = await position(page, selector);
+    expect(arrived.opacity, selector).toBe(1);
+    expect(arrived.y, selector).toBe(0);
     await scroll(page, 0);
-    near(await position(page, sample), revealed);
-    await scroll(page, top - 650);
-    near(await position(page, sample), revealed);
+    near(await position(page, selector), arrived);
   }
   await scroll(page, 0);
   near(await position(page, '.hero-photo'), hero);
   await page.setViewportSize({ width: 375, height: 812 });
   await page.waitForTimeout(500);
-  for (const selector of ['.service-tile', '.fleet-card']) {
+  for (const selector of ['.service-tile']) {
     const state = await position(page, selector);
     expect(state.opacity).toBe(1);
     expect(state.y).toBe(0);
   }
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  await page.screenshot({ path: 'docs/motion/once-mobile.png' });
+  await page.screenshot({ path: test.info().outputPath('once-mobile.png') });
+});
+
+test('content visible on arrival is never pulled back to an animation start', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  // Both elements sit in the first screen: the first service row and the quick quote.
+  for (const [route, selector] of [
+    ['/services', '.service-tile'],
+    ['/', '.quick-quote'],
+  ] as const) {
+    await page.goto(route);
+    await expect(page.locator(selector).first()).toBeInViewport();
+    // Sample from page load until well after the motion script has started.
+    const samples = await page.evaluate(async (target) => {
+      const element = document.querySelector(target)!;
+      const seen: [number, number][] = [];
+      for (let i = 0; i < 25; i++) {
+        const style = getComputedStyle(element);
+        seen.push([Number(style.opacity), new DOMMatrix(style.transform).m42]);
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
+      return seen;
+    }, selector);
+    await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
+    expect(
+      samples.every(([opacity, y]) => opacity === 1 && y === 0),
+      `${route} ${selector}`,
+    ).toBe(true);
+  }
+  // Content further down is already fully there before the visitor reaches it.
+  await ready(page, '/services');
+  const below = page.locator('.steps .step').first();
+  await expect(below).not.toBeInViewport();
+  expect(await below.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+});
+
+test('public pages preload the heading font and cross-fade; the admin does not', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/about');
+  const preload = page.locator('link[rel="preload"][as="font"]');
+  await expect(preload).toHaveCount(1);
+  const font = await request.get((await preload.getAttribute('href'))!);
+  expect(font.status()).toBe(200);
+  expect(font.headers()['content-type']).toContain('font/woff2');
+  // The preloaded file is the one the page's headings actually use.
+  await page.evaluate(() => document.fonts.ready);
+  expect(
+    await page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .filter((entry) => entry.name.endsWith('.woff2'))
+        .map((entry) => new URL(entry.name).pathname),
+    ),
+  ).toEqual([await preload.getAttribute('href')]);
+  expect(await page.content()).toContain('@view-transition');
+  expect(await (await request.get('/admin/login')).text()).not.toContain('@view-transition');
 });
 
 test('animations start automatically with reduced motion and old disabled preference', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // A choice stored by an older version of the site (under its demo name) must be ignored.
   await page.addInitScript(() => sessionStorage.setItem('lintas-scroll-motion', 'disabled'));
   await page.setViewportSize({ width: 1920, height: 917 });
   await ready(page);
@@ -159,7 +210,7 @@ test('animations start automatically with reduced motion and old disabled prefer
   expect((await position(page, '.service-tile')).opacity).toBe(1);
   await scroll(page, 0);
   expect((await position(page, '.service-tile')).opacity).toBe(1);
-  await page.screenshot({ path: 'docs/motion/automatic-desktop.png' });
+  await page.screenshot({ path: test.info().outputPath('automatic-desktop.png') });
 });
 
 test('no JavaScript keeps all pages visible; hash links and contact inputs remain usable', async ({
@@ -174,13 +225,13 @@ test('no JavaScript keeps all pages visible; hash links and contact inputs remai
     await expect(staticPage.locator('[data-motion-control], .pin-spacer')).toHaveCount(0);
     expect(
       await staticPage
-        .locator('[data-motion-item]')
+        .locator('main h2, .service-tile, .step')
         .evaluateAll((elements) => elements.every((el) => getComputedStyle(el).opacity === '1')),
     ).toBe(true);
   }
   await context.close();
-  await ready(page, '/#wingbox');
-  await expect(page.locator('#wingbox')).toBeInViewport();
+  await ready(page, '/#domestic-trucking');
+  await expect(page.locator('#domestic-trucking')).toBeInViewport();
   await ready(page, '/contact');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
@@ -200,30 +251,35 @@ test('no JavaScript keeps all pages visible; hash links and contact inputs remai
 
 test('empty, changing and oversized CMS content remains usable', async ({ page }) => {
   const db = new Database(process.env.DATABASE_PATH!);
-  const records = db.prepare('SELECT id, published, short_description FROM fleet').all() as {
+  const records = db
+    .prepare('SELECT id, published, short_description FROM services ORDER BY sort_order, id')
+    .all() as {
     id: number;
     published: number;
     short_description: string;
   }[];
   try {
-    db.prepare('UPDATE fleet SET published=0').run();
+    db.prepare('UPDATE services SET published=0').run();
     await ready(page);
-    await expect(page.locator('#armada [data-motion-item]')).toHaveCount(0);
+    await expect(page.locator('.services-grid .service-tile')).toHaveCount(0);
     for (const count of [1, 2, 3]) {
-      db.prepare('UPDATE fleet SET published=1 WHERE id=?').run(records[count - 1].id);
+      db.prepare('UPDATE services SET published=1 WHERE id=?').run(records[count - 1].id);
       await ready(page);
-      await expect(page.locator('#armada [data-motion-item]')).toHaveCount(count);
+      await expect(page.locator('.services-grid .service-tile')).toHaveCount(count);
     }
-    db.prepare('UPDATE fleet SET short_description=? WHERE id=?').run(
-      'Deskripsi armada panjang. '.repeat(120),
+    db.prepare('UPDATE services SET short_description=? WHERE id=?').run(
+      'Deskripsi layanan panjang. '.repeat(120),
       records[0].id,
     );
     await ready(page);
-    await page.locator('#armada .capacity a').first().click();
-    await expect(page).toHaveURL(/\/contact\?vehicle=/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+    await page.locator('.services-grid .service-tile a').first().click();
+    await expect(page).toHaveURL(/\/contact\?service=/);
   } finally {
     for (const row of records)
-      db.prepare('UPDATE fleet SET published=?, short_description=? WHERE id=?').run(
+      db.prepare('UPDATE services SET published=?, short_description=? WHERE id=?').run(
         row.published,
         row.short_description,
         row.id,

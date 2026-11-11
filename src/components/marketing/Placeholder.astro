@@ -1,0 +1,11 @@
+---
+import { Empty, EmptyHeader, EmptyTitle } from '../ui/empty';
+/** Shown where a list is empty on a page that always exists (Services). */
+const { text } = Astro.props as { text: string };
+---
+
+<Empty className="border md:p-8">
+  <EmptyHeader>
+    <EmptyTitle className="text-base">{text}</EmptyTitle>
+  </EmptyHeader>
+</Empty>

@@ -1,164 +1,235 @@
 ---
 import '../styles/global.css';
-import { ArrowUpRight, Menu } from 'lucide-react';
 import Brand from '../components/Brand.astro';
-import { getSettings } from '../lib/repository';
+import SiteHeader from '../components/site/SiteHeader';
+import { Separator } from '../components/ui/separator';
+import { getPublicContent, getPublicSettings, visibleSections } from '../lib/repository';
 import { origin } from '../lib/env';
+import { locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
+import { ui } from '../lib/copy';
+// Headings use this file on first paint; preloading it avoids a flash of the fallback font.
+import headingFont from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 interface Props {
   title: string;
   description: string;
+  /** Social sharing image. Defaults to the bundled port photo. */
+  image?: string;
+  /** Pages without a counterpart in the other language (the 404 page). */
+  noAlternates?: boolean;
 }
-const { title, description } = Astro.props;
-const s = getSettings();
-const pathname = Astro.url.pathname;
-const nav = [
-  ['/', 'Beranda'],
-  ['/about', 'Tentang Kami'],
-  ['/services', 'Layanan'],
-  ['/fleet', 'Armada'],
-  ['/coverage', 'Jangkauan'],
-  ['/projects', 'Proyek'],
-];
-const canonical = new URL(pathname, origin).href;
+const { title, description, image = '/images/genesis/og.jpg', noAlternates = false } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const path = noAlternates ? '/' : stripLocale(Astro.url.pathname).path;
+const href = (target: string) => localePath(locale, target);
+// Projects and Articles drop out of every menu while nothing is published there.
+const visible = visibleSections();
+const nav = (
+  [
+    ['/', t.nav.home],
+    ['/about', t.nav.about],
+    ['/services', t.nav.services],
+    ['/projects', t.nav.projects],
+    ['/articles', t.nav.articles],
+    ['/contact', t.nav.contact],
+  ] as const
+).filter(
+  ([target]) =>
+    (target !== '/projects' || visible.projects) && (target !== '/articles' || visible.articles),
+);
+const current = (target: string) =>
+  !noAlternates && (path === target || (target !== '/' && path.startsWith(`${target}/`)))
+    ? 'page'
+    : undefined;
+// The Services link in the header opens a panel with one entry per service.
+const servicesMenu = {
+  all: t.home.servicesAll,
+  items: getPublicContent('services', locale).map((service) => ({
+    href: `${href('/services')}#${service.slug}`,
+    title: service.title,
+    text: service.shortDescription,
+  })),
+};
+const absolute = (target: string) => new URL(target, origin).href;
+const canonical = absolute(localePath(locale, stripLocale(Astro.url.pathname).path));
+const languages: Record<Locale, { code: string; name: string }> = {
+  id: { code: 'ID', name: 'Bahasa Indonesia' },
+  en: { code: 'EN', name: 'English' },
+};
+// Each page is written in its own language, so the <html translate="no"> attribute and the
+// Google notranslate tag below stop browsers offering machine translation.
+const pageTitle = `${title} | ${s.companyName}`;
+const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
+// Footer contacts: only what is filled in under Settings appears, nothing marks a gap.
+const footerContacts = [
+  s.whatsapp && {
+    label: t.footer.whatsapp,
+    value: `+${s.whatsapp}`,
+    href: `https://wa.me/${s.whatsapp}`,
+  },
+  s.email && { label: t.footer.email, value: s.email, href: `mailto:${s.email}` },
+  s.phone && { label: t.footer.phone, value: s.phone, href: phoneHref },
+  s.instagram && { label: '', value: 'Instagram', href: s.instagram },
+  s.linkedin && { label: '', value: 'LinkedIn', href: s.linkedin },
+].filter((contact) => !!contact);
+// Direct contacts for the header, only the ones filled in under Settings.
+const contacts = [
+  s.whatsapp && {
+    kind: 'whatsapp' as const,
+    label: t.contact.whatsapp,
+    value: `+${s.whatsapp}`,
+    href: `https://wa.me/${s.whatsapp}`,
+  },
+  s.phone && { kind: 'phone' as const, label: t.contact.phone, value: s.phone, href: phoneHref },
+  s.email && {
+    kind: 'email' as const,
+    label: t.contact.email,
+    value: s.email,
+    href: `mailto:${s.email}`,
+  },
+].filter((contact) => !!contact);
 const structured = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: s.legalName,
   url: origin,
   description: s.shortDescription,
-  ...(s.logo ? { logo: new URL(s.logo, origin).href } : {}),
-  ...(!s.demoMode ? { telephone: s.phone, email: s.email, address: s.address } : {}),
+  ...(s.logo ? { logo: absolute(s.logo) } : {}),
+  ...(s.phone ? { telephone: s.phone } : {}),
+  ...(s.email ? { email: s.email } : {}),
+  ...(s.address ? { address: s.address } : {}),
 }).replaceAll('<', '\\u003c');
 ---
 
 <!doctype html>
-<html lang="id">
+<html lang={t.htmlLang} translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} | {s.companyName} Logistics</title>
+    <meta name="google" content="notranslate" />
+    <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noAlternates ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={canonical} />
+        {locales.map((code) => (
+          <link rel="alternate" hreflang={code} href={absolute(localePath(code, path))} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={absolute(localePath('id', path))} />
+      </>
+    )}
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={`${title} | ${s.companyName} Logistics`} />
+    <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content="id_ID" />
-    <meta property="og:image" content={new URL('/images/hero.jpg', origin).href} />
+    <meta property="og:locale" content={t.ogLocale} />
+    <meta property="og:image" content={absolute(image)} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#142b28" />
-    <link rel="icon" href={s.favicon || '/favicon.svg'} />
+    <meta name="theme-color" content="#0b2545" />
+    <link rel="preload" as="font" type="font/woff2" href={headingFont} crossorigin />
+    <link rel="icon" href={s.favicon || '/favicon.png'} />
     <script is:inline type="application/ld+json" set:html={structured}></script>
+    <slot name="head" />
+    <style is:global>
+      /* Moving between public pages cross-fades instead of flashing white, and the header
+         stays in place (.navbar has a view-transition-name). Browsers without cross-document
+         view transitions simply load the page. */
+      @view-transition {
+        navigation: auto;
+      }
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.2s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @view-transition {
+          navigation: none;
+        }
+      }
+    </style>
   </head>
   <body class="marketing">
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:z-50 focus:bg-white focus:p-4"
     >
-      Langsung ke konten
+      {t.skip}
     </a>
-    <div class="topbar">
-      <div class="wrap">
-        <span>INDONESIA, CONNECTED. &nbsp; / &nbsp; ROAD FREIGHT SOLUTIONS</span>
-        <span>
-          {s.email} &nbsp; · &nbsp; {s.phone}
-        </span>
-      </div>
-    </div>
-    <header class="navbar">
-      <div class="wrap nav-inner">
-        <Brand name={s.companyName} logo={s.logo} />
-        <nav class="desktop-nav" aria-label="Navigasi utama">
-          {nav.map(([href, label]) => (
-            <a href={href} aria-current={pathname === href ? 'page' : undefined}>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <a href="/contact" class="cta">
-          {s.ctaText}
-          <ArrowUpRight size={17} />
-        </a>
-        <details class="mobile-nav">
-          <summary aria-label="Buka navigasi">
-            <Menu size={26} />
-          </summary>
-          <nav aria-label="Navigasi seluler">
-            {[...nav, ['/contact', 'Hubungi Kami']].map(([href, label]) => (
-              <a href={href} aria-current={pathname === href ? 'page' : undefined}>
-                {label}
-              </a>
-            ))}
-          </nav>
-        </details>
-      </div>
-    </header>
+    <SiteHeader
+      client:idle
+      brand={{ name: s.companyName, logo: s.logo, href: href('/'), label: t.nav.brandHome }}
+      nav={nav.map(([target, label]) => ({
+        href: href(target),
+        label,
+        current: current(target) === 'page',
+        ...(target === '/services' ? { menu: servicesMenu } : {}),
+      }))}
+      languages={locales.map((code) => ({
+        ...languages[code],
+        locale: code,
+        href: localePath(code, path),
+        current: code === locale,
+      }))}
+      contacts={contacts}
+      cta={{ href: href('/contact'), label: s.ctaText }}
+      labels={{
+        main: t.nav.main,
+        open: t.nav.open,
+        close: t.nav.close,
+        mobile: t.nav.mobile,
+        language: t.nav.language,
+        contact: t.contact.infoHeading,
+      }}
+    />
     <main id="main" tabindex="-1">
       <slot />
     </main>
     <footer class="footer">
       <div class="wrap">
         <div class="footer-grid">
-          <div>
-            <Brand name={s.companyName} logo={s.logo} />
+          <div class="footer-about">
+            <Brand name={s.companyName} logo={s.logo} href={href('/')} label={t.nav.brandHome} />
             <p>{s.shortDescription}</p>
           </div>
           <div>
-            <h3>JELAJAHI</h3>
+            <h2>{t.footer.explore}</h2>
             <ul>
-              {nav.slice(1).map(([href, label]) => (
+              {nav.slice(1).map(([target, label]) => (
                 <li>
-                  <a href={href}>{label}</a>
+                  <a href={href(target)}>{label}</a>
                 </li>
               ))}
             </ul>
           </div>
-          <div>
-            <h3>TERHUBUNG</h3>
-            <ul>
-              <li>
-                <a href="/contact">Minta penawaran</a>
-              </li>
-              <li>
-                <a href={`mailto:${s.email}`}>Email kami</a>
-              </li>
-              <li>
-                <a href={`https://wa.me/${s.whatsapp}`}>WhatsApp</a>
-              </li>
-              {s.instagram && (
-                <li>
-                  <a href={s.instagram} rel="noopener noreferrer">
-                    Instagram
-                  </a>
-                </li>
-              )}
-              {s.linkedin && (
-                <li>
-                  <a href={s.linkedin} rel="noopener noreferrer">
-                    LinkedIn
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
-          <div>
-            <h3>KANTOR KAMI</h3>
-            <p style="margin-top:0;white-space:pre-line">{s.address}</p>
-            <p>
-              <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>
-            </p>
-          </div>
+          {footerContacts.length > 0 && (
+            <div>
+              <h2>{t.footer.contact}</h2>
+              <ul class="footer-contact">
+                {footerContacts.map((contact) => (
+                  <li>
+                    {contact.label && <span>{contact.label}</span>}
+                    <a href={contact.href} rel="noopener noreferrer">
+                      {contact.value}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {s.address && (
+            <div>
+              <h2>{t.footer.office}</h2>
+              <p class="footer-address">{s.address}</p>
+            </div>
+          )}
         </div>
+        <Separator className="mt-14" />
         <div class="footer-bottom">
-          <span>
-            © {new Date().getFullYear()} {s.legalName}.
-          </span>
-          <span>
-            {s.demoMode
-              ? 'Website demo · profil, proyek, dan klien adalah ilustrasi.'
-              : 'Menghubungkan bisnis. Menggerakkan Indonesia.'}
-          </span>
-          <a href="/admin/login">Admin ↗</a>
+          <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
+          <span>{s.tagline}</span>
         </div>
       </div>
     </footer>

@@ -1,0 +1,39 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import CTA from '../components/marketing/CTA.astro';
+import ProjectLedger from '../components/marketing/ProjectLedger.astro';
+import ClientList from '../components/marketing/ClientList.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { fill, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const projects = getPublicContent('projects', locale);
+const clients = getPublicContent('clients', locale);
+---
+
+<PublicLayout
+  title={t.projects.title}
+  description={fill(t.projects.description, { name: s.legalName })}
+>
+  <PageHero label={t.nav.projects} title={t.projects.h1} description={t.projects.intro} />
+  {projects.length > 0 && (
+    <section class="section">
+      <div class="wrap">
+        <h2 class="mb-10">{t.projects.projectsHeading}</h2>
+        <ProjectLedger items={projects} />
+      </div>
+    </section>
+  )}
+  {clients.length > 0 && (
+    <section class="section tint">
+      <div class="wrap">
+        <h2 class="mb-8">{t.projects.clientsHeading}</h2>
+        <ClientList items={clients} />
+      </div>
+    </section>
+  )}
+  <CTA text={s.ctaText} />
+</PublicLayout>

@@ -1,0 +1,40 @@
+---
+import DateMark from './DateMark.astro';
+import type { ContentRecord } from '../../lib/content-config';
+import { localePath, toLocale } from '../../i18n';
+import { responsive } from '../../lib/images';
+/**
+ * Articles as an index: one ruled row each, the date marking on the left, title and summary in
+ * the middle, a small photo on the right. The title is the link; the whole row answers clicks.
+ */
+const { items } = Astro.props as { items: ContentRecord[] };
+const locale = toLocale(Astro.currentLocale);
+---
+
+<ol class="article-index">
+  {items.map((item) => (
+    <li class="article-row">
+      <DateMark date={item.createdAt} />
+      <div class="article-row-copy">
+        <h3>
+          <a class="article-row-link" href={localePath(locale, `/articles/${item.slug}`)}>
+            {item.title}
+          </a>
+        </h3>
+        {item.shortDescription && <p>{item.shortDescription}</p>}
+      </div>
+      {item.image && (
+        <div class="article-row-photo" aria-hidden="true">
+          <img
+            class="photo"
+            {...responsive(item.image, '(max-width: 767px) 96px, 200px')}
+            alt=""
+            width="640"
+            height="480"
+            loading="lazy"
+          />
+        </div>
+      )}
+    </li>
+  ))}
+</ol>

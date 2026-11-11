@@ -1,0 +1,17 @@
+---
+import ScaleDrawing from './ScaleDrawing.astro';
+import { toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
+const t = ui(toLocale(Astro.currentLocale)).container;
+---
+
+<section class="section dark-section dark" id="container">
+  <div class="wrap container-scale">
+    <div>
+      <h2>{t.heading}</h2>
+      <p class="mt-5 max-w-[48ch] text-muted-foreground">{t.text}</p>
+      <p class="mt-4 max-w-[48ch] text-sm text-muted-foreground">{t.note}</p>
+    </div>
+    <ScaleDrawing />
+  </div>
+</section>

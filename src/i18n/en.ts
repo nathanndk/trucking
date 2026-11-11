@@ -1,0 +1,259 @@
+import type { Dictionary } from './id';
+/** English interface text. Keep the same shape as `id.ts`. */
+export const en: Dictionary = {
+  htmlLang: 'en',
+  ogLocale: 'en_US',
+  dateLocale: 'en-GB',
+  skip: 'Skip to content',
+  nav: {
+    home: 'Home',
+    about: 'About',
+    services: 'Services',
+    projects: 'Projects',
+    articles: 'Articles',
+    contact: 'Contact',
+    main: 'Main navigation',
+    open: 'Open navigation',
+    close: 'Close navigation',
+    mobile: 'Mobile navigation',
+    language: 'Language',
+    brandHome: 'Home',
+  },
+  footer: {
+    explore: 'Explore',
+    contact: 'Contact',
+    office: 'Office',
+    whatsapp: 'WhatsApp',
+    email: 'Email',
+    phone: 'Phone',
+  },
+  cta: {
+    heading: 'Have a container to move?',
+    text: 'Send us your shipment details. We will prepare a quote.',
+  },
+  route: {
+    stops: [
+      { title: 'Factory or warehouse', text: 'The container is loaded at your site.' },
+      { title: 'Container truck', text: '20 or 40-foot, matched to your cargo.' },
+      { title: 'Customs', text: 'We assist with documents and clearance.' },
+      { title: 'Tanjung Priok', text: 'The container arrives at the port.' },
+    ],
+  },
+  container: {
+    heading: 'Two container sizes, drawn to scale.',
+    text: 'A 40-foot container is twice as long as a 20-foot one, with the same width and height. Choose a size to start a quote request.',
+    note: 'Standard ISO external dimensions: 2.44 m wide and 2.59 m high for both sizes. Internal size and payload depend on the container type.',
+    sizes: {
+      '20ft': {
+        name: '20-foot',
+        length: '6.06 m',
+        action: 'Request a quote for a 20-foot container',
+      },
+      '40ft': {
+        name: '40-foot',
+        length: '12.19 m',
+        action: 'Request a quote for a 40-foot container',
+      },
+    },
+    lengthLabel: 'Length',
+  },
+  strengths: {
+    heading: 'What you get',
+    items: [
+      {
+        title: '20 and 40-foot containers',
+        text: 'Choose the size that fits your cargo volume.',
+      },
+      {
+        title: 'Straight from factory to port',
+        text: 'Goods are carried from your site to Tanjung Priok.',
+      },
+      {
+        title: 'Customs paperwork assistance',
+        text: 'We help with documents and the customs clearance process.',
+      },
+      {
+        title: 'One point of coordination',
+        text: 'Transport and shipping are arranged in a single flow.',
+      },
+      {
+        title: 'Safe and on time',
+        text: 'Cargo safety, efficiency and punctual delivery come first.',
+      },
+    ],
+  },
+  area: {
+    heading: 'Operating in Jakarta, centred on Tanjung Priok.',
+    main: 'Main area',
+    mainValue: 'Greater Jakarta',
+    port: 'Main port',
+    portValue: 'Tanjung Priok, Jakarta',
+  },
+  home: {
+    title: 'Container Trucking to Tanjung Priok',
+    h1: 'From your factory to Tanjung Priok, we deliver your containers.',
+    heroAlt: 'Aerial view of a container ship berthed at a port terminal',
+    servicesLink: 'View services',
+    aboutHeading: 'A container trucking partner for factories and exporters.',
+    aboutAlt: 'The team checking shipping documents in a warehouse',
+    aboutLink: 'Company profile',
+    servicesHeading: 'Five services, one shipping flow.',
+    servicesAll: 'All services',
+    projectsHeading: 'Projects and clients',
+    projectsLink: 'View projects',
+    articlesHeading: 'Latest articles',
+    articlesLink: 'All articles',
+  },
+  quick: {
+    heading: 'Start a quote',
+    service: 'Service',
+    container: 'Container type',
+    containerPlaceholder: 'Choose a size',
+    submit: 'Continue to the form',
+  },
+  faq: {
+    heading: 'Common questions',
+    items: [
+      {
+        question: 'Which services do you offer?',
+        answer:
+          '20 and 40-foot container transport, domestic trucking, factory-to-port haulage, customs clearance assistance, and shipment coordination.',
+      },
+      {
+        question: 'Which container sizes do you carry?',
+        answer: '20-foot and 40-foot containers. Choose the size that fits your cargo volume.',
+      },
+      {
+        question: 'Where do you operate?',
+        answer: 'Jakarta and the surrounding area, with Tanjung Priok as the main port.',
+      },
+      {
+        question: 'Do you help with customs documents?',
+        answer: 'Yes. We assist with the documents and the customs clearance process.',
+      },
+      {
+        question: 'Can you collect cargo straight from the factory?',
+        answer: 'Yes. Cargo is carried from your factory or warehouse to Tanjung Priok.',
+      },
+      {
+        question: 'How do I request a quote?',
+        answer:
+          'Fill in the quote form with the service, origin, destination and container type. Our team contacts you by WhatsApp or email.',
+      },
+    ],
+  },
+  about: {
+    title: 'About Us',
+    description:
+      'Profile, vision and mission of {name}, a container trucking and logistics company.',
+    h1: 'A container trucking and logistics company in Jakarta.',
+    profileHeading: 'Company profile',
+    imageAlt: 'A team reviewing documents on site',
+    vision: 'Vision',
+    mission: 'Mission',
+    factsHeading: 'Company details',
+    legalName: 'Company name',
+    established: 'Established',
+    credentials: 'Legal credentials',
+  },
+  services: {
+    title: 'Services',
+    description:
+      '20 and 40-foot container transport, domestic trucking, factory-to-port haulage, customs clearance assistance and shipping coordination.',
+    h1: 'Container transport, trucking and customs assistance.',
+    intro:
+      'Five connected services, from pickup at your factory to the container arriving at the port.',
+    quote: 'Request a quote for this service',
+    quoteShort: 'Request a quote',
+    empty: 'Our service list is being updated.',
+    stepsHeading: 'How to order',
+    steps: [
+      {
+        title: 'Send your shipment details',
+        text: 'Fill in the quote form: service, origin, destination and container type.',
+      },
+      {
+        title: 'Receive a quote',
+        text: 'Our team contacts you by WhatsApp or email.',
+      },
+      {
+        title: 'Your container is moved',
+        text: 'Once the schedule is agreed, the goods are carried to their destination.',
+      },
+    ],
+  },
+  projects: {
+    title: 'Projects and Clients',
+    description: 'Shipping experience of {name} and the companies we work with.',
+    h1: 'Our projects and clients.',
+    intro: 'Our shipping experience and the companies we work with.',
+    projectsHeading: 'Projects',
+    clientsHeading: 'Clients and partners',
+    imageAlt: 'Photo of the project {title}',
+  },
+  articles: {
+    title: 'Articles and News',
+    description: 'News from {name} and practical information about container shipping.',
+    h1: 'Company articles and news.',
+    intro: 'Recent news and practical information about container shipping.',
+    back: 'All articles',
+    more: 'More articles',
+  },
+  contact: {
+    title: 'Contact and Quotes',
+    description:
+      'Request a container trucking quote: send the service you need, origin, destination and container type.',
+    h1: 'Request a shipping quote.',
+    intro: 'Fill in your shipment details. We will get back to you with a quote.',
+    infoHeading: 'Contact us directly',
+    phone: 'Phone',
+    whatsapp: 'WhatsApp',
+    email: 'Email',
+    office: 'Office',
+    maps: 'View on Google Maps',
+    whatsappCta: 'Chat on WhatsApp',
+    formHeading: 'Quote form',
+    required: 'Fields marked * are required.',
+    shipmentHeading: 'Shipment details',
+    detailsHeading: 'Your details',
+    fullName: 'Full name',
+    company: 'Company name',
+    phoneField: 'WhatsApp number',
+    emailField: 'Email',
+    serviceType: 'Service needed',
+    servicePlaceholder: 'Choose a service',
+    pickup: 'Shipment origin',
+    destination: 'Shipment destination',
+    containerType: 'Container type',
+    message: 'Message or details (optional)',
+    messagePlaceholder: 'Number of containers, schedule, type of goods…',
+    privacy:
+      'Your details are used to respond to this request and are only visible to company administrators.',
+    submit: 'Send request',
+    successTitle: 'Thank you. Your request has been sent.',
+    successText: 'Our team will contact you using the details you provided.',
+    errors: {
+      invalid: 'Please check the form. All fields marked * must be filled in correctly.',
+      BAD_REQUEST: 'This form has expired. Your details are still here; send it again now.',
+      TOO_MANY_REQUESTS: 'Too many requests. Please try again in an hour.',
+      CONFLICT: 'This form was already sent. Reload the page for a new request.',
+      generic: 'Your request was not sent. Please try again.',
+    },
+  },
+  notFound: {
+    title: 'Page Not Found',
+    description: 'The page you are looking for is not available.',
+    h1: 'This page does not exist.',
+    text: 'The address may have changed or been mistyped.',
+    back: 'Back to home',
+  },
+  mail: {
+    subject: 'We have received your quote request',
+    greeting: 'Hello {name},',
+    intro:
+      'Thank you for contacting {company}. We have received your quote request with these details:',
+    outro:
+      'Our team will contact you by WhatsApp or email with the quote. If you would like to add anything, simply reply to this email.',
+    signature: 'Kind regards,\n{company}',
+  },
+};

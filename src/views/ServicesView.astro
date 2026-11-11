@@ -1,0 +1,113 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ContainerScale from '../components/marketing/ContainerScale.astro';
+import Placeholder from '../components/marketing/Placeholder.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { buttonVariants } from '../components/ui/button';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { cn } from '../lib/utils';
+import { responsive } from '../lib/images';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const items = getPublicContent('services', locale);
+// Services read as a catalogue: the names stay in view on the left and mark the one being
+// read; each service is a row with its photo, full description and quote link.
+---
+
+<PublicLayout title={t.services.title} description={t.services.description}>
+  <PageHero label={t.nav.services} title={t.services.h1} description={t.services.intro} />
+  <section class="section">
+    <div class="wrap">
+      {items.length > 0 ? (
+        <div class="catalogue">
+          <nav class="catalogue-nav" aria-label={t.nav.services}>
+            <ul>
+              {items.map((item) => (
+                <li>
+                  <a href={`#${item.slug}`}>{item.title}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div class="catalogue-list">
+            {items.map((item) => (
+              <article class="service-tile catalogue-item" id={item.slug}>
+                <div class="catalogue-photo">
+                  {item.image && (
+                    <img
+                      class="photo"
+                      {...responsive(item.image, '(max-width: 1023px) 100vw, 360px')}
+                      alt=""
+                      width="1280"
+                      height="960"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+                <div class="catalogue-copy">
+                  <h2>{item.title}</h2>
+                  <p>{item.description || item.shortDescription}</p>
+                  <a
+                    class={cn(buttonVariants({ variant: 'outline' }), 'mt-6')}
+                    href={`${localePath(locale, '/contact')}?service=${item.slug}`}
+                  >
+                    {t.services.quote}
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Placeholder text={t.services.empty} />
+      )}
+    </div>
+  </section>
+  <ContainerScale />
+  <section class="section">
+    <div class="wrap">
+      <h2 class="mb-12">{t.services.stepsHeading}</h2>
+      {/* Ordering is a real sequence, so its stops are numbered and joined by a line. */}
+      <ol class="steps">
+        {t.services.steps.map((step, i) => (
+          <li class="step">
+            <span class="step-num" aria-hidden="true">
+              {i + 1}
+            </span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>
+
+<script>
+  // Mark the service being read in the catalogue list: the last one whose top has passed 40%
+  // of the screen. Nothing is marked above the first one. Without JavaScript, plain links.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('.catalogue-nav a')];
+  const targets = links.map((link) => document.getElementById(link.hash.slice(1)));
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const line = innerHeight * 0.4;
+    let current = -1;
+    targets.forEach((target, i) => {
+      if (target && target.getBoundingClientRect().top <= line) current = i;
+    });
+    links.forEach((link, i) => {
+      if (i === current) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  };
+  if (links.length > 0) {
+    addEventListener('scroll', () => (frame ||= requestAnimationFrame(update)), { passive: true });
+    update();
+  }
+</script>

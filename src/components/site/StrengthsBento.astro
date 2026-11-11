@@ -1,0 +1,145 @@
+---
+import { FileCheck2, ShieldCheck } from 'lucide-react';
+import ScaleDrawing from '../marketing/ScaleDrawing.astro';
+import CoordinationBeam from './CoordinationBeam';
+import StatTicker from './StatTicker';
+import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '../ui/item';
+import { cn } from '../../lib/utils';
+/**
+ * The five strengths on the home page. Each card draws what it promises, and none repeats
+ * another home section: the containers at true scale (the page's signature, on navy), the
+ * route from site to port, the customs paperwork, every stop wired to Genesis, and the
+ * company's own figures. The route and both container sizes live here and nowhere else on Home.
+ */
+interface Props {
+  /** The five strengths, in the order of the dictionary. */
+  items: { title: string; text: string }[];
+  /** The four shipping stops, in route order. */
+  route: { title: string; text: string }[];
+  /** Company figures from Settings; the first two are shown, none means an icon instead. */
+  statistics: { value: string; label: string }[];
+  /** Square company mark for the middle of the coordination drawing. */
+  mark: string;
+  name: string;
+  /** BCP 47 locale for the figures, e.g. "id-ID". */
+  numberLocale: string;
+}
+const { items, route, statistics, mark, name, numberLocale } = Astro.props;
+const stats = statistics.slice(0, 2);
+// Desktop: a six-column grid, 4 + 2 on the first row and 2 + 2 + 2 on the second.
+const spans = [
+  'md:col-span-2 lg:col-span-4',
+  'lg:col-span-2',
+  'lg:col-span-2',
+  'lg:col-span-2',
+  'lg:col-span-2',
+];
+const panel = 'flex flex-1 items-center rounded-md bg-muted p-5';
+---
+
+<div class="grid gap-5 md:grid-cols-2 lg:grid-cols-6">
+  {items.slice(0, 5).map((item, i) => (
+    <Card className={cn('gap-0 py-0', spans[i], i === 0 && 'dark')}>
+      <div class="flex flex-1 flex-col p-5 pb-0">
+        {i === 0 && (
+          <div class="flex flex-1 items-center px-1 py-4 sm:px-3">
+            <div class="w-full">
+              <ScaleDrawing />
+            </div>
+          </div>
+        )}
+        {i === 1 && (
+          <div class={panel}>
+            <ItemGroup className="relative gap-3">
+              <span
+                class="absolute top-4 bottom-4 left-4 w-0.5 -translate-x-1/2 bg-border"
+                aria-hidden="true"
+              />
+              {route.map((stop, n) => (
+                <Item role="listitem" className="flex-nowrap items-start gap-3 p-0">
+                  <ItemMedia
+                    variant="icon"
+                    className={cn(
+                      'relative size-8 rounded-full border-2 border-foreground bg-card text-sm font-bold tabular-nums',
+                      n === route.length - 1 && 'border-primary bg-primary text-primary-foreground',
+                    )}
+                  >
+                    {n + 1}
+                  </ItemMedia>
+                  <ItemContent className="gap-0.5">
+                    <ItemTitle className="text-[15px] font-semibold">{stop.title}</ItemTitle>
+                    <ItemDescription className="line-clamp-none text-sm">
+                      {stop.text}
+                    </ItemDescription>
+                  </ItemContent>
+                </Item>
+              ))}
+            </ItemGroup>
+          </div>
+        )}
+        {i === 2 && (
+          <div class={cn(panel, 'justify-center max-sm:hidden')} aria-hidden="true">
+            <div class="relative h-36 w-36">
+              <div class="absolute inset-x-3 top-1 h-32 -rotate-6 rounded-md border bg-card" />
+              <div class="absolute inset-x-3 top-1 h-32 rotate-3 rounded-md border bg-card" />
+              <div class="absolute inset-x-3 top-1 flex h-32 flex-col gap-2.5 rounded-md border bg-card p-4 shadow-sm">
+                <span class="h-2 w-3/5 rounded-full bg-foreground/70" />
+                <span class="h-1.5 w-full rounded-full bg-muted-foreground/25" />
+                <span class="h-1.5 w-11/12 rounded-full bg-muted-foreground/25" />
+                <span class="h-1.5 w-4/5 rounded-full bg-muted-foreground/25" />
+                <span class="h-1.5 w-2/3 rounded-full bg-muted-foreground/25" />
+              </div>
+              <span class="absolute right-0 bottom-0 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-4 ring-muted">
+                <FileCheck2 className="size-6" strokeWidth={1.75} />
+              </span>
+            </div>
+          </div>
+        )}
+        {i === 3 && (
+          <div class={cn(panel, 'px-4')}>
+            <CoordinationBeam
+              client:visible
+              stops={route.map((stop) => stop.title)}
+              mark={mark}
+              name={name}
+            />
+          </div>
+        )}
+        {i === 4 && (
+          <div class={panel}>
+            {stats.length > 0 ? (
+              <dl class="grid w-full grid-cols-2 gap-4">
+                {stats.map((stat) => (
+                  <div class="flex flex-col-reverse justify-end gap-1">
+                    <dt class="text-sm text-muted-foreground">{stat.label}</dt>
+                    <dd class="text-4xl leading-none font-bold tracking-tight">
+                      <StatTicker
+                        client:visible={{ rootMargin: '200px' }}
+                        value={stat.value}
+                        locale={numberLocale}
+                      />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <span
+                class="mx-auto flex size-16 items-center justify-center rounded-full bg-card text-primary shadow-sm"
+                aria-hidden="true"
+              >
+                <ShieldCheck className="size-8" strokeWidth={1.5} />
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <CardHeader className="gap-2 py-5">
+        <CardTitle>
+          <h3>{item.title}</h3>
+        </CardTitle>
+        <CardDescription className="text-[15px]">{item.text}</CardDescription>
+      </CardHeader>
+    </Card>
+  ))}
+</div>

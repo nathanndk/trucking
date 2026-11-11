@@ -1,0 +1,26 @@
+---
+import type { ContentRecord } from '../../lib/content-config';
+/** Clients set as type, a hairline above each; a logo when the company has one. */
+const { items } = Astro.props as { items: ContentRecord[] };
+---
+
+<ul class="client-list">
+  {items.map((client) => {
+    const mark = client.image ? (
+      <img src={client.image} alt={client.title} width="240" height="80" loading="lazy" />
+    ) : (
+      client.title
+    );
+    return (
+      <li>
+        {client.website ? (
+          <a href={client.website} rel="noopener noreferrer">
+            {mark}
+          </a>
+        ) : (
+          mark
+        )}
+      </li>
+    );
+  })}
+</ul>

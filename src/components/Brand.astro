@@ -1,23 +1,20 @@
 ---
-import { ArrowUpRight } from 'lucide-react';
 interface Props {
-  name?: string;
+  name: string;
   logo?: string;
   href?: string;
+  /** Accessible name of the link target, e.g. "Beranda". */
+  label?: string;
 }
-const { name = 'LINTAS', logo, href = '/' } = Astro.props;
+const { name, logo, href = '/', label = 'Home' } = Astro.props;
 ---
 
-<a href={href} class="brand" aria-label={`${name} — Beranda`}>
+<a href={href} class="brand" aria-label={`${name}, ${label}`}>
   {logo ? (
-    <img src={logo} alt="" width="42" height="42" />
+    // Width and height give the browser the logo's proportions before it loads (the CSS
+    // sets the height), so nothing shifts; they match the bundled 585×192 logo.
+    <img class="brand-logo" src={logo} alt="" width="585" height="192" />
   ) : (
-    <span class="brand-icon">
-      <ArrowUpRight size={30} strokeWidth={3} />
-    </span>
-  )}
-  <span>
     <span class="brand-word">{name}</span>
-    <small>LOGISTICS & TRANSPORT</small>
-  </span>
+  )}
 </a>

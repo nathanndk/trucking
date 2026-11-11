@@ -1,33 +1,54 @@
 ---
-import { Truck, Package, Warehouse, Container, Route, Handshake } from 'lucide-react';
+import { buttonVariants } from '../ui/button';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import Placeholder from './Placeholder.astro';
 import type { ContentRecord } from '../../lib/content-config';
-const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
-const icons: Record<string, typeof Truck> = {
-  Truck,
-  Package,
-  Warehouse,
-  Container,
-  Route,
-  Handshake,
-};
+import { cn } from '../../lib/utils';
+import { responsive } from '../../lib/images';
+import { localePath, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
+const { items } = Astro.props as { items: ContentRecord[] };
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
 ---
 
-<div class="services-grid" data-motion="group">
-  {items.map((item, i) => {
-    const Icon = icons[item.icon || 'Truck'] || Truck;
-    return (
-      <article class="service-tile" data-motion-item id={item.slug}>
-        <span class="tile-num">{String(i + 1).padStart(2, '0')}</span>
-        <Icon />
-        <h3>{item.title}</h3>
-        <p>{full ? item.description : item.shortDescription}</p>
-        {full && (
-          <a href="/contact" class="text-link" style="margin-top:24px;color:#c9f36a">
-            Diskusikan kebutuhan Anda <span aria-hidden="true">↗</span>
-          </a>
+<div class="services-grid">
+  {items.map((item) => (
+    <Card
+      className="service-tile gap-4 overflow-hidden pt-0 max-sm:grid max-sm:grid-cols-[88px_minmax(0,1fr)] max-sm:items-start max-sm:gap-x-4 max-sm:gap-y-2 max-sm:p-4"
+      id={item.slug}
+    >
+      {/* On phones each service is a compact row: a small square photo beside the text. */}
+      <div class="tile-photo aspect-[16/10] overflow-hidden bg-muted max-sm:row-span-2 max-sm:aspect-square max-sm:rounded-md">
+        {item.image && (
+          <img
+            class="photo"
+            {...responsive(item.image, '(max-width: 639px) 88px, (max-width: 1023px) 50vw, 400px')}
+            alt=""
+            width="1280"
+            height="800"
+            loading="lazy"
+          />
         )}
-      </article>
-    );
-  })}
+      </div>
+      <CardHeader className="max-sm:gap-1 max-sm:px-0">
+        <CardTitle>
+          <h3>{item.title}</h3>
+        </CardTitle>
+        <CardDescription className="text-[15px] whitespace-pre-line">
+          {item.shortDescription}
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="mt-auto max-sm:col-start-2 max-sm:px-0">
+        <a
+          class={cn(buttonVariants({ variant: 'link' }), 'h-auto p-0')}
+          href={`${localePath(locale, '/contact')}?service=${item.slug}`}
+          aria-label={`${t.services.quoteShort}: ${item.title}`}
+        >
+          {t.services.quoteShort}
+        </a>
+      </CardFooter>
+    </Card>
+  ))}
 </div>
-{items.length === 0 && <p>Layanan sedang diperbarui. Hubungi tim kami untuk informasi.</p>}
+{items.length === 0 && <Placeholder text={t.services.empty} />}

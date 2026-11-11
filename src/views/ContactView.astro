@@ -1,0 +1,175 @@
+---
+import { actions, isInputError } from 'astro:actions';
+import type { ActionError } from 'astro:actions';
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import QuoteForm from '../components/site/QuoteForm';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { buttonVariants } from '../components/ui/button';
+import { cn } from '../lib/utils';
+import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { formToken } from '../lib/spam';
+import type { QuoteValues } from '../lib/quote-refill';
+import { containerTypes } from '../lib/validation';
+import { toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+interface Props {
+  /** Error from a submitted quote, passed down by the route file. */
+  error?: ActionError;
+  /** What the visitor sent when the server refused it, to fill the form in again. */
+  submitted?: QuoteValues;
+}
+const { error, submitted = {} } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const c = t.contact;
+const s = getPublicSettings(locale);
+const services = getPublicContent('services', locale);
+const success = Astro.url.searchParams.get('sent') === '1';
+const errorText = !error
+  ? ''
+  : isInputError(error)
+    ? c.errors.invalid
+    : (c.errors[error.code as keyof typeof c.errors] ?? c.errors.generic);
+// WhatsApp is the quickest way to reach the team, so it gets its own button; the other
+// channels follow as a list. Channels not filled in are left out.
+const whatsappHref = s.whatsapp && `https://wa.me/${s.whatsapp}`;
+const contacts = [
+  {
+    label: c.whatsapp,
+    value: s.whatsapp && `+${s.whatsapp}`,
+    href: whatsappHref,
+    Icon: MessageCircle,
+  },
+  {
+    label: c.phone,
+    value: s.phone,
+    href: s.phone && `tel:${s.phone.replace(/[^+\d]/g, '')}`,
+    Icon: Phone,
+  },
+  { label: c.email, value: s.email, href: s.email && `mailto:${s.email}`, Icon: Mail },
+  { label: c.office, value: s.address, href: '', Icon: MapPin },
+  // Channels not filled in under Settings are left out; WhatsApp has its own button.
+].filter((contact) => contact.value && !(contact.Icon === MessageCircle && whatsappHref));
+---
+
+<PublicLayout title={c.title} description={c.description}>
+  <PageHero label={t.nav.contact} title={c.h1} description={c.intro} />
+  <section class="section">
+    <div class="wrap">
+      {success && (
+        <Alert role="status" className="contact-notice">
+          <AlertTitle>{c.successTitle}</AlertTitle>
+          <AlertDescription>{c.successText}</AlertDescription>
+        </Alert>
+      )}
+      {errorText && (
+        <Alert variant="destructive" className="contact-notice">
+          <AlertDescription>{errorText}</AlertDescription>
+        </Alert>
+      )}
+      <div class="contact-layout">
+        <aside class="contact-direct">
+          <h2>{c.infoHeading}</h2>
+          {whatsappHref && (
+            <div class="contact-whatsapp">
+              <a
+                class={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'w-full')}
+                href={whatsappHref}
+                rel="noopener noreferrer"
+              >
+                <MessageCircle data-icon="inline-start" />
+                {c.whatsappCta}
+              </a>
+              <p>+{s.whatsapp}</p>
+            </div>
+          )}
+          <ul class="contact-channels">
+            {contacts.map(({ label, value, href, Icon }) => (
+              <li>
+                <Icon aria-hidden="true" />
+                <div>
+                  <p class="contact-channel-label">{label}</p>
+                  {href ? (
+                    <a href={href} rel="noopener noreferrer">
+                      {value}
+                    </a>
+                  ) : (
+                    <p class="contact-channel-value">{value}</p>
+                  )}
+                  {label === c.office && s.mapsUrl && (
+                    <a class="contact-map" href={s.mapsUrl} rel="noopener noreferrer">
+                      {c.maps}
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </aside>
+        <Card className="contact-form" id="form">
+          <CardHeader>
+            <CardTitle>
+              <h2 class="text-2xl">{c.formHeading}</h2>
+            </CardTitle>
+            <CardDescription>{c.required}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <QuoteForm
+              client:load
+              action={actions.quote.toString()}
+              token={formToken()}
+              services={services.map(({ slug, title }) => ({ slug, title }))}
+              containers={containerTypes.map((value) => ({
+                value,
+                name: t.container.sizes[value].name,
+                detail: `${t.container.lengthLabel} ${t.container.sizes[value].length}`,
+              }))}
+              selectedService={submitted.serviceType || Astro.url.searchParams.get('service') || ''}
+              selectedContainer={
+                submitted.containerType || Astro.url.searchParams.get('container') || ''
+              }
+              values={submitted}
+              labels={{
+                fullName: c.fullName,
+                company: c.company,
+                phoneField: c.phoneField,
+                emailField: c.emailField,
+                serviceType: c.serviceType,
+                servicePlaceholder: c.servicePlaceholder,
+                pickup: c.pickup,
+                destination: c.destination,
+                containerType: c.containerType,
+                message: c.message,
+                messagePlaceholder: c.messagePlaceholder,
+                privacy: c.privacy,
+                submit: c.submit,
+                shipmentHeading: c.shipmentHeading,
+                detailsHeading: c.detailsHeading,
+              }}
+            />
+          </CardContent>
+        </Card>
+        {/* What happens after sending, so nobody wonders whether the request arrived. */}
+        <div class="contact-next">
+          <h2>{t.services.stepsHeading}</h2>
+          <ol>
+            {t.services.steps.map((step, i) => (
+              <li>
+                <span class="contact-next-num" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <div>
+                  <p class="contact-next-title">{step.title}</p>
+                  <p class="contact-next-text">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</PublicLayout>

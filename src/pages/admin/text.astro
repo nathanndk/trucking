@@ -1,0 +1,14 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import CopyManager from '../../components/admin/CopyManager';
+import { defaults, flattenText } from '../../i18n';
+import { savedCopy } from '../../lib/copy';
+const base = { id: flattenText(defaults('id')), en: flattenText(defaults('en')) };
+---
+
+<AdminLayout
+  title="Page text"
+  description="Change the wording of every section of the website, in Indonesian and English."
+>
+  <CopyManager base={base} saved={savedCopy()} client:load />
+</AdminLayout>

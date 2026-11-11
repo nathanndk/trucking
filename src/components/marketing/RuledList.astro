@@ -1,0 +1,36 @@
+---
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from '../ui/item';
+/** A separated list of title + text rows, used for strengths, missions and company facts. */
+interface Props {
+  rows: { title?: string; text?: string; label?: string }[];
+}
+const { rows } = Astro.props;
+---
+
+<ItemGroup>
+  {rows.map((row, i) => (
+    <>
+      {i > 0 && <ItemSeparator />}
+      <Item role="listitem" className="px-0">
+        <ItemContent>
+          {row.label && <ItemDescription className="line-clamp-none">{row.label}</ItemDescription>}
+          {row.title && (
+            <ItemTitle className="text-base font-semibold whitespace-pre-line">
+              {row.title}
+            </ItemTitle>
+          )}
+          {row.text && (
+            <ItemDescription className="line-clamp-none text-[15px]">{row.text}</ItemDescription>
+          )}
+        </ItemContent>
+      </Item>
+    </>
+  ))}
+</ItemGroup>

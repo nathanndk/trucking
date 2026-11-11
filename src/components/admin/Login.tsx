@@ -1,9 +1,10 @@
 import { useState, type SubmitEvent } from 'react';
-import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, CircleAlert, Eye, EyeOff } from 'lucide-react';
 import { createAuthClient } from 'better-auth/react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 const authClient = createAuthClient();
 export default function Login() {
   const [busy, setBusy] = useState(false);
@@ -34,54 +35,59 @@ export default function Login() {
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-6">
-      {error && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      <div className="space-y-2">
-        <Label htmlFor="email">Email address</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          required
-          placeholder="you@company.co.id"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
+    // method="post": if the script has not loaded yet, a submit must never put the
+    // password in the address bar (the browser default for a form is GET).
+    <form onSubmit={submit} method="post">
+      <FieldGroup>
+        {error && (
+          <Alert variant="destructive">
+            <CircleAlert />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <Field>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
           <Input
-            id="password"
-            name="password"
-            type={show ? 'text' : 'password'}
-            autoComplete="current-password"
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="username"
             required
-            className="pr-12"
+            placeholder="you@company.co.id"
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-0 top-0"
-            aria-label={show ? 'Hide password' : 'Show password'}
-            onClick={() => setShow(!show)}
-          >
-            {show ? <EyeOff /> : <Eye />}
-          </Button>
-        </div>
-      </div>
-      <Button type="submit" disabled={busy} className="w-full">
-        {busy ? 'Signing in…' : 'Sign in'}
-        <ArrowRight />
-      </Button>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Access is limited to website administrators. Contact your website owner if you need help
-        signing in.
-      </p>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={show ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-0 right-0"
+              aria-label={show ? 'Hide password' : 'Show password'}
+              onClick={() => setShow(!show)}
+            >
+              {show ? <EyeOff /> : <Eye />}
+            </Button>
+          </div>
+        </Field>
+        <Button type="submit" disabled={busy} className="w-full">
+          {busy ? 'Signing in…' : 'Sign in'}
+          <ArrowRight data-icon="inline-end" />
+        </Button>
+        <FieldDescription>
+          Access is limited to website administrators. Contact your website owner if you need help
+          signing in.
+        </FieldDescription>
+      </FieldGroup>
     </form>
   );
 }

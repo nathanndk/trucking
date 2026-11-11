@@ -1,0 +1,21 @@
+---
+import { defaults, formatDate, toLocale } from '../../i18n';
+/**
+ * A publication date set as a marking: the day in wide type, month and year small beneath,
+ * the same wide numerals as the figures on the About page and the years on Projects.
+ */
+const { date, class: className } = Astro.props as { date: Date; class?: string };
+const locale = toLocale(Astro.currentLocale);
+const part = (options: Intl.DateTimeFormatOptions) =>
+  date.toLocaleDateString(defaults(locale).dateLocale, { timeZone: 'Asia/Jakarta', ...options });
+---
+
+<time class:list={['date-mark', className]} datetime={date.toISOString()}>
+  <span class="sr-only">{formatDate(date, locale)}</span>
+  <span class="date-mark-day" aria-hidden="true">
+    {part({ day: 'numeric' })}
+  </span>
+  <span class="date-mark-rest" aria-hidden="true">
+    {part({ month: 'long', year: 'numeric' })}
+  </span>
+</time>

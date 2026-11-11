@@ -1,5 +1,7 @@
 import { test as base, expect, type Page, type Cookie } from '@playwright/test';
 import Database from 'better-sqlite3';
+import { AxeBuilder } from '@axe-core/playwright';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
   adminSession: [
@@ -20,7 +22,9 @@ const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('console', (m) => {
-        if (m.type() === 'error') errors.push(m.text());
+        // A refused form action answers 400 by design and the page shows the reason; the
+        // browser logs that status, which is not an application error.
+        if (m.type() === 'error' && !m.text().includes('(AstroActionError)')) errors.push(m.text());
       });
       await use();
       expect(errors, 'No browser application errors').toEqual([]);
@@ -28,14 +32,16 @@ const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
     { auto: true },
   ],
 });
-const publicRoutes = ['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'];
+const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+// Every page exists in Indonesian (no prefix) and English (/en).
+const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p}`))];
 const adminRoutes = [
   '/admin',
+  '/admin/text',
   '/admin/services',
-  '/admin/fleet',
-  '/admin/coverage',
   '/admin/projects',
   '/admin/clients',
+  '/admin/articles',
   '/admin/inquiries',
   '/admin/settings',
 ];
@@ -45,6 +51,24 @@ async function login(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill(process.env.ADMIN_PASSWORD!);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
+}
+/** Quote emails the test server wrote to its outbox for one customer address, oldest first. */
+function outbox(customer: string) {
+  const dir = process.env.MAIL_OUTBOX!;
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .sort()
+    .map((file) => JSON.parse(readFileSync(path.join(dir, file), 'utf8')))
+    .filter((mail) =>
+      [...mail.to, ...(mail.replyTo ?? [])].some(
+        (to: { address: string }) => to.address === customer,
+      ),
+    ) as {
+    to: { address: string }[];
+    replyTo: { address: string }[];
+    subject: string;
+    text: string;
+  }[];
 }
 function database() {
   return new Database(process.env.DATABASE_PATH!);
@@ -81,11 +105,158 @@ for (const [name, width, height] of [
         await page.screenshot({ path: testInfo.outputPath(`${name}-home.png`), fullPage: true });
     }
     if (name === 'mobile') {
-      await page.getByLabel('Buka navigasi').click();
-      await expect(page.getByRole('navigation', { name: 'Navigasi seluler' })).toBeVisible();
+      // The mobile menu is a sheet that opens once the header island has hydrated.
+      for (const [route, open, menu] of [
+        ['/', 'Buka navigasi', 'Navigasi seluler'],
+        ['/en', 'Open navigation', 'Mobile navigation'],
+      ] as const) {
+        await page.goto(route);
+        await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+        await page.getByLabel(open).click();
+        await expect(page.getByRole('navigation', { name: menu })).toBeVisible();
+      }
     }
   });
 }
+// The header's phone and desktop layouts are chosen by global.css from its stable class
+// names, so they hold on every page even if server and browser markup ever differ.
+test('the header lays out the same on every public page, at phone and desktop width', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+  for (const [width, height] of [
+    [375, 812],
+    [1440, 900],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    const phone = width < 1024;
+    for (const route of publicRoutes) {
+      await page.goto(route);
+      await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+      const header = await page.evaluate(() => {
+        const shown = (selector: string) => {
+          const el = document.querySelector(selector);
+          return (
+            !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0
+          );
+        };
+        return {
+          strip: shown('.nav-strip'),
+          menu: shown('.desktop-nav'),
+          trigger: shown('.mobile-nav-trigger'),
+          quote: shown('.nav-cta'),
+          tall: document.querySelector('.nav-bar')!.getBoundingClientRect().height > 80,
+          overflow: [...document.querySelectorAll('.navbar *')].some(
+            (el) => el.getBoundingClientRect().right > innerWidth + 1,
+          ),
+        };
+      });
+      expect(header, `${route} at ${width}px`).toEqual({
+        strip: !phone,
+        menu: !phone,
+        trigger: phone,
+        quote: true,
+        tall: false,
+        overflow: false,
+      });
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
+test('data that is not there is not shown: no markers, no empty sections, no dead links', async ({
+  page,
+  request,
+}) => {
+  const db = database();
+  const settings = db
+    .prepare(
+      'SELECT phone, whatsapp, address, established, credentials, credentials_en FROM site_settings WHERE id=1',
+    )
+    .get() as Record<string, string>;
+  const published = Object.fromEntries(
+    ['projects', 'clients', 'articles'].map((table) => [
+      table,
+      (db.prepare(`SELECT id FROM ${table} WHERE published=1`).all() as { id: number }[]).map(
+        (row) => row.id,
+      ),
+    ]),
+  );
+  try {
+    db.prepare(
+      "UPDATE site_settings SET phone='', whatsapp='', address='', established='', credentials='', credentials_en='' WHERE id=1",
+    ).run();
+    for (const table of ['projects', 'clients', 'articles'])
+      db.prepare(`UPDATE ${table} SET published=0`).run();
+    // Empty pages are not served and not listed anywhere.
+    for (const route of ['/projects', '/en/projects', '/articles', '/en/articles'])
+      expect((await request.get(route)).status(), route).toBe(404);
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+    expect(sitemap).not.toMatch(/\/(projects|articles)</);
+    for (const route of ['/', '/about', '/contact', '/en']) {
+      await page.goto(route);
+      // No link anywhere on the page (header, mobile menu, footer, sections) leads to them.
+      await expect(page.locator('a[href$="/projects"], a[href$="/articles"]'), route).toHaveCount(
+        0,
+      );
+      const text = await page.locator('body').innerText();
+      expect(text, route).not.toMatch(/Segera diperbarui|To be updated/);
+      // Missing contact details simply do not appear.
+      expect(text, route).not.toMatch(/Telepon|\bPhone\b|\bKantor\b|\bOffice\b/);
+    }
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Proyek dan klien' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Artikel terbaru' })).toHaveCount(0);
+    await expect(page.getByText('Area lain')).toHaveCount(0);
+    await page.goto('/about');
+    const plate = page.locator('.door-plate');
+    await expect(plate).toContainText('PT Genesis Trans Indonesia');
+    await expect(plate).not.toContainText('Tahun berdiri');
+    await expect(plate).not.toContainText('Legalitas');
+  } finally {
+    db.prepare(
+      'UPDATE site_settings SET phone=?, whatsapp=?, address=?, established=?, credentials=?, credentials_en=? WHERE id=1',
+    ).run(
+      settings.phone,
+      settings.whatsapp,
+      settings.address,
+      settings.established,
+      settings.credentials,
+      settings.credentials_en,
+    );
+    for (const [table, ids] of Object.entries(published))
+      for (const id of ids) db.prepare(`UPDATE ${table} SET published=1 WHERE id=?`).run(id);
+    db.close();
+  }
+});
+
+test('public pages have no WCAG 2.1 A/AA violations, on desktop and phone', async ({ page }) => {
+  for (const [width, height] of [
+    [1440, 900],
+    [375, 812],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    for (const route of [...publicRoutes, '/articles/e2e-articles']) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      // Islands that load when visible stay server-rendered here; the header must be live.
+      await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+      const { violations } = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(
+        violations.map(
+          (v) => `${v.impact} ${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
+        ),
+        `${route} at ${width}px`,
+      ).toEqual([]);
+    }
+  }
+});
+
 test('SEO, private routes, mutation authorization and path protection', async ({ request }) => {
   for (const route of adminRoutes) {
     const r = await request.get(route, { maxRedirects: 0 });
@@ -96,10 +267,32 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   expect(loginPage.status()).toBe(200);
   expect(loginPage.headers()['x-robots-tag']).toContain('noindex');
   const robots = await request.get('/robots.txt');
-  expect(await robots.text()).toContain('Disallow: /admin');
+  // robots.txt is public, so it must not advertise where the CMS lives.
+  expect(await robots.text()).not.toMatch(/admin|_actions|api/i);
+  // Nothing on the public website links to or names the admin area.
+  for (const route of [...publicRoutes, '/not-a-page', '/sitemap.xml']) {
+    const html = await (await request.get(route)).text();
+    expect(html, route).not.toMatch(/\/admin|admin-|sign in/i);
+    // No developer notes in the markup (framework markers such as <!--astro:end--> are fine).
+    expect(html, route).not.toMatch(/<!--[^>]*[a-z]{3,} [a-z]{3,}[^>]*-->/i);
+  }
   const sitemap = await request.get('/sitemap.xml');
-  expect((await sitemap.text()).match(/<url>/g)).toHaveLength(7);
+  const sitemapXml = await sitemap.text();
+  // Every public page plus each published article, in both languages.
+  const articles = database();
+  const publishedArticles = (
+    articles.prepare('SELECT COUNT(*) AS n FROM articles WHERE published=1').get() as { n: number }
+  ).n;
+  articles.close();
+  expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length + publishedArticles * 2);
+  expect(sitemapXml).toContain('/en/projects</loc>');
+  expect(sitemapXml).toContain('/en/services</loc>');
+  expect(sitemapXml).not.toContain('/fleet');
+  // Fleet and coverage were removed from the website and the CMS.
+  for (const hidden of ['/fleet', '/coverage', '/en/fleet'])
+    expect((await request.get(hidden)).status()).toBe(404);
   for (const action of [
+    'saveCopy',
     'deleteContent',
     'publishContent',
     'saveContent',
@@ -124,8 +317,15 @@ test('SEO, private routes, mutation authorization and path protection', async ({
       headers: { Origin: 'http://localhost:4322' },
       data: payload,
     });
-    expect(r.status()).toBeGreaterThanOrEqual(400);
+    // Refused before validation, so the reply says nothing about the CMS data model.
+    expect(r.status(), action).toBe(401);
+    expect(await r.text(), action).not.toMatch(/issues|companyName|collection|services/);
   }
+  const formStyle = await request.post('/contact?_action=upload', {
+    headers: { Origin: 'http://localhost:4322' },
+    multipart: { folder: 'general' },
+  });
+  expect(formStyle.status()).toBe(401);
   const cross = await request.post('/_actions/deleteContent', {
     headers: { Origin: 'https://evil.example' },
     data: { collection: 'services', id: 1 },
@@ -147,7 +347,7 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   const db = database();
   expect(db.prepare('SELECT count(*) AS n FROM user').get()).toEqual({ n: 1 });
   expect(db.pragma('journal_mode', { simple: true })).toBe('wal');
-  expect(db.prepare('SELECT count(*) AS n FROM services').get()).toEqual({ n: 6 });
+  expect(db.prepare('SELECT count(*) AS n FROM services').get()).toEqual({ n: 5 });
   db.close();
 });
 test('admin login, all protected routes, responsive navigation and logout', async ({
@@ -167,11 +367,30 @@ test('admin login, all protected routes, responsive navigation and logout', asyn
     );
     await page.screenshot({ path: testInfo.outputPath(`admin-${width}.png`), fullPage: true });
     if (width === 375) {
-      await page.getByText('CMS navigation', { exact: true }).click();
-      await expect(page.getByRole('navigation', { name: 'Mobile admin navigation' })).toBeVisible();
+      // On small screens the sidebar opens as a sheet.
+      await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+      const menu = page.getByRole('dialog');
+      await expect(menu.getByRole('link', { name: 'Settings' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
     }
   }
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  // The CMS only manages what the public website shows.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/admin');
+  const sidebar = page.locator('[data-slot="sidebar"]');
+  await expect(sidebar.getByRole('link', { name: 'Services' })).toBeVisible();
+  for (const removed of ['Fleet', 'Coverage'])
+    await expect(sidebar.getByRole('link', { name: removed })).toHaveCount(0);
+  for (const removed of ['/admin/fleet', '/admin/coverage'])
+    expect((await page.request.get(removed)).status()).toBe(404);
+  // The dashboard leads with what needs attention.
+  await expect(page.getByRole('list', { name: 'Requests by status' })).toContainText('Quoted');
+  await expect(page.getByText('Website checklist')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp number: open Settings' })).toBeVisible();
+  // Signing out lives in the account menu at the bottom of the sidebar.
+  await page.getByRole('button', { name: /^Account menu for/ }).click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
   await page.goto('/admin/settings');
   await expect(page).toHaveURL(/\/admin\/login$/);
@@ -181,30 +400,62 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
   adminSession,
 }, testInfo) => {
   await page.context().addCookies(adminSession);
-  for (const [collection, singular, titleLabel, extras] of [
-    ['services', 'service', 'Title', {}],
-    ['fleet', 'vehicle', 'Vehicle name', { 'Vehicle type': 'Heavy duty', Capacity: '10 ton' }],
-    ['coverage', 'service area', 'City', { Province: 'Jawa Barat' }],
-    ['projects', 'project', 'Title', { 'Client name': 'Test Client', 'Project year': '2026' }],
-    ['clients', 'client', 'Client name', { 'Website (optional)': 'https://example.com' }],
+  // The last entry is the public page a published record appears on.
+  for (const [collection, singular, titleLabel, extras, route] of [
+    ['services', 'service', 'Title', {}, '/services'],
+    [
+      'projects',
+      'project',
+      'Title',
+      { 'Client name': 'Test Client', 'Project year': '2026' },
+      '/projects',
+    ],
+    [
+      'clients',
+      'client',
+      'Client name',
+      { 'Website (optional)': 'https://example.com' },
+      '/projects',
+    ],
+    ['articles', 'article', 'Title', {}, '/articles'],
   ] as const) {
+    const publicHtml = async (prefix = '') => (await page.request.get(`${prefix}${route}`)).text();
     await page.goto(`/admin/${collection}`);
+    // The editor is a React island: clicking before it has hydrated does nothing, which made
+    // this test fail now and then.
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
     const title = `Test ${collection}`;
     await page.getByRole('button', { name: `Add ${singular}`, exact: true }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel(new RegExp(`^${titleLabel}`)).fill(title);
+    const titleField = dialog.getByLabel(new RegExp(`^${titleLabel}`));
+    const englishTitle = dialog.getByLabel(new RegExp(`^English ${titleLabel}$`, 'i'));
+    if (collection === 'services') {
+      // The editor shows one language at a time, Indonesian first.
+      await expect(titleField).toBeVisible();
+      await expect(englishTitle).toBeHidden();
+      // Saving from the English tab with the required Indonesian title missing brings
+      // the Indonesian tab back instead of failing silently.
+      await dialog.getByRole('tab', { name: 'English' }).click();
+      await expect(titleField).toBeHidden();
+      await dialog.getByRole('button', { name: 'Save changes' }).click();
+      await expect(titleField).toBeVisible();
+    }
+    await titleField.fill(title);
+    await dialog.getByRole('tab', { name: 'English' }).click();
+    await englishTitle.fill(`${title} in English`);
+    // Switching back keeps what was typed in the other language.
+    await dialog.getByRole('tab', { name: 'Indonesian' }).click();
+    await expect(titleField).toHaveValue(title);
     for (const [label, value] of Object.entries(extras))
       await dialog.getByLabel(label, { exact: false }).fill(value);
     await dialog
       .getByLabel('Description', { exact: true })
       .fill('A verified test record for end-to-end acceptance.');
     await dialog.getByLabel('Sort order').fill('999');
-    if (collection !== 'coverage') {
-      await dialog
-        .locator('input[type=file]')
-        .setInputFiles(path.resolve('public/images/fleet.jpg'));
-      await expect(dialog.getByAltText(/preview/)).toBeVisible();
-    }
+    await dialog
+      .locator('input[type=file]')
+      .setInputFiles(path.resolve('public/images/genesis/service-trucking-640.webp'));
+    await expect(dialog.getByAltText(/preview/)).toBeVisible();
     if (collection === 'services') {
       await page.setViewportSize({ width: 375, height: 812 });
       await expect
@@ -233,14 +484,15 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
       expect(image.headers()['content-type']).toBe('image/webp');
     }
     db.close();
-    const route = collection === 'clients' ? '/projects' : `/${collection}`;
-    expect(await (await page.request.get(route)).text()).not.toContain(title);
+    expect(await publicHtml()).not.toContain(title);
     await page.getByRole('button', { name: `Actions for ${title}` }).click();
     await page.getByRole('menuitem', { name: 'Publish', exact: true }).click();
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    expect(await (await page.request.get(route)).text()).toContain(title);
+    expect(await publicHtml()).toContain(title);
+    expect(await publicHtml()).not.toContain(`${title} in English`);
+    expect(await publicHtml('/en')).toContain(`${title} in English`);
     await page.getByRole('button', { name: title, exact: true }).click();
     await page
       .getByRole('dialog')
@@ -259,16 +511,101 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    expect(await (await page.request.get(route)).text()).not.toContain(`${title} edited`);
+    expect(await publicHtml()).not.toContain(`${title} edited`);
     await page.getByRole('button', { name: `Actions for ${title} edited` }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+    // Deleting reloads the list; wait for it so the next navigation cannot race the reload.
+    const reloaded = page.waitForEvent('load');
     await page.getByRole('button', { name: 'Delete permanently' }).click();
+    await reloaded;
     await expect(page.getByRole('button', { name: `${title} edited`, exact: true })).toHaveCount(0);
     const after = database();
     expect(after.prepare(`SELECT id FROM ${collection} WHERE id=?`).get(record.id)).toBeUndefined();
     after.close();
   }
 });
+test('dropdowns open the website list and the form sends the chosen value', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const quick = page.locator('.quick-quote');
+  // Once loaded, the quick quote's dropdowns are listboxes, not the system menu.
+  await quick.locator('#quick-service[role="combobox"]').waitFor();
+  await page.getByRole('combobox', { name: 'Jenis layanan' }).click();
+  await page.getByRole('option', { name: 'Trucking Domestik' }).click();
+  await page.getByRole('combobox', { name: 'Jenis kontainer' }).click();
+  await page.getByRole('option', { name: '40 feet' }).click();
+  await quick.getByRole('button', { name: 'Lanjut ke form' }).click();
+  await expect(page).toHaveURL(/\/contact\?service=domestic-trucking&container=40ft$/);
+  // The contact form shows the choice in its own dropdown and submits the same value.
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  await expect(page.locator('#serviceType')).toHaveText('Trucking Domestik');
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+  await page.getByRole('combobox', { name: /Jenis layanan yang dibutuhkan/ }).click();
+  await page.getByRole('option', { name: 'Bantuan Customs Clearance' }).click();
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('customs-clearance-assistance');
+  // Nothing chosen still blocks sending, and the dropdown is marked.
+  await page.goto('/contact');
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact$/);
+  await expect(page.locator('#serviceType')).toHaveAttribute('aria-invalid', 'true');
+});
+
+test('arrow keys move the container choice on the quote form', async ({ page }) => {
+  await page.goto('/contact');
+  await page.locator('astro-island:not([ssr]) form').waitFor();
+  const twenty = page.getByRole('radio', { name: /20 feet/ });
+  const forty = page.getByRole('radio', { name: /40 feet/ });
+  // Tab reaches the choice from the destination field; arrows then move and select at once,
+  // even when keydown and keyup arrive together as they do here.
+  await page.locator('[name="destination"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(twenty).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(forty).toBeFocused();
+  await expect(forty).toBeChecked();
+  await page.keyboard.press('ArrowLeft');
+  await expect(twenty).toBeFocused();
+  await expect(twenty).toBeChecked();
+  await expect(forty).not.toBeChecked();
+});
+
+test('a rejected quote request keeps everything the visitor typed', async ({ page }) => {
+  await page.goto('/contact');
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  const values = {
+    fullName: 'Rina Tertolak',
+    company: 'PT Coba Lagi',
+    phone: '+62 812 0000 1111',
+    email: 'rina@example.com',
+    pickup: 'Cikarang',
+    destination: 'Tanjung Priok',
+    message: 'Dua kontainer, minggu depan.',
+  };
+  for (const [name, value] of Object.entries(values))
+    await page.locator(`[name="${name}"]`).fill(value);
+  await page.getByRole('combobox', { name: /Jenis layanan yang dibutuhkan/ }).click();
+  await page.getByRole('option', { name: 'Trucking Domestik' }).click();
+  await page.getByRole('radio', { name: /40 feet/ }).click();
+  // An expired form is refused by the server; the visitor should not have to type it all again.
+  await page
+    .locator('[name="token"]')
+    .evaluate((input: HTMLInputElement) => (input.value = 'expired'));
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page.getByText('Form sudah kedaluwarsa')).toBeVisible();
+  for (const [name, value] of Object.entries(values))
+    await expect(page.locator(`[name="${name}"]`), name).toHaveValue(value);
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+  await expect(page.getByRole('radio', { name: /40 feet/ })).toBeChecked();
+  // The refilled form goes through once sent again.
+  await page.waitForTimeout(2100);
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact\?sent=1$/);
+  const db = database();
+  db.prepare('DELETE FROM inquiries WHERE email=?').run(values.email);
+  db.close();
+});
+
 test('quotation persists privately, appears to admin, and status changes', async ({
   page,
   adminSession,
@@ -280,48 +617,497 @@ test('quotation persists privately, appears to admin, and status changes', async
     phone: '+62 812 3456 7890',
     email: 'dewi@example.com',
     pickup: 'Bekasi',
-    destination: 'Surabaya',
-    cargo: 'Barang palet',
-    weight: '5 ton',
+    destination: 'Tanjung Priok',
     message: 'Delivery next week.',
   };
   for (const [name, value] of Object.entries(values))
     await page.locator(`[name="${name}"]`).fill(value);
+  await page.locator('[name="serviceType"]').selectOption('container-transportation');
+  await page.getByRole('radio', { name: /40 feet/ }).click();
+  await expect(page.getByRole('radio', { name: /40 feet/ })).toBeChecked();
   await page.waitForTimeout(2100);
-  await page.getByRole('button', { name: 'Kirim Permintaan' }).click();
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact\?sent=1$/);
   await expect(page.getByRole('status')).toContainText('Permintaan Anda berhasil dikirim');
+  // The team is emailed with a reply going to the customer; the customer gets a confirmation.
+  await expect.poll(() => outbox(values.email).length).toBe(2);
+  const [toTeam, toCustomer] = outbox(values.email);
+  expect(toTeam.to[0].address).toBe('info@genesistransindo.com');
+  expect(toTeam.replyTo[0].address).toBe(values.email);
+  expect(toTeam.text).toContain('Delivery next week.');
+  expect(toCustomer.to[0].address).toBe(values.email);
+  expect(toCustomer.subject).toBe('Permintaan penawaran Anda sudah kami terima');
+  expect(toCustomer.text).not.toContain('Delivery next week.');
   const db = database();
   const row = db.prepare('SELECT * FROM inquiries WHERE email=?').get(values.email) as {
     id: number;
     status: string;
+    service_type: string;
+    container_type: string;
   };
   expect(row.status).toBe('new');
+  expect(row.service_type).toBe('Angkutan Kontainer');
+  expect(row.container_type).toBe('40ft');
   db.close();
   expect(await (await page.request.get('/contact')).text()).not.toContain(values.email);
   await page.context().addCookies(adminSession);
   await page.goto('/admin/inquiries');
-  const inquiry = page.getByRole('row').filter({ hasText: values.fullName });
-  await inquiry.getByRole('button', { name: 'View inquiry' }).click();
+  await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+  // The sidebar flags requests nobody has followed up yet.
+  await expect(page.locator('[data-slot="sidebar-menu-badge"]').last()).toHaveText('1 new');
+  // The board is the default view; each card opens the request's details.
+  await page
+    .getByRole('button', { name: `View inquiry from ${values.fullName}`, exact: true })
+    .click();
   await expect(page.getByRole('dialog')).toContainText(values.message);
-  await page.getByLabel('Inquiry status', { exact: true }).selectOption('quoted');
+  await expect(page.getByRole('dialog')).toContainText('Angkutan Kontainer');
+  await expect(page.getByRole('dialog')).toContainText('40ft');
+  await page.getByRole('combobox', { name: 'Inquiry status', exact: true }).click();
+  await page.getByRole('option', { name: 'Quoted' }).click();
   await page.getByRole('button', { name: 'Update status' }).click();
-  await expect(page.getByRole('status')).toContainText('Inquiry status updated');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Inquiry status updated' }),
+  ).toBeVisible();
+  // The table view lists the same request with its new status.
+  await page.getByRole('tab', { name: 'Table' }).click();
+  const tableRow = page.getByRole('row').filter({ hasText: values.fullName });
+  await expect(tableRow).toContainText('Quoted');
+  await expect(tableRow.getByRole('button', { name: 'View inquiry' })).toBeVisible();
   const after = database();
   expect(after.prepare('SELECT status FROM inquiries WHERE id=?').get(row.id)).toEqual({
     status: 'quoted',
   });
   after.close();
 });
+test('board cards point screen readers at drag instructions that exist, on every load', async ({
+  page,
+  adminSession,
+}) => {
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO inquiries (full_name, company, phone, email, pickup, destination, cargo, weight, service_type, container_type, status, created_at, updated_at)
+     VALUES ('Board Check', 'PT Board', '081200000000', 'board@example.com', 'Bekasi', 'Tanjung Priok', '', '', 'Angkutan Kontainer', '20ft', 'new', ?, ?)`,
+  ).run(now, now);
+  try {
+    await page.context().addCookies(adminSession);
+    // The server renders the board many times; ids must still match what the browser builds.
+    for (let load = 0; load < 3; load++) {
+      await page.goto('/admin/inquiries');
+      await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+      const broken = await page.evaluate(() =>
+        [...document.querySelectorAll('[aria-describedby^="DndDescribedBy"]')]
+          .map((card) => card.getAttribute('aria-describedby')!)
+          .filter((id) => !document.getElementById(id)),
+      );
+      expect(broken, `load ${load + 1}`).toEqual([]);
+    }
+  } finally {
+    db.prepare("DELETE FROM inquiries WHERE email='board@example.com'").run();
+    db.close();
+  }
+});
+
+test('dragging an inquiry card to another column changes its status', async ({
+  page,
+  adminSession,
+}) => {
+  await page.context().addCookies(adminSession);
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO inquiries (full_name, company, phone, email, pickup, destination, cargo, weight, vehicle, message, service_type, container_type, status, created_at, updated_at)
+     VALUES ('Drag Tester','PT Seret','+62 811 0000 1111','drag@example.com','Karawang','Tanjung Priok','','','','','Trucking Domestik','20ft','new',?,?)`,
+  ).run(now, now);
+  const status = () =>
+    (
+      db.prepare("SELECT status FROM inquiries WHERE email='drag@example.com'").get() as {
+        status: string;
+      }
+    ).status;
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/admin/inquiries');
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+    const card = (await page.getByText('Drag Tester', { exact: true }).boundingBox())!;
+    const column = (await page.getByText('Contacted', { exact: true }).boundingBox())!;
+    await page.mouse.move(card.x + 20, card.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(card.x + 40, card.y + 30, { steps: 5 });
+    await page.mouse.move(column.x + 60, column.y + 110, { steps: 15 });
+    await page.mouse.up();
+    await expect.poll(status).toBe('contacted');
+    await expect(page.getByText('Drag Tester moved to Contacted.')).toBeVisible();
+    // The board fits small screens by scrolling inside its own area.
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+  } finally {
+    db.prepare("DELETE FROM inquiries WHERE email='drag@example.com'").run();
+    db.close();
+  }
+});
+test('English pages, language switching and the English quote flow', async ({ page }) => {
+  await page.goto('/en/about');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/en\/about$/);
+  await expect(page.locator('link[hreflang="id"]')).toHaveAttribute('href', /[^n]\/about$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('logistics company');
+  // English CMS text is used where it exists.
+  await page.goto('/en/services');
+  await expect(page.getByRole('heading', { name: 'Customs Clearance Assistance' })).toBeVisible();
+  await page.locator('.desktop-nav').waitFor();
+  await page.locator('.nav-actions a[hreflang="id"]').click();
+  await expect(page).toHaveURL(/[^n]\/services$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
+  await expect(page.getByRole('heading', { name: 'Bantuan Customs Clearance' })).toBeVisible();
+  await page.locator('.nav-actions a[hreflang="en"]').click();
+  await expect(page).toHaveURL(/\/en\/services$/);
+  // The container diagram hands the chosen size to the quote form.
+  await page.locator('.scale-box.is-20').click();
+  await expect(page).toHaveURL(/\/en\/contact\?container=20ft$/);
+  await expect(page.getByRole('radio', { name: /20-foot/ })).toBeChecked();
+  const values = {
+    fullName: 'Evan English',
+    company: 'Test Exports Ltd',
+    phone: '+62 811 2222 3333',
+    email: 'evan@example.com',
+    pickup: 'Cikarang',
+    destination: 'Tanjung Priok',
+  };
+  for (const [name, value] of Object.entries(values))
+    await page.locator(`[name="${name}"]`).fill(value);
+  await page.locator('[name="serviceType"]').selectOption({ label: 'Domestic Trucking' });
+  await page.waitForTimeout(2100);
+  await page.getByRole('button', { name: 'Send request' }).click();
+  await expect(page).toHaveURL(/\/en\/contact\?sent=1$/);
+  await expect(page.getByRole('status')).toContainText('Your request has been sent');
+  // A visitor on the English page gets the English confirmation.
+  await expect.poll(() => outbox(values.email).length).toBe(2);
+  expect(outbox(values.email)[1].subject).toBe('We have received your quote request');
+  const db = database();
+  expect(
+    db
+      .prepare('SELECT service_type, container_type FROM inquiries WHERE email=?')
+      .get(values.email),
+  ).toEqual({ service_type: 'Trucking Domestik', container_type: '20ft' });
+  db.close();
+  // Unknown English URLs get the English 404 page. Fetched without the page so the
+  // expected 404 is not reported as a browser console error.
+  const missing = await page.request.get('/en/not-a-page');
+  expect(missing.status()).toBe(404);
+  const missingHtml = await missing.text();
+  expect(missingHtml).toContain('<html lang="en"');
+  expect(missingHtml).toContain('This page does not exist.');
+});
+test('home: quick quote, services menu and common questions, in both languages', async ({
+  page,
+  browser,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const text of [
+    {
+      home: '/',
+      prefix: '',
+      service: 'Trucking Domestik',
+      size: /40 feet/,
+      submit: 'Lanjut ke form',
+      nav: 'Navigasi utama',
+      menu: 'Layanan',
+      all: 'Semua layanan',
+      first: 'Angkutan kontainer 20 dan 40 feet, trucking domestik',
+      question: 'Ukuran kontainer apa yang dilayani?',
+      answer: 'Kontainer 20 feet dan 40 feet.',
+    },
+    {
+      home: '/en',
+      prefix: '/en',
+      service: 'Domestic Trucking',
+      size: /40-foot/,
+      submit: 'Continue to the form',
+      nav: 'Main navigation',
+      menu: 'Services',
+      all: 'All services',
+      first: '20 and 40-foot container transport, domestic trucking',
+      question: 'Which container sizes do you carry?',
+      answer: '20-foot and 40-foot containers.',
+    },
+  ]) {
+    // Quick quote: both choices arrive selected on the quote form.
+    await page.goto(text.home);
+    const quick = page.locator('.quick-quote');
+    await quick.locator('[name="service"]').selectOption({ label: text.service });
+    await quick.locator('[name="container"]').selectOption('40ft');
+    await quick.getByRole('button', { name: text.submit }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`${text.prefix}/contact\\?service=domestic-trucking&container=40ft$`),
+    );
+    await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+    await expect(page.getByRole('radio', { name: text.size })).toBeChecked();
+
+    // Services menu: pointing at the link lists every service; each entry opens its section.
+    await page.goto(text.home);
+    await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+    const nav = page.getByRole('navigation', { name: text.nav });
+    const trigger = nav.getByRole('link', { name: text.menu, exact: true });
+    await trigger.hover();
+    const panel = page.locator('.services-menu');
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('link')).toHaveCount(6);
+    expect(
+      await panel
+        .getByRole('link')
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+    ).toEqual([
+      ...[
+        'container-transportation',
+        'domestic-trucking',
+        'factory-to-port-transportation',
+        'customs-clearance-assistance',
+        'logistics-shipping-coordination',
+      ].map((slug) => `${text.prefix}/services#${slug}`),
+      `${text.prefix}/services`,
+    ]);
+    await expect(panel.getByRole('link', { name: text.all })).toBeVisible();
+    await panel.getByRole('link', { name: text.service }).click();
+    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services#domestic-trucking$`));
+    await expect(page.locator('#domestic-trucking')).toBeInViewport();
+    // The link itself still opens the Services page.
+    await page.goto(text.home);
+    await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+    await nav.getByRole('link', { name: text.menu, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services$`));
+
+    // Common questions: one answer open at a time, and the same text as structured data.
+    await page.goto(text.home);
+    const faq = page.locator('#faq');
+    await faq.scrollIntoViewIfNeeded();
+    await faq.locator('astro-island:not([ssr])').waitFor();
+    await expect(faq.getByRole('button')).toHaveCount(6);
+    await expect(faq.getByText(text.first)).toBeVisible();
+    await faq.getByRole('button', { name: text.question }).click();
+    await expect(faq.getByText(text.answer)).toBeVisible();
+    await expect(faq.getByText(text.first)).toBeHidden();
+    await faq.getByRole('button', { name: text.question }).click();
+    await expect(faq.getByText(text.answer)).toBeHidden();
+    const structured = await page
+      .locator('script[type="application/ld+json"]')
+      .evaluateAll((scripts) => scripts.map((script) => JSON.parse(script.textContent!)));
+    const faqData = structured.find((entry) => entry['@type'] === 'FAQPage');
+    expect(faqData.mainEntity).toHaveLength(6);
+    expect(faqData.mainEntity[1].name).toBe(text.question);
+    expect(faqData.mainEntity[1].acceptedAnswer.text).toContain(text.answer);
+  }
+  // Without JavaScript the quick quote and the Services link still work.
+  const context = await browser.newContext({ javaScriptEnabled: false, locale: 'id-ID' });
+  const plain = await context.newPage();
+  await plain.goto('http://localhost:4322/');
+  await plain.locator('.quick-quote [name="container"]').selectOption('20ft');
+  await plain.locator('.quick-quote button[type="submit"]').click();
+  await expect(plain).toHaveURL(/\/contact\?service=&container=20ft$/);
+  await expect(plain.locator('#container-20ft')).toHaveAttribute('aria-checked', 'true');
+  await plain.goto('http://localhost:4322/');
+  await plain.locator('.desktop-nav').getByRole('link', { name: 'Layanan', exact: true }).click();
+  await expect(plain).toHaveURL(/\/services$/);
+  await context.close();
+});
+test('home strengths: the containers, route and coordination appear once, inside the bento', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const prefix of ['', '/en']) {
+    await page.goto(`${prefix}/`);
+    // The route strip and the separate container section are gone from Home.
+    await expect(page.locator('.route')).toHaveCount(0);
+    await expect(page.locator('#container')).toHaveCount(0);
+    await expect(page.locator('main .scale')).toHaveCount(1);
+    // Every stop is wired to the company mark once the drawing is on screen.
+    const beam = page.locator('astro-island[component-url*="CoordinationBeam"]');
+    await beam.scrollIntoViewIfNeeded();
+    await expect(beam.locator('svg path[d^="M"]')).not.toHaveCount(0);
+    await page.locator('main .scale-box.is-40').click();
+    await expect(page).toHaveURL(new RegExp(`${prefix}/contact\\?container=40ft$`));
+  }
+});
+
+test('the first page follows the visitor, and a manual language choice is remembered', async ({
+  browser,
+  page,
+  request,
+}) => {
+  const site = 'http://localhost:4322';
+  // The test server sees every visitor on loopback, which carries no location, so the
+  // browser language stands in for it here. Address lookups are covered by unit tests.
+  const abroad = await browser.newContext({ locale: 'en-US' });
+  const visitor = await abroad.newPage();
+  await visitor.goto(`${site}/services`);
+  await expect(visitor).toHaveURL(`${site}/en/services`);
+  await expect(visitor.locator('html')).toHaveAttribute('translate', 'no');
+  expect(await visitor.locator('meta[name="google"]').getAttribute('content')).toBe('notranslate');
+  // Choosing Indonesian is respected immediately…
+  await visitor.locator('.nav-actions a[hreflang="id"]').click();
+  await expect(visitor).toHaveURL(`${site}/services`);
+  await expect(visitor.locator('html')).toHaveAttribute('lang', 'id');
+  await visitor.locator('.desktop-nav a[href="/about"]').click();
+  await expect(visitor).toHaveURL(`${site}/about`);
+  // …and on the next arrival from outside the site.
+  await visitor.goto(`${site}/`);
+  await expect(visitor).toHaveURL(`${site}/`);
+  // Switching back to English is remembered the same way.
+  await visitor.locator('.nav-actions a[hreflang="en"]').click();
+  await expect(visitor).toHaveURL(`${site}/en`);
+  await visitor.goto(`${site}/contact?container=40ft`);
+  await expect(visitor).toHaveURL(`${site}/en/contact?container=40ft`);
+  await abroad.close();
+  // A visitor browsing in Indonesian stays on the unprefixed pages.
+  await page.goto('/');
+  await expect(page).toHaveURL(`${site}/`);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
+  // Crawlers and link previews are never redirected, so both versions can be indexed.
+  const english = { 'Accept-Language': 'en-US,en;q=0.9' };
+  for (const agent of ['Googlebot/2.1 (+http://www.google.com/bot.html)', 'WhatsApp/2.23'])
+    expect(
+      (
+        await request.get('/', { headers: { ...english, 'User-Agent': agent }, maxRedirects: 0 })
+      ).status(),
+    ).toBe(200);
+  const first = await request.get('/about', { headers: english, maxRedirects: 0 });
+  expect(first.status()).toBe(302);
+  expect(first.headers().location).toBe('/en/about');
+  expect(first.headers()['cache-control']).toBe('no-store');
+  // Only public pages take part.
+  for (const other of ['/sitemap.xml', '/robots.txt', '/admin/login'])
+    expect((await request.get(other, { headers: english, maxRedirects: 0 })).status()).toBe(200);
+});
+test('articles are public only while published, in both languages', async ({ page }) => {
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO articles (title, slug, short_description, description, title_en, description_en, published, sort_order, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,1,0,?,?)`,
+  ).run(
+    'Jadwal Operasional',
+    'jadwal-operasional',
+    'Ringkasan jadwal.',
+    'Paragraf pertama.\n\nParagraf kedua <b>tanpa HTML</b>.',
+    'Operating Schedule',
+    'First paragraph.',
+    now,
+    now,
+  );
+  try {
+    await page.goto('/articles');
+    await page.getByRole('link', { name: 'Jadwal Operasional' }).click();
+    await expect(page).toHaveURL(/\/articles\/jadwal-operasional$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jadwal Operasional');
+    await expect(page.locator('.article-body p')).toHaveCount(2);
+    // The body is plain text: markup typed by an editor is shown, never executed.
+    await expect(page.locator('.article-body b')).toHaveCount(0);
+    await page.goto('/en/articles/jadwal-operasional');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Operating Schedule');
+    await expect(page.locator('.article-body')).toContainText('First paragraph.');
+    expect(await (await page.request.get('/sitemap.xml')).text()).toContain(
+      '/en/articles/jadwal-operasional</loc>',
+    );
+    db.prepare('UPDATE articles SET published=0 WHERE slug=?').run('jadwal-operasional');
+    for (const url of ['/articles/jadwal-operasional', '/en/articles/jadwal-operasional'])
+      expect((await page.request.get(url)).status()).toBe(404);
+    expect(await (await page.request.get('/articles')).text()).not.toContain('Jadwal Operasional');
+  } finally {
+    db.prepare('DELETE FROM articles WHERE slug=?').run('jadwal-operasional');
+    db.close();
+  }
+});
+test('section wording is edited on the Page text screen, in both languages', async ({
+  page,
+  adminSession,
+}) => {
+  await page.context().addCookies(adminSession);
+  const html = async (route: string) => (await page.request.get(route)).text();
+  const defaultHeading = 'Dari pabrik ke Tanjung Priok, kontainer Anda kami antar.';
+  try {
+    await page.goto('/admin/text');
+    // Wait for the editor to become interactive before typing into it.
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+    const heading = page.getByLabel('Main heading (Indonesian)');
+    await expect(heading).toHaveValue(defaultHeading);
+    await heading.fill('Kontainer Anda, urusan kami.');
+    await page.getByLabel('Main heading (English)').fill('Your containers, handled.');
+    await expect(page.getByText('1 unsaved change', { exact: true })).toBeVisible();
+    // Edits survive switching between page tabs.
+    await page.getByRole('tab', { name: 'Contact' }).click();
+    await page.getByLabel('Send button (Indonesian)').fill('Kirim sekarang');
+    await page.getByRole('tab', { name: 'Home' }).click();
+    await expect(heading).toHaveValue('Kontainer Anda, urusan kami.');
+    // The common questions are editable too, and the structured data follows.
+    await page.getByLabel('Question 1 (Indonesian)').fill('Layanan apa yang ada?');
+    await expect(page.getByText('3 unsaved changes', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
+    await expect(page.getByText('No unsaved changes')).toBeVisible();
+
+    expect(await html('/')).toContain('Kontainer Anda, urusan kami.');
+    expect(await html('/')).not.toContain(defaultHeading);
+    expect(await html('/')).toContain('"name":"Layanan apa yang ada?"');
+    expect(await html('/')).not.toContain('Layanan apa saja yang tersedia?');
+    expect(await html('/en')).toContain('Your containers, handled.');
+    expect(await html('/contact')).toContain('Kirim sekarang');
+    // Only the language that was changed is affected.
+    expect(await html('/en/contact')).toContain('Send request');
+
+    // Search finds wording on any page; Reset returns it to the default.
+    await page.getByLabel('Search text').fill('Kirim sekarang');
+    await expect(page.getByText('Contact / Quote form')).toBeVisible();
+    await expect(page.getByLabel('Send button (Indonesian)')).toHaveValue('Kirim sekarang');
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await page.getByLabel('Search text').fill('');
+    // A cleared field also goes back to its default.
+    await heading.fill('');
+    await page.getByLabel('Main heading (English)').fill('');
+    await page.getByLabel('Question 1 (Indonesian)').fill('');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
+    await expect(heading).toHaveValue(defaultHeading);
+    expect(await html('/')).toContain(defaultHeading);
+    expect(await html('/contact')).toContain('Kirim permintaan');
+    expect(await html('/en')).toContain('we deliver your containers');
+    const db = database();
+    expect(db.prepare("SELECT count(*) AS n FROM site_copy WHERE id<>'' OR en<>''").get()).toEqual({
+      n: 0,
+    });
+    db.close();
+    // Small screens keep the form inside the viewport.
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+  } finally {
+    // Never leave edited wording behind for the other tests.
+    const db = database();
+    db.prepare('DELETE FROM site_copy').run();
+    db.close();
+  }
+});
 test('settings changes are reflected on public pages', async ({ page, adminSession }) => {
   await page.context().addCookies(adminSession);
   await page.goto('/admin/settings');
-  await page.getByLabel('Company name', { exact: false }).first().fill('LINTAS TEST');
+  await page.getByLabel('Company name', { exact: false }).first().fill('GENESIS TEST');
   await page.getByLabel('Primary CTA text').fill('Diskusikan Muatan');
+  // Indonesian and English sit side by side in the Company text card.
+  await page.getByLabel('English CTA text').fill('Discuss your cargo');
+  await page.getByLabel('WhatsApp (international digits)').fill('628123456789');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Settings saved.' })).toBeVisible();
   const html = await (await page.request.get('/')).text();
-  expect(html).toContain('LINTAS TEST');
+  expect(html).toContain('GENESIS TEST');
   expect(html).toContain('Diskusikan Muatan');
+  expect(await (await page.request.get('/en')).text()).toContain('Discuss your cargo');
+  // Filling in a missing detail takes it off the dashboard's checklist.
+  await page.goto('/admin');
+  await expect(page.getByText('Website checklist')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp number: open Settings' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Office phone: open Settings' })).toBeVisible();
 });
 
 test('invalid mutations and revoked admin roles are rejected by the server', async ({
@@ -344,7 +1130,7 @@ test('invalid mutations and revoked admin roles are rejected by the server', asy
   const upload = await page.request.post('/_actions/upload', {
     headers,
     multipart: {
-      folder: 'fleet',
+      folder: 'services',
       file: {
         name: '../../payload.png',
         mimeType: 'image/png',

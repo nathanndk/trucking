@@ -1,0 +1,176 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import ServiceGrid from '../components/marketing/ServiceGrid.astro';
+import ProjectLedger from '../components/marketing/ProjectLedger.astro';
+import ClientList from '../components/marketing/ClientList.astro';
+import ArticleIndex from '../components/marketing/ArticleIndex.astro';
+import RuledList from '../components/marketing/RuledList.astro';
+import QuickQuote from '../components/site/QuickQuote';
+import StrengthsBento from '../components/site/StrengthsBento.astro';
+import Faq from '../components/site/Faq';
+import CTA from '../components/marketing/CTA.astro';
+import { AspectRatio } from '../components/ui/aspect-ratio';
+import { buttonVariants } from '../components/ui/button';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { cn } from '../lib/utils';
+import { containerTypes } from '../lib/validation';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const href = (path: string) => localePath(locale, path);
+const services = getPublicContent('services', locale);
+const projects = getPublicContent('projects', locale).slice(0, 2);
+const clients = getPublicContent('clients', locale);
+const articles = getPublicContent('articles', locale).slice(0, 3);
+const aboutLead = s.about.split(/\n{2,}/)[0];
+// cn() resolves the padding conflict; buttonVariants alone would keep both classes.
+const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
+// The same questions as data search engines read (schema.org FAQPage).
+const faqStructured = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: t.faq.items.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+}).replaceAll('<', '\\u003c');
+---
+
+<PublicLayout title={t.home.title} description={s.shortDescription}>
+  <script slot="head" is:inline type="application/ld+json" set:html={faqStructured}></script>
+  <section class="hero dark" data-motion="hero">
+    <div class="hero-media">
+      <img
+        class="hero-photo"
+        src="/images/genesis/hero-port-1920.webp"
+        srcset="/images/genesis/hero-port-768.webp 768w, /images/genesis/hero-port-1280.webp 1280w, /images/genesis/hero-port-1920.webp 1920w"
+        sizes="100vw"
+        alt={t.home.heroAlt}
+        width="1920"
+        height="1080"
+        fetchpriority="high"
+      />
+    </div>
+    <div class="wrap hero-content">
+      <div class="hero-copy">
+        <p class="hero-tagline">{s.tagline}</p>
+        <h1>{t.home.h1}</h1>
+        <p class="hero-text">{s.shortDescription}</p>
+        <QuickQuote
+          client:idle
+          action={href('/contact')}
+          services={services.map(({ slug, title }) => ({ slug, title }))}
+          containers={containerTypes.map((type) => ({
+            value: type,
+            name: t.container.sizes[type].name,
+          }))}
+          more={{ href: href('/services'), label: t.home.servicesLink }}
+          labels={{ ...t.quick, servicePlaceholder: t.contact.servicePlaceholder }}
+        />
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap intro-grid">
+      <div class="intro-copy">
+        <h2>{t.home.aboutHeading}</h2>
+        <p>{aboutLead}</p>
+        <a class={link} href={href('/about')}>
+          {t.home.aboutLink}
+        </a>
+      </div>
+      <AspectRatio ratio={4 / 3} className="overflow-hidden rounded-lg">
+        <img
+          class="photo"
+          src="/images/genesis/about-team-1280.webp"
+          srcset="/images/genesis/about-team-640.webp 640w, /images/genesis/about-team-1280.webp 1280w"
+          sizes="(max-width: 767px) 100vw, 50vw"
+          alt={t.home.aboutAlt}
+          width="1280"
+          height="720"
+          loading="lazy"
+        />
+      </AspectRatio>
+    </div>
+  </section>
+  <section class="section tint">
+    <div class="wrap">
+      <h2 class="mb-10">{t.strengths.heading}</h2>
+      <StrengthsBento
+        items={t.strengths.items}
+        route={t.route.stops}
+        statistics={s.statistics}
+        mark={
+          !s.favicon || s.favicon === '/images/genesis/favicon.png'
+            ? '/images/genesis/mark-96.webp'
+            : s.favicon
+        }
+        name={s.companyName}
+        numberLocale={locale === 'id' ? 'id-ID' : 'en-US'}
+      />
+    </div>
+  </section>
+  <section class="section" id="services">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>{t.home.servicesHeading}</h2>
+        <a href={href('/services')} class={link}>
+          {t.home.servicesAll}
+        </a>
+      </div>
+      <ServiceGrid items={services} />
+    </div>
+  </section>
+  <section class="section tint">
+    <div class="wrap split-list">
+      <h2>{t.area.heading}</h2>
+      <RuledList
+        rows={[
+          { label: t.area.main, title: t.area.mainValue },
+          { label: t.area.port, title: t.area.portValue },
+        ]}
+      />
+    </div>
+  </section>
+  {(projects.length > 0 || clients.length > 0) && (
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.home.projectsHeading}</h2>
+          <a href={href('/projects')} class={link}>
+            {t.home.projectsLink}
+          </a>
+        </div>
+        {projects.length > 0 && <ProjectLedger items={projects} summary />}
+        {clients.length > 0 && (
+          <div class:list={[projects.length > 0 && 'mt-14']}>
+            <ClientList items={clients} />
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+  {articles.length > 0 && (
+    <section class="section tint">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.home.articlesHeading}</h2>
+          <a href={href('/articles')} class={link}>
+            {t.home.articlesLink}
+          </a>
+        </div>
+        <ArticleIndex items={articles} />
+      </div>
+    </section>
+  )}
+  <section class="section" id="faq">
+    <div class="wrap split-list">
+      <h2>{t.faq.heading}</h2>
+      <Faq client:visible items={t.faq.items} />
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

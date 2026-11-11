@@ -1,16 +1,53 @@
 import { useState, type SubmitEvent } from 'react';
 import { actions } from 'astro:actions';
-import { toast, Toaster } from 'sonner';
-import { Save } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Input, Textarea } from '../ui/input';
-import { Label } from '../ui/label';
-import { settingFields } from '../../lib/content-config';
+import { toast } from 'sonner';
+import { Check, CircleAlert, CircleCheck, Save } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  settingSections,
+  settingTextPairs,
+  type Field as FieldConfig,
+} from '../../lib/content-config';
 import { settingsInput } from '../../lib/validation';
 import { UploadField } from './UploadField';
 import type { z } from 'zod';
-type Settings = z.infer<typeof settingsInput>;
+type Settings = z.input<typeof settingsInput>;
+function Control({
+  field,
+  settings,
+  wide = field.type === 'textarea',
+}: {
+  field: FieldConfig;
+  settings: Settings;
+  /** Span both columns of the surrounding grid. */
+  wide?: boolean;
+}) {
+  const props = {
+    id: field.name,
+    name: field.name,
+    defaultValue: String(settings[field.name as keyof Settings] ?? ''),
+    required: field.required,
+  };
+  return (
+    <Field className={wide ? 'md:col-span-2' : ''}>
+      <FieldLabel htmlFor={field.name}>
+        {field.label}
+        {field.required ? ' *' : ''}
+      </FieldLabel>
+      {field.type === 'textarea' ? (
+        <Textarea {...props} />
+      ) : (
+        <Input {...props} type={field.type || 'text'} />
+      )}
+    </Field>
+  );
+}
 export default function SettingsForm({ settings }: { settings: Settings }) {
   const [logo, setLogo] = useState(settings.logo);
   const [favicon, setFavicon] = useState(settings.favicon);
@@ -28,6 +65,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     const statistics = Array.from({ length: 4 }, (_, i) => ({
       value: String(f.get(`stat-value-${i}`) || ''),
       label: String(f.get(`stat-label-${i}`) || ''),
+      labelEn: String(f.get(`stat-label-en-${i}`) || ''),
     })).filter((s) => s.value || s.label);
     try {
       const parsed = settingsInput.safeParse({
@@ -35,7 +73,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         logo,
         favicon,
         statistics,
-        demoMode: f.get('demoMode') === 'on',
       });
       if (!parsed.success)
         throw new Error(
@@ -54,58 +91,62 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     }
   }
   return (
-    <form onSubmit={save} className="max-w-5xl space-y-6">
-      <Toaster richColors />
+    <form
+      onSubmit={save}
+      onChange={() => setSuccess(false)}
+      className="flex max-w-5xl flex-col gap-6"
+    >
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-4 text-destructive">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <CircleAlert />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       {success && (
-        <p
-          role="status"
-          className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900"
-        >
-          Settings saved. The public website now uses these values.
-        </p>
+        <Alert role="status">
+          <CircleCheck />
+          <AlertDescription>
+            Settings saved. The public website now uses these values.
+          </AlertDescription>
+        </Alert>
       )}
+      {settingSections.map((section) => (
+        <Card key={section.title}>
+          <CardHeader>
+            <CardTitle>{section.title}</CardTitle>
+            <CardDescription>{section.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup className="grid md:grid-cols-2">
+              {section.fields.map((field) => (
+                <Control key={field.name} field={field} settings={settings} />
+              ))}
+            </FieldGroup>
+          </CardContent>
+        </Card>
+      ))}
       <Card>
         <CardHeader>
-          <CardTitle>Company & contact details</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Keep company information accurate. Fields marked * are required.
-          </p>
+          <CardTitle>Company text</CardTitle>
+          <CardDescription>
+            Indonesian on the left, English on the right. A blank English text falls back to the
+            Indonesian one. Headings, buttons and form labels are edited under{' '}
+            <a href="/admin/text" className="underline underline-offset-4 hover:text-primary">
+              Page text
+            </a>
+            .
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            {settingFields.map((field) => (
-              <div
-                key={field.name}
-                className={`space-y-2 ${field.type === 'textarea' ? 'md:col-span-2' : ''}`}
-              >
-                <Label htmlFor={field.name}>
-                  {field.label}
-                  {field.required ? ' *' : ''}
-                </Label>
-                {field.type === 'textarea' ? (
-                  <Textarea
-                    id={field.name}
-                    name={field.name}
-                    defaultValue={String(settings[field.name as keyof Settings] ?? '')}
-                    required={field.required}
-                  />
-                ) : (
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    defaultValue={String(settings[field.name as keyof Settings] ?? '')}
-                    type={field.type || 'text'}
-                    required={field.required}
-                  />
-                )}
+          <FieldGroup>
+            {settingTextPairs.map(([indonesian, english]) => (
+              <div key={indonesian.name} className="grid gap-5 md:grid-cols-2">
+                {[indonesian, english].map((field) => (
+                  <Control key={field.name} field={field} settings={settings} wide={false} />
+                ))}
               </div>
             ))}
-          </div>
+          </FieldGroup>
         </CardContent>
       </Card>
       <Card>
@@ -124,59 +165,56 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Homepage statistics</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Up to four facts. Leave both fields blank to omit one. Use verified figures only.
-          </p>
+          <CardTitle>Company facts</CardTitle>
+          <CardDescription>
+            Up to four facts shown on the About page. Leave a row blank to omit it. Use verified
+            figures only.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="grid gap-3 sm:grid-cols-[140px_1fr]">
-              <div className="space-y-2">
-                <Label htmlFor={`stat-value-${i}`}>Value {i + 1}</Label>
+            <div key={i} className="grid gap-3 sm:grid-cols-[140px_1fr_1fr]">
+              <Field>
+                <FieldLabel htmlFor={`stat-value-${i}`}>Value {i + 1}</FieldLabel>
                 <Input
                   id={`stat-value-${i}`}
                   name={`stat-value-${i}`}
                   defaultValue={settings.statistics[i]?.value}
                   maxLength={20}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stat-label-${i}`}>Label {i + 1}</Label>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`stat-label-${i}`}>Label {i + 1}</FieldLabel>
                 <Input
                   id={`stat-label-${i}`}
                   name={`stat-label-${i}`}
                   defaultValue={settings.statistics[i]?.label}
                   maxLength={250}
                 />
-              </div>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`stat-label-en-${i}`}>English label {i + 1}</FieldLabel>
+                <Input
+                  id={`stat-label-en-${i}`}
+                  name={`stat-label-en-${i}`}
+                  defaultValue={settings.statistics[i]?.labelEn}
+                  maxLength={250}
+                />
+              </Field>
             </div>
           ))}
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              name="demoMode"
-              defaultChecked={settings.demoMode}
-              className="mt-1 size-4 accent-primary"
-            />
-            <span>
-              <strong className="block text-sm">Show demo content notices</strong>
-              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                Keep enabled until all sample company information, projects, contacts, and client
-                logos have been replaced and verified.
-              </span>
-            </span>
-          </label>
-        </CardContent>
-      </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={busy || logoBusy || faviconBusy}>
-          <Save />
-          {busy ? 'Saving…' : 'Save settings'}
+          {busy ? (
+            <Spinner data-icon="inline-start" />
+          ) : success ? (
+            <Check data-icon="inline-start" />
+          ) : (
+            <Save data-icon="inline-start" />
+          )}
+          {busy ? 'Saving…' : success ? 'Saved' : 'Save settings'}
         </Button>
       </div>
     </form>

@@ -1,4 +1,6 @@
 ---
+import { AspectRatio } from '../ui/aspect-ratio';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import type { ContentRecord } from '../../lib/content-config';
 import { formatDate, localePath, toLocale } from '../../i18n';
 const { items } = Astro.props as { items: ContentRecord[] };
@@ -7,17 +9,40 @@ const locale = toLocale(Astro.currentLocale);
 
 <div class="article-list" data-motion="group">
   {items.map((item) => (
-    <article class="article-card" data-motion-item>
-      <div class="tile-photo">
+    <Card className="gap-4 overflow-hidden pt-0" data-motion-item>
+      <AspectRatio ratio={16 / 10} className="overflow-hidden bg-muted">
         {item.image && (
-          <img data-motion-photo src={item.image} alt="" width="800" height="500" loading="lazy" />
+          <img
+            data-motion-photo
+            class="photo"
+            src={item.image}
+            alt=""
+            width="800"
+            height="500"
+            loading="lazy"
+          />
         )}
-      </div>
-      <time datetime={item.createdAt.toISOString()}>{formatDate(item.createdAt, locale)}</time>
-      <h3>
-        <a href={localePath(locale, `/articles/${item.slug}`)}>{item.title}</a>
-      </h3>
-      {item.shortDescription && <p>{item.shortDescription}</p>}
-    </article>
+      </AspectRatio>
+      <CardHeader>
+        <CardDescription>
+          <time datetime={item.createdAt.toISOString()}>{formatDate(item.createdAt, locale)}</time>
+        </CardDescription>
+        <CardTitle>
+          <h3>
+            <a
+              class="hover:text-primary hover:underline hover:underline-offset-4"
+              href={localePath(locale, `/articles/${item.slug}`)}
+            >
+              {item.title}
+            </a>
+          </h3>
+        </CardTitle>
+      </CardHeader>
+      {item.shortDescription && (
+        <CardContent>
+          <p class="text-[15px] text-muted-foreground">{item.shortDescription}</p>
+        </CardContent>
+      )}
+    </Card>
   ))}
 </div>

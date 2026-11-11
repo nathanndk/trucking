@@ -1,7 +1,9 @@
 ---
 import '../styles/global.css';
-import { Menu } from 'lucide-react';
 import Brand from '../components/Brand.astro';
+import SiteHeader from '../components/site/SiteHeader';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
 import { getPublicSettings } from '../lib/repository';
 import { origin } from '../lib/env';
 import { locales, localePath, stripLocale, toLocale, ui, type Locale } from '../i18n';
@@ -110,73 +112,28 @@ const structured = JSON.stringify({
     >
       {t.skip}
     </a>
-    <header class="navbar">
-      <div class="wrap nav-inner">
-        <Brand name={s.companyName} logo={s.logo} href={href('/')} label={t.nav.brandHome} />
-        <nav class="desktop-nav" aria-label={t.nav.main}>
-          {nav.slice(1).map(([target, label]) => (
-            <a href={href(target)} aria-current={current(target)}>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div class="nav-actions">
-          <div class="lang-switch" role="group" aria-label={t.nav.language}>
-            {locales.map((code, i) => (
-              <>
-                {i > 0 && (
-                  <span class="sep" aria-hidden="true">
-                    /
-                  </span>
-                )}
-                <a
-                  href={localePath(code, path)}
-                  hreflang={code}
-                  lang={code}
-                  aria-label={languages[code].name}
-                  aria-current={code === locale ? 'true' : undefined}
-                >
-                  {languages[code].code}
-                </a>
-              </>
-            ))}
-          </div>
-          <a href={href('/contact')} class="cta">
-            {s.ctaText}
-          </a>
-        </div>
-        <details class="mobile-nav">
-          <summary aria-label={t.nav.open}>
-            <Menu size={26} />
-          </summary>
-          <nav aria-label={t.nav.mobile}>
-            {nav.map(([target, label]) => (
-              <a href={href(target)} aria-current={current(target)}>
-                {label}
-              </a>
-            ))}
-            <div class="lang-switch" role="group" aria-label={t.nav.language}>
-              {locales.map((code, i) => (
-                <>
-                  {i > 0 && (
-                    <span class="sep" aria-hidden="true">
-                      /
-                    </span>
-                  )}
-                  <a
-                    href={localePath(code, path)}
-                    lang={code}
-                    aria-current={code === locale ? 'true' : undefined}
-                  >
-                    {languages[code].name}
-                  </a>
-                </>
-              ))}
-            </div>
-          </nav>
-        </details>
-      </div>
-    </header>
+    <SiteHeader
+      client:media="(max-width: 767px)"
+      brand={{ name: s.companyName, logo: s.logo, href: href('/'), label: t.nav.brandHome }}
+      nav={nav.map(([target, label]) => ({
+        href: href(target),
+        label,
+        current: current(target) === 'page',
+      }))}
+      languages={locales.map((code) => ({
+        ...languages[code],
+        locale: code,
+        href: localePath(code, path),
+        current: code === locale,
+      }))}
+      cta={{ href: href('/contact'), label: s.ctaText }}
+      labels={{
+        main: t.nav.main,
+        open: t.nav.open,
+        mobile: t.nav.mobile,
+        language: t.nav.language,
+      }}
+    />
     <main id="main" tabindex="-1">
       <slot />
     </main>
@@ -208,7 +165,7 @@ const structured = JSON.stringify({
                   </a>
                 ) : (
                   <span>
-                    <span class="marker">{t.toBeUpdated}</span>
+                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
                   </span>
                 )}
               </li>
@@ -218,7 +175,7 @@ const structured = JSON.stringify({
                   <a href={`mailto:${s.email}`}>{s.email}</a>
                 ) : (
                   <span>
-                    <span class="marker">{t.toBeUpdated}</span>
+                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
                   </span>
                 )}
               </li>
@@ -228,7 +185,7 @@ const structured = JSON.stringify({
                   <a href={phoneHref}>{s.phone}</a>
                 ) : (
                   <span>
-                    <span class="marker">{t.toBeUpdated}</span>
+                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
                   </span>
                 )}
               </li>
@@ -253,10 +210,11 @@ const structured = JSON.stringify({
             {s.address ? (
               <p class="footer-address">{s.address}</p>
             ) : (
-              <span class="marker">{t.toBeUpdated}</span>
+              <Badge variant="secondary">{t.toBeUpdated}</Badge>
             )}
           </div>
         </div>
+        <Separator className="mt-14" />
         <div class="footer-bottom">
           <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
           <span>{s.tagline}</span>

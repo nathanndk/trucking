@@ -1,13 +1,32 @@
 import { useState } from 'react';
 import { actions } from 'astro:actions';
 import { toast, Toaster } from 'sonner';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { CircleAlert } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Separator } from '@/components/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { inquiries } from '../../db/schema';
 type Inquiry = typeof inquiries.$inferSelect;
 const statuses = ['new', 'contacted', 'quoted', 'closed'] as const;
@@ -47,21 +66,20 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
           onChange={(e) => setQuery(e.target.value)}
           className="sm:max-w-sm"
         />
-        <select
+        <NativeSelect
           aria-label="Filter inquiry status"
-          className="admin-select !w-auto"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
-          <option value="all">All statuses</option>
+          <NativeSelectOption value="all">All statuses</NativeSelectOption>
           {statuses.map((s) => (
-            <option key={s} value={s}>
+            <NativeSelectOption key={s} value={s}>
               {s}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
       </div>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -90,13 +108,7 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
                   </p>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    className={
-                      item.status === 'new'
-                        ? 'border-green-200 bg-green-50 text-green-800'
-                        : 'bg-muted'
-                    }
-                  >
+                  <Badge variant={item.status === 'new' ? 'default' : 'secondary'}>
                     {item.status}
                   </Badge>
                 </TableCell>
@@ -125,12 +137,12 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
           </TableBody>
         </Table>
         {!filtered.length && (
-          <div className="p-12 text-center">
-            <p className="font-semibold">No inquiries found</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              New quotation requests will appear here.
-            </p>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No inquiries found</EmptyTitle>
+              <EmptyDescription>New quotation requests will appear here.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </Card>
       <p className="mt-4 text-xs text-muted-foreground">
@@ -142,15 +154,13 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
           if (!v) setSelected(null);
         }}
       >
-        <DialogContent>
-          <div>
-            <DialogTitle className="text-xl font-semibold">
-              Quotation request #{selected?.id}
-            </DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-muted-foreground">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Quotation request #{selected?.id}</DialogTitle>
+            <DialogDescription>
               Review the request and record your follow-up status.
             </DialogDescription>
-          </div>
+          </DialogHeader>
           {selected && (
             <>
               <dl className="grid gap-5 sm:grid-cols-2">
@@ -186,31 +196,33 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
                   {selected.message || 'No additional message.'}
                 </p>
               </div>
-              <div className="space-y-2 border-t pt-5">
-                <Label htmlFor="status">Inquiry status</Label>
-                <select
+              <Separator />
+              <Field>
+                <FieldLabel htmlFor="status">Inquiry status</FieldLabel>
+                <NativeSelect
                   id="status"
-                  className="admin-select"
+                  className="w-full"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as Inquiry['status'])}
                 >
                   {statuses.map((s) => (
-                    <option key={s} value={s}>
+                    <NativeSelectOption key={s} value={s}>
                       {s}
-                    </option>
+                    </NativeSelectOption>
                   ))}
-                </select>
-              </div>
+                </NativeSelect>
+              </Field>
               {error && (
-                <p role="alert" className="text-destructive">
-                  {error}
-                </p>
+                <Alert variant="destructive">
+                  <CircleAlert />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
-              <div className="flex justify-end">
+              <DialogFooter>
                 <Button disabled={busy} onClick={() => void save()}>
                   {busy ? 'Saving…' : 'Update status'}
                 </Button>
-              </div>
+              </DialogFooter>
             </>
           )}
         </DialogContent>

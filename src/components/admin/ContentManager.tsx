@@ -9,21 +9,59 @@ import {
   Eye,
   EyeOff,
   ArrowUpDown,
+  CircleAlert,
+  CircleCheck,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { Button } from '../ui/button';
-import { Input, Textarea } from '../ui/input';
-import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
-} from '../ui/dropdown-menu';
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { contentConfig, type Collection, type ContentRecord } from '../../lib/content-config';
 import { contentInput } from '../../lib/validation';
 import { UploadField } from './UploadField';
@@ -42,6 +80,7 @@ function Editor({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [slug, setSlug] = useState(item?.slug || '');
+  const hasSummary = collection !== 'coverage' && collection !== 'clients';
   async function save(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
@@ -75,169 +114,169 @@ function Editor({
     }
   }
   return (
-    <form onSubmit={save} className="space-y-6">
-      {error && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="title">
-            {collection === 'coverage'
-              ? 'City'
-              : collection === 'clients'
-                ? 'Client name'
-                : collection === 'fleet'
-                  ? 'Vehicle name'
-                  : 'Title'}{' '}
-            *
-          </Label>
-          <Input
-            id="title"
-            name="title"
-            defaultValue={item?.title}
-            required
-            maxLength={250}
-            onChange={(e) => {
-              if (!item)
-                setSlug(
-                  e.target.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-|-$/g, ''),
-                );
-            }}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="slug">Slug *</Label>
-          <Input
-            id="slug"
-            name="slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            required
-            maxLength={160}
-          />
-        </div>
-      </div>
-      {collection !== 'coverage' && collection !== 'clients' && (
-        <div className="space-y-2">
-          <Label htmlFor="shortDescription">Short description</Label>
-          <Input
-            id="shortDescription"
-            name="shortDescription"
-            defaultValue={item?.shortDescription}
-            maxLength={500}
-          />
-        </div>
-      )}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          name="description"
-          defaultValue={item?.description}
-          maxLength={10000}
-        />
-      </div>
-      <fieldset className="space-y-5 rounded-md border p-4">
-        <legend className="px-2 text-sm font-semibold">English version</legend>
-        <p className="text-xs text-muted-foreground">
-          Shown on the English website (/en). Blank fields fall back to the Indonesian text.
-        </p>
-        <div className="space-y-2">
-          <Label htmlFor="titleEn">English title</Label>
-          <Input id="titleEn" name="titleEn" defaultValue={item?.titleEn} maxLength={250} />
-        </div>
-        {collection !== 'coverage' && collection !== 'clients' && (
-          <div className="space-y-2">
-            <Label htmlFor="shortDescriptionEn">English short description</Label>
+    <form onSubmit={save}>
+      <FieldGroup>
+        {error && (
+          <Alert variant="destructive">
+            <CircleAlert />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="title">
+              {collection === 'coverage'
+                ? 'City'
+                : collection === 'clients'
+                  ? 'Client name'
+                  : collection === 'fleet'
+                    ? 'Vehicle name'
+                    : 'Title'}{' '}
+              *
+            </FieldLabel>
             <Input
-              id="shortDescriptionEn"
-              name="shortDescriptionEn"
-              defaultValue={item?.shortDescriptionEn}
+              id="title"
+              name="title"
+              defaultValue={item?.title}
+              required
+              maxLength={250}
+              onChange={(e) => {
+                if (!item)
+                  setSlug(
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-|-$/g, ''),
+                  );
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="slug">Slug *</FieldLabel>
+            <Input
+              id="slug"
+              name="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              required
+              maxLength={160}
+            />
+          </Field>
+        </div>
+        {hasSummary && (
+          <Field>
+            <FieldLabel htmlFor="shortDescription">Short description</FieldLabel>
+            <Input
+              id="shortDescription"
+              name="shortDescription"
+              defaultValue={item?.shortDescription}
               maxLength={500}
             />
-          </div>
+          </Field>
         )}
-        <div className="space-y-2">
-          <Label htmlFor="descriptionEn">English description</Label>
+        <Field>
+          <FieldLabel htmlFor="description">Description</FieldLabel>
           <Textarea
-            id="descriptionEn"
-            name="descriptionEn"
-            defaultValue={item?.descriptionEn}
+            id="description"
+            name="description"
+            defaultValue={item?.description}
             maxLength={10000}
           />
-        </div>
-      </fieldset>
-      {config.fields.map((field) => (
-        <div className="space-y-2" key={field.name}>
-          <Label htmlFor={field.name}>
-            {field.label}
-            {field.required ? ' *' : ''}
-          </Label>
-          {field.type === 'textarea' ? (
-            <Textarea
-              id={field.name}
-              name={field.name}
-              defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
-              maxLength={5000}
-            />
-          ) : (
+        </Field>
+        <FieldSet className="rounded-lg border p-4">
+          <FieldLegend>English version</FieldLegend>
+          <FieldDescription>
+            Shown on the English website (/en). Blank fields fall back to the Indonesian text.
+          </FieldDescription>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="titleEn">English title</FieldLabel>
+              <Input id="titleEn" name="titleEn" defaultValue={item?.titleEn} maxLength={250} />
+            </Field>
+            {hasSummary && (
+              <Field>
+                <FieldLabel htmlFor="shortDescriptionEn">English short description</FieldLabel>
+                <Input
+                  id="shortDescriptionEn"
+                  name="shortDescriptionEn"
+                  defaultValue={item?.shortDescriptionEn}
+                  maxLength={500}
+                />
+              </Field>
+            )}
+            <Field>
+              <FieldLabel htmlFor="descriptionEn">English description</FieldLabel>
+              <Textarea
+                id="descriptionEn"
+                name="descriptionEn"
+                defaultValue={item?.descriptionEn}
+                maxLength={10000}
+              />
+            </Field>
+          </FieldGroup>
+        </FieldSet>
+        {config.fields.map((field) => (
+          <Field key={field.name}>
+            <FieldLabel htmlFor={field.name}>
+              {field.label}
+              {field.required ? ' *' : ''}
+            </FieldLabel>
+            {field.type === 'textarea' ? (
+              <Textarea
+                id={field.name}
+                name={field.name}
+                defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
+                maxLength={5000}
+              />
+            ) : (
+              <Input
+                id={field.name}
+                name={field.name}
+                type={field.type || 'text'}
+                step={field.type === 'number' ? 'any' : undefined}
+                required={field.required}
+                defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
+                maxLength={500}
+              />
+            )}
+          </Field>
+        ))}
+        {config.image && (
+          <UploadField
+            label={collection === 'clients' ? 'Logo' : 'Image'}
+            value={image}
+            onChange={setImage}
+            folder={collection}
+            onBusy={setUploading}
+          />
+        )}
+        <div className="grid items-end gap-5 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="sortOrder">Sort order (lowest first)</FieldLabel>
             <Input
-              id={field.name}
-              name={field.name}
-              type={field.type || 'text'}
-              step={field.type === 'number' ? 'any' : undefined}
-              required={field.required}
-              defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
-              maxLength={500}
+              id="sortOrder"
+              name="sortOrder"
+              type="number"
+              min={0}
+              max={100000}
+              required
+              defaultValue={item?.sortOrder ?? 0}
             />
-          )}
+          </Field>
+          <Field orientation="horizontal">
+            <Checkbox id="published" name="published" defaultChecked={item?.published ?? false} />
+            <FieldLabel htmlFor="published">Published on website</FieldLabel>
+          </Field>
         </div>
-      ))}
-      {config.image && (
-        <UploadField
-          label={collection === 'clients' ? 'Logo' : 'Image'}
-          value={image}
-          onChange={setImage}
-          folder={collection}
-          onBusy={setUploading}
-        />
-      )}
-      <div className="grid items-center gap-5 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="sortOrder">Sort order (lowest first)</Label>
-          <Input
-            id="sortOrder"
-            name="sortOrder"
-            type="number"
-            min={0}
-            max={100000}
-            required
-            defaultValue={item?.sortOrder ?? 0}
-          />
-        </div>
-        <label className="flex items-center gap-3 text-sm font-medium">
-          <input
-            name="published"
-            type="checkbox"
-            defaultChecked={item?.published ?? false}
-            className="size-4 accent-primary"
-          />
-          Published on website
-        </label>
-      </div>
-      <div className="flex justify-end gap-3 border-t pt-5">
-        <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={busy || uploading}>
-          {busy ? 'Saving…' : 'Save changes'}
-        </Button>
-      </div>
+        <Field orientation="horizontal" className="justify-end border-t pt-5">
+          <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={busy || uploading}>
+            {busy ? 'Saving…' : 'Save changes'}
+          </Button>
+        </Field>
+      </FieldGroup>
     </form>
   );
 }
@@ -289,17 +328,15 @@ export default function ContentManager({
     <>
       <Toaster richColors position="top-right" />
       {saved && (
-        <p
-          role="status"
-          className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900"
-        >
-          Changes saved successfully.
-        </p>
+        <Alert role="status" className="mb-5">
+          <CircleCheck />
+          <AlertDescription>Changes saved successfully.</AlertDescription>
+        </Alert>
       )}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 flex-wrap gap-3">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-3.5 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
             <Input
               aria-label="Search records"
               placeholder={`Search ${config.label.toLowerCase()}…`}
@@ -308,16 +345,15 @@ export default function ContentManager({
               className="max-w-full pl-9 sm:w-64"
             />
           </div>
-          <select
-            className="admin-select !w-auto"
+          <NativeSelect
             aria-label="Filter by publication"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
-            <option value="all">All statuses</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
+            <NativeSelectOption value="all">All statuses</NativeSelectOption>
+            <NativeSelectOption value="published">Published</NativeSelectOption>
+            <NativeSelectOption value="draft">Draft</NativeSelectOption>
+          </NativeSelect>
         </div>
         <Button
           onClick={() => {
@@ -325,11 +361,11 @@ export default function ContentManager({
             setOpen(true);
           }}
         >
-          <Plus />
+          <Plus data-icon="inline-start" />
           Add {config.singular}
         </Button>
       </div>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -337,7 +373,7 @@ export default function ContentManager({
               <TableHead>Status</TableHead>
               <TableHead>
                 <span className="flex items-center gap-2">
-                  <ArrowUpDown size={14} />
+                  <ArrowUpDown className="size-3.5" />
                   Order
                 </span>
               </TableHead>
@@ -358,30 +394,25 @@ export default function ContentManager({
                         className="hidden h-12 w-16 rounded-md bg-muted object-cover sm:block"
                       />
                     )}
-                    <div className="min-w-36">
-                      <button
-                        className="text-left font-semibold hover:underline"
+                    <div className="flex min-w-36 flex-col items-start gap-1">
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 font-semibold whitespace-normal text-foreground"
                         onClick={() => {
                           setEdit(item);
                           setOpen(true);
                         }}
                       >
                         {item.title}
-                      </button>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
                         {collection === 'coverage' ? item.province : item.slug}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    className={
-                      item.published
-                        ? 'border-green-200 bg-green-50 text-green-800'
-                        : 'bg-muted text-muted-foreground'
-                    }
-                  >
+                  <Badge variant={item.published ? 'default' : 'outline'}>
                     {item.published ? 'Published' : 'Draft'}
                   </Badge>
                 </TableCell>
@@ -399,29 +430,31 @@ export default function ContentManager({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onSelect={() => {
-                          setEdit(item);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => void publish(item)}>
-                        {item.published ? <EyeOff /> : <Eye />}
-                        {item.published ? 'Unpublish' : 'Publish'}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onSelect={() => {
-                          setRemove(item);
-                          setError('');
-                        }}
-                      >
-                        <Trash2 />
-                        Delete
-                      </DropdownMenuItem>
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem
+                          onSelect={() => {
+                            setEdit(item);
+                            setOpen(true);
+                          }}
+                        >
+                          <Pencil />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => void publish(item)}>
+                          {item.published ? <EyeOff /> : <Eye />}
+                          {item.published ? 'Unpublish' : 'Publish'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onSelect={() => {
+                            setRemove(item);
+                            setError('');
+                          }}
+                        >
+                          <Trash2 />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -430,31 +463,31 @@ export default function ContentManager({
           </TableBody>
         </Table>
         {!filtered.length && (
-          <div className="p-12 text-center">
-            <p className="font-semibold">
-              {items.length ? 'No matching records' : 'Nothing here yet'}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {items.length
-                ? 'Try a different search or filter.'
-                : `Add your first ${config.singular} to get started.`}
-            </p>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{items.length ? 'No matching records' : 'Nothing here yet'}</EmptyTitle>
+              <EmptyDescription>
+                {items.length
+                  ? 'Try a different search or filter.'
+                  : `Add your first ${config.singular} to get started.`}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </Card>
       <p className="mt-4 text-xs text-muted-foreground">
         {filtered.length} of {items.length} records · Edit the sort order to rearrange the website.
       </p>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <div className="pr-6">
-            <DialogTitle className="text-xl font-semibold">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
               {edit ? 'Edit' : 'Add'} {config.singular}
             </DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-muted-foreground">
+            <DialogDescription>
               Changes appear on the website when published. Fields marked * are required.
             </DialogDescription>
-          </div>
+          </DialogHeader>
           {open && (
             <Editor
               key={edit?.id ?? 'new'}
@@ -465,33 +498,42 @@ export default function ContentManager({
           )}
         </DialogContent>
       </Dialog>
-      <Dialog
+      <AlertDialog
         open={!!remove}
         onOpenChange={(v) => {
           if (!v && !busy) setRemove(null);
         }}
       >
-        <DialogContent className="max-w-md">
-          <DialogTitle className="text-xl font-semibold">Delete {config.singular}?</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            “{remove?.title}” will be permanently removed. Unpublish it instead if you may need it
-            later.
-          </DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {config.singular}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{remove?.title}” will be permanently removed. Unpublish it instead if you may need it
+              later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           {error && (
-            <p role="alert" className="text-destructive">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <CircleAlert />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setRemove(null)} disabled={busy}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={() => void deleteItem()} disabled={busy}>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={busy}
+              onClick={(e) => {
+                // Keep the dialog open until the server confirms, so errors stay visible.
+                e.preventDefault();
+                void deleteItem();
+              }}
+            >
               {busy ? 'Deleting…' : 'Delete permanently'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -4,6 +4,7 @@ import PageHero from '../components/marketing/PageHero.astro';
 import ServiceGrid from '../components/marketing/ServiceGrid.astro';
 import ContainerScale from '../components/marketing/ContainerScale.astro';
 import CTA from '../components/marketing/CTA.astro';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { toLocale, ui } from '../i18n';
 const locale = toLocale(Astro.currentLocale);
@@ -22,15 +23,26 @@ const items = getPublicContent('services', locale);
   <ContainerScale />
   <section class="section">
     <div class="wrap">
-      <h2 data-motion="heading">{t.services.stepsHeading}</h2>
-      <ol class="steps" data-motion="group">
-        {t.services.steps.map((step) => (
-          <li data-motion-item>
-            <h3>{step.title}</h3>
-            <p>{step.text}</p>
-          </li>
+      <h2 data-motion="heading" class="mb-10">
+        {t.services.stepsHeading}
+      </h2>
+      <div class="steps" data-motion="group">
+        {t.services.steps.map((step, i) => (
+          <Card data-motion-item>
+            <CardHeader>
+              <CardDescription className="font-semibold text-primary tabular-nums">
+                {i + 1}
+              </CardDescription>
+              <CardTitle>
+                <h3>{step.title}</h3>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p class="text-[15px] text-muted-foreground">{step.text}</p>
+            </CardContent>
+          </Card>
         ))}
-      </ol>
+      </div>
     </div>
   </section>
   <CTA text={s.ctaText} />

@@ -1,38 +1,33 @@
 import { useState } from 'react';
 import { createAuthClient } from 'better-auth/react';
 import { LogOut } from 'lucide-react';
-import { Button } from '../ui/button';
+import { toast, Toaster } from 'sonner';
+import { Button } from '@/components/ui/button';
 const authClient = createAuthClient();
 export default function Logout() {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
   return (
-    <div>
+    <>
+      <Toaster richColors />
       <Button
         variant="ghost"
         size="sm"
         disabled={busy}
         onClick={async () => {
           setBusy(true);
-          setError(false);
           try {
             const r = await authClient.signOut();
             if (r.error) throw new Error();
             window.location.assign('/admin/login');
           } catch {
-            setError(true);
+            toast.error('Sign out failed. Try again.');
             setBusy(false);
           }
         }}
       >
-        <LogOut />
+        <LogOut data-icon="inline-start" />
         {busy ? 'Signing out…' : 'Sign out'}
       </Button>
-      {error && (
-        <span role="alert" className="block text-xs text-destructive">
-          Sign out failed. Try again.
-        </span>
-      )}
-    </div>
+    </>
   );
 }

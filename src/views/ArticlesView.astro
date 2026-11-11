@@ -2,6 +2,7 @@
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
 import ArticleList from '../components/marketing/ArticleList.astro';
+import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { fill, toLocale, ui } from '../i18n';
@@ -21,7 +22,7 @@ const articles = getPublicContent('articles', locale);
       {articles.length > 0 ? (
         <ArticleList items={articles} />
       ) : (
-        <p class="placeholder">{t.articles.empty}</p>
+        <Placeholder text={t.articles.empty} marker={false} />
       )}
     </div>
   </section>

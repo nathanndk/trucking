@@ -84,12 +84,16 @@ for (const [name, width, height] of [
         await page.screenshot({ path: testInfo.outputPath(`${name}-home.png`), fullPage: true });
     }
     if (name === 'mobile') {
-      await page.goto('/');
-      await page.getByLabel('Buka navigasi').click();
-      await expect(page.getByRole('navigation', { name: 'Navigasi seluler' })).toBeVisible();
-      await page.goto('/en');
-      await page.getByLabel('Open navigation').click();
-      await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible();
+      // The mobile menu is a sheet that opens once the header island has hydrated.
+      for (const [route, open, menu] of [
+        ['/', 'Buka navigasi', 'Navigasi seluler'],
+        ['/en', 'Open navigation', 'Mobile navigation'],
+      ] as const) {
+        await page.goto(route);
+        await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+        await page.getByLabel(open).click();
+        await expect(page.getByRole('navigation', { name: menu })).toBeVisible();
+      }
     }
   });
 }
@@ -180,8 +184,12 @@ test('admin login, all protected routes, responsive navigation and logout', asyn
     );
     await page.screenshot({ path: testInfo.outputPath(`admin-${width}.png`), fullPage: true });
     if (width === 375) {
-      await page.getByText('CMS navigation', { exact: true }).click();
-      await expect(page.getByRole('navigation', { name: 'Mobile admin navigation' })).toBeVisible();
+      // On small screens the sidebar opens as a sheet.
+      await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+      const menu = page.getByRole('dialog');
+      await expect(menu.getByRole('link', { name: 'Settings' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
     }
   }
   await page.getByRole('button', { name: 'Sign out' }).click();
@@ -329,7 +337,8 @@ test('quotation persists privately, appears to admin, and status changes', async
   for (const [name, value] of Object.entries(values))
     await page.locator(`[name="${name}"]`).fill(value);
   await page.locator('[name="serviceType"]').selectOption('container-transportation');
-  await page.locator('[name="containerType"][value="40ft"]').check();
+  await page.getByRole('radio', { name: /40 feet/ }).click();
+  await expect(page.getByRole('radio', { name: /40 feet/ })).toBeChecked();
   await page.waitForTimeout(2100);
   await page.getByRole('button', { name: 'Kirim permintaan' }).click();
   await expect(page).toHaveURL(/\/contact\?sent=1$/);
@@ -381,7 +390,7 @@ test('English pages, language switching and the English quote flow', async ({ pa
   // The container diagram hands the chosen size to the quote form.
   await page.locator('.scale-box.is-20').click();
   await expect(page).toHaveURL(/\/en\/contact\?container=20ft$/);
-  await expect(page.locator('[name="containerType"][value="20ft"]')).toBeChecked();
+  await expect(page.getByRole('radio', { name: /20-foot/ })).toBeChecked();
   const values = {
     fullName: 'Evan English',
     company: 'Test Exports Ltd',

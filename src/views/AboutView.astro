@@ -1,7 +1,9 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
+import RuledList from '../components/marketing/RuledList.astro';
 import CTA from '../components/marketing/CTA.astro';
+import { AspectRatio } from '../components/ui/aspect-ratio';
 import { getPublicSettings } from '../lib/repository';
 import { fill, toLocale, ui } from '../i18n';
 const locale = toLocale(Astro.currentLocale);
@@ -18,85 +20,62 @@ const lines = (text: string) =>
   <PageHero label={t.nav.about} title={t.about.h1} description={s.tagline} />
   <section class="section">
     <div class="wrap split">
-      <img
-        class="photo"
-        src="/images/genesis/about-team-1280.webp"
-        srcset="/images/genesis/about-team-640.webp 640w, /images/genesis/about-team-1280.webp 1280w"
-        sizes="(max-width: 800px) 100vw, 50vw"
-        alt={t.about.imageAlt}
-        width="1280"
-        height="720"
-      />
+      <AspectRatio ratio={4 / 3} className="overflow-hidden rounded-lg">
+        <img
+          class="photo"
+          src="/images/genesis/about-team-1280.webp"
+          srcset="/images/genesis/about-team-640.webp 640w, /images/genesis/about-team-1280.webp 1280w"
+          sizes="(max-width: 767px) 100vw, 50vw"
+          alt={t.about.imageAlt}
+          width="1280"
+          height="720"
+        />
+      </AspectRatio>
       <div>
         <h2>{t.about.profileHeading}</h2>
-        <p class="prose-block" style="margin-top:20px">
-          {s.about}
-        </p>
+        <p class="prose-block mt-5">{s.about}</p>
       </div>
     </div>
   </section>
-  <section class="section dark-section">
+  <section class="section dark-section dark">
     <div class="wrap split">
       <div>
         <h2 data-motion="heading">{t.about.vision}</h2>
-        <p data-motion="copy" style="margin-top:20px;max-width:52ch">
+        <p data-motion="copy" class="mt-5 max-w-[52ch] text-muted-foreground">
           {s.vision}
         </p>
       </div>
       <div>
-        <h2 data-motion="heading">{t.about.mission}</h2>
-        <ul class="plain-list" style="margin-top:20px">
-          {lines(s.mission).map((item) => (
-            <li>{item}</li>
-          ))}
-        </ul>
+        <h2 data-motion="heading" class="mb-2">
+          {t.about.mission}
+        </h2>
+        <RuledList rows={lines(s.mission).map((text) => ({ text }))} />
       </div>
     </div>
   </section>
   <section class="section">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.strengths.heading}</h2>
-      <ul class="ruled">
-        {t.strengths.items.map((item) => (
-          <li>
-            <span class="ruled-title">{item.title}</span>
-            <span class="ruled-text">{item.text}</span>
-          </li>
-        ))}
-      </ul>
+      <RuledList rows={t.strengths.items} />
     </div>
   </section>
   <section class="section tint">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.about.factsHeading}</h2>
-      <dl class="ruled">
-        <div>
-          <dt>{t.about.legalName}</dt>
-          <dd>{s.legalName}</dd>
-        </div>
-        <div>
-          <dt>{t.about.established}</dt>
-          <dd>{s.established || <span class="marker">{t.toBeUpdated}</span>}</dd>
-        </div>
-        <div>
-          <dt>{t.area.main}</dt>
-          <dd>{t.area.mainValue}</dd>
-        </div>
-        <div>
-          <dt>{t.area.port}</dt>
-          <dd>{t.area.portValue}</dd>
-        </div>
-        <div>
-          <dt>{t.about.credentials}</dt>
-          <dd>{s.credentials.trim() || <span class="marker">{t.toBeUpdated}</span>}</dd>
-        </div>
-        {s.statistics.map((stat) => (
-          <div>
-            <dt>{stat.label}</dt>
-            <dd>{stat.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <RuledList
+        rows={[
+          { label: t.about.legalName, title: s.legalName },
+          s.established
+            ? { label: t.about.established, title: s.established }
+            : { label: t.about.established, pending: true },
+          { label: t.area.main, title: t.area.mainValue },
+          { label: t.area.port, title: t.area.portValue },
+          s.credentials.trim()
+            ? { label: t.about.credentials, title: s.credentials.trim() }
+            : { label: t.about.credentials, pending: true },
+          ...s.statistics.map((stat) => ({ label: stat.label, title: stat.value })),
+        ]}
+      />
     </div>
   </section>
   <CTA text={s.ctaText} />

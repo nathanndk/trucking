@@ -1,0 +1,19 @@
+---
+import { Badge } from '../ui/badge';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '../ui/empty';
+import { toLocale, ui } from '../../i18n';
+/** Shown where the company has not supplied content yet. */
+const { text, marker = true } = Astro.props as { text: string; marker?: boolean };
+const t = ui(toLocale(Astro.currentLocale));
+---
+
+<Empty className="border md:p-8">
+  <EmptyHeader>
+    <EmptyTitle className="text-base">{text}</EmptyTitle>
+    {marker && (
+      <EmptyDescription>
+        <Badge variant="secondary">{t.toBeUpdated}</Badge>
+      </EmptyDescription>
+    )}
+  </EmptyHeader>
+</Empty>

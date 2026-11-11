@@ -3,6 +3,18 @@ import { actions, isInputError } from 'astro:actions';
 import type { ActionError } from 'astro:actions';
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
+import QuoteForm from '../components/site/QuoteForm';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { Badge } from '../components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from '../components/ui/item';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { formToken } from '../lib/spam';
 import { containerTypes } from '../lib/validation';
@@ -18,24 +30,21 @@ const c = t.contact;
 const s = getPublicSettings(locale);
 const services = getPublicContent('services', locale);
 const success = Astro.url.searchParams.get('sent') === '1';
-const selectedService = Astro.url.searchParams.get('service') || '';
-const selectedContainer = Astro.url.searchParams.get('container') || '';
 const errorText = !error
   ? ''
   : isInputError(error)
     ? c.errors.invalid
     : (c.errors[error.code as keyof typeof c.errors] ?? c.errors.generic);
-const textFields = [
-  ['fullName', c.fullName, 'text', 'name'],
-  ['company', c.company, 'text', 'organization'],
-  ['phone', c.phoneField, 'tel', 'tel'],
-  ['email', c.emailField, 'email', 'email'],
-] as const;
-const routeFields = [
-  ['pickup', c.pickup],
-  ['destination', c.destination],
-] as const;
-const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
+const contacts = [
+  {
+    label: c.whatsapp,
+    value: s.whatsapp && `+${s.whatsapp}`,
+    href: s.whatsapp && `https://wa.me/${s.whatsapp}`,
+  },
+  { label: c.phone, value: s.phone, href: s.phone && `tel:${s.phone.replace(/[^+\d]/g, '')}` },
+  { label: c.email, value: s.email, href: s.email && `mailto:${s.email}` },
+  { label: c.office, value: s.address, href: '' },
+];
 ---
 
 <PublicLayout title={c.title} description={c.description}>
@@ -43,143 +52,91 @@ const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
   <section class="section">
     <div class="wrap contact-grid">
       <aside>
-        <h2>{c.infoHeading}</h2>
-        <dl class="contact-list">
-          <div>
-            <dt>{c.whatsapp}</dt>
-            <dd>
-              {s.whatsapp ? (
-                <a href={`https://wa.me/${s.whatsapp}`} rel="noopener noreferrer">
-                  +{s.whatsapp}
-                </a>
-              ) : (
-                <span class="marker">{t.toBeUpdated}</span>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{c.phone}</dt>
-            <dd>
-              {s.phone ? (
-                <a href={phoneHref}>{s.phone}</a>
-              ) : (
-                <span class="marker">{t.toBeUpdated}</span>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{c.email}</dt>
-            <dd>
-              {s.email ? (
-                <a href={`mailto:${s.email}`}>{s.email}</a>
-              ) : (
-                <span class="marker">{t.toBeUpdated}</span>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{c.office}</dt>
-            <dd>{s.address || <span class="marker">{t.toBeUpdated}</span>}</dd>
-            {s.mapsUrl && (
-              <dd>
-                <a href={s.mapsUrl} rel="noopener noreferrer">
-                  {c.maps}
-                </a>
-              </dd>
-            )}
-          </div>
-        </dl>
+        <h2 class="mb-4">{c.infoHeading}</h2>
+        <ItemGroup>
+          {contacts.map((contact, i) => (
+            <>
+              {i > 0 && <ItemSeparator />}
+              <Item className="px-0">
+                <ItemContent>
+                  <ItemDescription>{contact.label}</ItemDescription>
+                  <ItemTitle className="text-base font-semibold break-all whitespace-pre-line">
+                    {!contact.value ? (
+                      <Badge variant="secondary">{t.toBeUpdated}</Badge>
+                    ) : contact.href ? (
+                      <a
+                        class="text-primary hover:underline hover:underline-offset-4"
+                        href={contact.href}
+                        rel="noopener noreferrer"
+                      >
+                        {contact.value}
+                      </a>
+                    ) : (
+                      contact.value
+                    )}
+                  </ItemTitle>
+                  {contact.label === c.office && s.mapsUrl && (
+                    <ItemDescription>
+                      <a href={s.mapsUrl} rel="noopener noreferrer">
+                        {c.maps}
+                      </a>
+                    </ItemDescription>
+                  )}
+                </ItemContent>
+              </Item>
+            </>
+          ))}
+        </ItemGroup>
       </aside>
-      <div class="form-card">
-        <h2>{c.formHeading}</h2>
-        <p class="form-note">{c.required}</p>
-        {success && (
-          <div class="form-result" role="status">
-            <strong>{c.successTitle}</strong>
-            <p>{c.successText}</p>
-          </div>
-        )}
-        {errorText && (
-          <div class="form-result error" role="alert">
-            {errorText}
-          </div>
-        )}
-        <form method="POST" action={actions.quote} class="form-grid" style="margin-top:24px">
-          <input type="hidden" name="token" value={formToken()} />
-          <div
-            style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"
-            aria-hidden="true"
-          >
-            <label for="website">Website</label>
-            <input id="website" name="website" tabindex="-1" autocomplete="off" />
-          </div>
-          {textFields.map(([name, label, type, autocomplete]) => (
-            <div class="form-field">
-              <label for={name}>{label} *</label>
-              <input
-                id={name}
-                name={name}
-                type={type}
-                autocomplete={autocomplete}
-                required
-                minlength={name === 'phone' ? 8 : 2}
-                maxlength={name === 'phone' ? 30 : 250}
-              />
-            </div>
-          ))}
-          <div class="form-field full">
-            <label for="serviceType">{c.serviceType} *</label>
-            <select id="serviceType" name="serviceType" required>
-              <option value="">{c.servicePlaceholder}</option>
-              {services.map((service) => (
-                <option value={service.slug} selected={selectedService === service.slug}>
-                  {service.title}
-                </option>
-              ))}
-            </select>
-          </div>
-          {routeFields.map(([name, label]) => (
-            <div class="form-field">
-              <label for={name}>{label} *</label>
-              <input id={name} name={name} type="text" required minlength="2" maxlength="250" />
-            </div>
-          ))}
-          <fieldset class="choice-group full">
-            <legend>{c.containerType} *</legend>
-            <div class="choices">
-              {containerTypes.map((type) => (
-                <label class:list={['choice', type === '20ft' ? 'is-20' : 'is-40']}>
-                  <input
-                    type="radio"
-                    name="containerType"
-                    value={type}
-                    required
-                    checked={selectedContainer === type}
-                  />
-                  <span class="choice-shape" aria-hidden="true" />
-                  <span class="choice-name">{t.container.sizes[type].name}</span>
-                  <span class="choice-length">
-                    {`${t.container.lengthLabel} ${t.container.sizes[type].length}`}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div class="form-field full">
-            <label for="message">{c.message}</label>
-            <textarea
-              id="message"
-              name="message"
-              maxlength="3000"
-              placeholder={c.messagePlaceholder}
-            ></textarea>
-          </div>
-          <p class="form-note full">{c.privacy}</p>
-          <button type="submit" class="cta full">
-            {c.submit}
-          </button>
-        </form>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <h2 class="text-2xl">{c.formHeading}</h2>
+          </CardTitle>
+          <CardDescription>{c.required}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          {success && (
+            <Alert role="status">
+              <AlertTitle>{c.successTitle}</AlertTitle>
+              <AlertDescription>{c.successText}</AlertDescription>
+            </Alert>
+          )}
+          {errorText && (
+            <Alert variant="destructive">
+              <AlertDescription>{errorText}</AlertDescription>
+            </Alert>
+          )}
+          <QuoteForm
+            client:load
+            action={actions.quote.toString()}
+            token={formToken()}
+            services={services.map(({ slug, title }) => ({ slug, title }))}
+            containers={containerTypes.map((value) => ({
+              value,
+              name: t.container.sizes[value].name,
+              detail: `${t.container.lengthLabel} ${t.container.sizes[value].length}`,
+            }))}
+            selectedService={Astro.url.searchParams.get('service') || ''}
+            selectedContainer={Astro.url.searchParams.get('container') || ''}
+            labels={{
+              fullName: c.fullName,
+              company: c.company,
+              phoneField: c.phoneField,
+              emailField: c.emailField,
+              serviceType: c.serviceType,
+              servicePlaceholder: c.servicePlaceholder,
+              pickup: c.pickup,
+              destination: c.destination,
+              containerType: c.containerType,
+              message: c.message,
+              messagePlaceholder: c.messagePlaceholder,
+              privacy: c.privacy,
+              submit: c.submit,
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   </section>
 </PublicLayout>

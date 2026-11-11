@@ -2,9 +2,9 @@ import { useId, useState } from 'react';
 import { UploadCloud, X } from 'lucide-react';
 import { actions } from 'astro:actions';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
-import { Label } from '../ui/label';
-import { Dropzone } from '../ui/dropzone';
+import { Button } from '@/components/ui/button';
+import { Dropzone } from '@/components/ui/dropzone';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 export function UploadField({
   value,
   onChange,
@@ -44,8 +44,8 @@ export function UploadField({
     }
   }
   return (
-    <div className="space-y-3">
-      <Label htmlFor={id}>{label}</Label>
+    <Field data-invalid={error ? true : undefined}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       {value && (
         <div className="flex items-start gap-3">
           <img
@@ -78,7 +78,7 @@ export function UploadField({
         }}
         className="min-w-0 border-dashed bg-muted/40 whitespace-normal break-words"
       >
-        <UploadCloud size={24} />
+        <UploadCloud className="size-6" />
         <span className="text-sm">
           {busy ? 'Uploading…' : 'Drop an image here, or choose a file'}
         </span>
@@ -86,11 +86,7 @@ export function UploadField({
           JPEG, PNG or WebP · max 5 MB · optimized automatically
         </span>
       </Dropzone>
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
+      {error && <FieldError>{error}</FieldError>}
+    </Field>
   );
 }

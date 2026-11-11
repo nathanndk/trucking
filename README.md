@@ -62,6 +62,14 @@ Every public page also exists in English under `/en` (`/en/about`, `/en/articles
 
 Supporting routes: `/api/auth/[...all]`, `/_actions/*`, `/media/[...path]`, `/robots.txt`, `/sitemap.xml`, and a custom 404 page. CMS collection routes share one Astro route template. Slugs are unique per collection and shared by both languages; `id` and `en` are reserved.
 
+## Interface components
+
+Every control on the public website and in the admin comes from [shadcn/ui](https://ui.shadcn.com) (style `new-york`, Radix primitives), added with the shadcn CLI into `src/components/ui`. `components.json` holds the configuration; theme tokens (brand colours, radius, the `dark` scope used by navy sections) live in `src/styles/global.css`. Add or update a component with `pnpm dlx shadcn@latest add <name>`, using `--diff` first when the file has local changes.
+
+- Public pages are Astro files that render shadcn components on the server (`Card`, `Item`, `Empty`, `Badge`, `Breadcrumb`, `AspectRatio`, `buttonVariants` for link buttons). Two parts hydrate React in the browser: the header on small screens (`Sheet` menu) and the quotation form (`RadioGroup` for the container size). Without JavaScript the pages still read and navigate through the footer links, but the mobile menu does not open and a container size cannot be chosen.
+- The admin frame is the shadcn `Sidebar`; forms use `Field`, `NativeSelect`, `Checkbox`, `Alert`, `AlertDialog` and `Empty`.
+- Layout that is specific to this brand (hero, shipping route line, to-scale container boxes, section grids) is plain CSS in the `components` layer of `global.css`, so Tailwind utilities on shadcn components always take precedence.
+
 ## Languages
 
 Indonesian is the default and has no URL prefix; English lives under `/en` (Astro `i18n` in `astro.config.mjs`). Each page body is a component in `src/views/`; the files in `src/pages/` and `src/pages/en/` are thin route wrappers. Interface text is in `src/i18n/id.ts` and `src/i18n/en.ts` (same shape, type-checked). CMS content has paired English fields ("English title", "English description", and the "English version" card in Settings). `getPublicContent` and `getPublicSettings` in `src/lib/repository.ts` return the English value when one was entered and fall back to Indonesian otherwise. The admin interface is English only.

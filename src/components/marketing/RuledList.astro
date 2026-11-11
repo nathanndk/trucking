@@ -1,0 +1,45 @@
+---
+import { Badge } from '../ui/badge';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from '../ui/item';
+import { toLocale, ui } from '../../i18n';
+/** A separated list of title + text rows, used for strengths, missions and company facts. */
+interface Props {
+  /** `pending` marks a value the company has not supplied yet. */
+  rows: { title?: string; text?: string; label?: string; pending?: boolean }[];
+}
+const { rows } = Astro.props;
+const t = ui(toLocale(Astro.currentLocale));
+---
+
+<ItemGroup>
+  {rows.map((row, i) => (
+    <>
+      {i > 0 && <ItemSeparator />}
+      <Item className="px-0">
+        <ItemContent>
+          {row.label && <ItemDescription className="line-clamp-none">{row.label}</ItemDescription>}
+          {row.title && (
+            <ItemTitle className="text-base font-semibold whitespace-pre-line">
+              {row.title}
+            </ItemTitle>
+          )}
+          {row.pending && (
+            <div>
+              <Badge variant="secondary">{t.toBeUpdated}</Badge>
+            </div>
+          )}
+          {row.text && (
+            <ItemDescription className="line-clamp-none text-[15px]">{row.text}</ItemDescription>
+          )}
+        </ItemContent>
+      </Item>
+    </>
+  ))}
+</ItemGroup>

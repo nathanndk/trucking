@@ -1,16 +1,21 @@
 ---
+import { AspectRatio } from '../ui/aspect-ratio';
 import { localePath, toLocale, ui } from '../../i18n';
 import { containerTypes } from '../../lib/validation';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale).container;
+// External length and height in metres (ISO 668), so both boxes share one scale.
+const ratio = { '20ft': 6.058 / 2.591, '40ft': 12.192 / 2.591 };
 ---
 
-<section class="section dark-section" id="container">
+<section class="section dark-section dark" id="container">
   <div class="wrap container-scale">
-    <div class="scale-copy">
+    <div>
       <h2 data-motion="heading">{t.heading}</h2>
-      <p data-motion="copy">{t.text}</p>
-      <p class="scale-note">{t.note}</p>
+      <p data-motion="copy" class="mt-5 max-w-[48ch] text-muted-foreground">
+        {t.text}
+      </p>
+      <p class="mt-4 max-w-[48ch] text-sm text-muted-foreground">{t.note}</p>
     </div>
     <div class="scale">
       {containerTypes.map((type) => (
@@ -19,9 +24,11 @@ const t = ui(locale).container;
           href={`${localePath(locale, '/contact')}?container=${type}`}
           aria-label={`${t.sizes[type].action} (${t.lengthLabel.toLowerCase()} ${t.sizes[type].length})`}
         >
-          <span class="scale-body">
-            <span class="scale-name">{t.sizes[type].name}</span>
-          </span>
+          <AspectRatio ratio={ratio[type]}>
+            <span class="scale-body">
+              <span class="scale-name">{t.sizes[type].name}</span>
+            </span>
+          </AspectRatio>
           <span class="scale-dim">{t.sizes[type].length}</span>
         </a>
       ))}

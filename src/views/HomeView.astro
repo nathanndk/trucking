@@ -5,8 +5,14 @@ import ContainerScale from '../components/marketing/ContainerScale.astro';
 import ServiceGrid from '../components/marketing/ServiceGrid.astro';
 import ProjectGrid from '../components/marketing/ProjectGrid.astro';
 import ArticleList from '../components/marketing/ArticleList.astro';
+import RuledList from '../components/marketing/RuledList.astro';
+import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
+import { AspectRatio } from '../components/ui/aspect-ratio';
+import { buttonVariants } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { cn } from '../lib/utils';
 import { localePath, toLocale, ui } from '../i18n';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
@@ -17,10 +23,12 @@ const projects = getPublicContent('projects', locale).slice(0, 2);
 const clients = getPublicContent('clients', locale);
 const articles = getPublicContent('articles', locale).slice(0, 3);
 const aboutLead = s.about.split(/\n{2,}/)[0];
+// cn() resolves the padding conflict; buttonVariants alone would keep both classes.
+const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
 ---
 
 <PublicLayout title={t.home.title} description={s.shortDescription}>
-  <section class="hero" data-motion="hero">
+  <section class="hero dark" data-motion="hero">
     <div class="hero-media">
       <img
         class="hero-photo"
@@ -39,10 +47,10 @@ const aboutLead = s.about.split(/\n{2,}/)[0];
         <h1>{t.home.h1}</h1>
         <p class="hero-text">{s.shortDescription}</p>
         <div class="hero-actions">
-          <a href={href('/contact')} class="cta">
+          <a href={href('/contact')} class={buttonVariants({ size: 'lg' })}>
             {s.ctaText}
           </a>
-          <a href={href('/services')} class="cta line">
+          <a href={href('/services')} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
             {t.home.servicesLink}
           </a>
         </div>
@@ -55,40 +63,35 @@ const aboutLead = s.about.split(/\n{2,}/)[0];
       <div class="intro-copy">
         <h2 data-motion="heading">{t.home.aboutHeading}</h2>
         <p data-motion="copy">{aboutLead}</p>
-        <a class="text-link" href={href('/about')}>
+        <a class={link} href={href('/about')}>
           {t.home.aboutLink}
         </a>
       </div>
-      <img
-        class="photo"
-        src="/images/genesis/about-handshake-1280.webp"
-        srcset="/images/genesis/about-handshake-640.webp 640w, /images/genesis/about-handshake-1280.webp 1280w"
-        sizes="(max-width: 800px) 100vw, 50vw"
-        alt={t.home.aboutAlt}
-        width="1280"
-        height="720"
-        loading="lazy"
-      />
+      <AspectRatio ratio={4 / 3} className="overflow-hidden rounded-lg">
+        <img
+          class="photo"
+          src="/images/genesis/about-handshake-1280.webp"
+          srcset="/images/genesis/about-handshake-640.webp 640w, /images/genesis/about-handshake-1280.webp 1280w"
+          sizes="(max-width: 767px) 100vw, 50vw"
+          alt={t.home.aboutAlt}
+          width="1280"
+          height="720"
+          loading="lazy"
+        />
+      </AspectRatio>
     </div>
   </section>
   <section class="section tint">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.strengths.heading}</h2>
-      <ul class="ruled">
-        {t.strengths.items.map((item) => (
-          <li>
-            <span class="ruled-title">{item.title}</span>
-            <span class="ruled-text">{item.text}</span>
-          </li>
-        ))}
-      </ul>
+      <RuledList rows={t.strengths.items} />
     </div>
   </section>
   <section class="section" id="services">
     <div class="wrap">
       <div class="section-head">
         <h2 data-motion="heading">{t.home.servicesHeading}</h2>
-        <a href={href('/services')} class="text-link">
+        <a href={href('/services')} class={link}>
           {t.home.servicesAll}
         </a>
       </div>
@@ -99,69 +102,60 @@ const aboutLead = s.about.split(/\n{2,}/)[0];
   <section class="section tint">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.area.heading}</h2>
-      <dl class="ruled">
-        <div>
-          <dt>{t.area.main}</dt>
-          <dd>{t.area.mainValue}</dd>
-        </div>
-        <div>
-          <dt>{t.area.port}</dt>
-          <dd>{t.area.portValue}</dd>
-        </div>
-        <div>
-          <dt>{t.area.other}</dt>
-          <dd>
-            <span class="marker">{t.toBeUpdated}</span>
-          </dd>
-        </div>
-      </dl>
+      <RuledList
+        rows={[
+          { label: t.area.main, title: t.area.mainValue },
+          { label: t.area.port, title: t.area.portValue },
+          { label: t.area.other, pending: true },
+        ]}
+      />
     </div>
   </section>
   <section class="section">
     <div class="wrap">
       <div class="section-head">
         <h2 data-motion="heading">{t.home.projectsHeading}</h2>
-        <a href={href('/projects')} class="text-link">
+        <a href={href('/projects')} class={link}>
           {t.home.projectsLink}
         </a>
       </div>
       {projects.length > 0 && <ProjectGrid items={projects} />}
       {clients.length > 0 && (
-        <div class="client-grid" style={projects.length ? 'margin-top:40px' : undefined}>
+        <div class:list={['client-grid', projects.length > 0 && 'mt-10']}>
           {clients.map((client) => (
-            <div>
-              {client.image ? (
-                <img src={client.image} alt={client.title} width="240" height="80" loading="lazy" />
-              ) : (
-                client.title
-              )}
-            </div>
+            <Card className="justify-center py-5">
+              <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
+                {client.image ? (
+                  <img
+                    src={client.image}
+                    alt={client.title}
+                    width="240"
+                    height="80"
+                    loading="lazy"
+                  />
+                ) : (
+                  client.title
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
-      {projects.length === 0 && clients.length === 0 && (
-        <p class="placeholder">
-          {t.home.projectsEmpty}
-          <span class="marker">{t.toBeUpdated}</span>
-        </p>
-      )}
+      {projects.length === 0 && clients.length === 0 && <Placeholder text={t.home.projectsEmpty} />}
     </div>
   </section>
   <section class="section tint">
     <div class="wrap">
       <div class="section-head">
         <h2 data-motion="heading">{t.home.articlesHeading}</h2>
-        <a href={href('/articles')} class="text-link">
+        <a href={href('/articles')} class={link}>
           {t.home.articlesLink}
         </a>
       </div>
       {articles.length > 0 ? (
         <ArticleList items={articles} />
       ) : (
-        <p class="placeholder">
-          {t.home.articlesEmpty}
-          <span class="marker">{t.toBeUpdated}</span>
-        </p>
+        <Placeholder text={t.home.articlesEmpty} />
       )}
     </div>
   </section>

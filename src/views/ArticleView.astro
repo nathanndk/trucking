@@ -1,6 +1,16 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import CTA from '../components/marketing/CTA.astro';
+import { AspectRatio } from '../components/ui/aspect-ratio';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '../components/ui/breadcrumb';
+import { Separator } from '../components/ui/separator';
 import type { ContentRecord } from '../lib/content-config';
 import { getPublicSettings } from '../lib/repository';
 import { formatDate, localePath, toLocale, ui } from '../i18n';
@@ -23,19 +33,33 @@ const summary = article.shortDescription || paragraphs[0]?.slice(0, 160) || t.ar
   <section class="section">
     <div class="wrap">
       <article class="article">
-        <nav class="breadcrumb" aria-label="Breadcrumb">
-          <a href={localePath(locale, '/articles')}>{t.articles.back}</a>
-        </nav>
-        <h1>{article.title}</h1>
-        <p class="article-meta" style="margin-top:16px">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={localePath(locale, '/articles')}>
+                {t.articles.back}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{article.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <h1 class="mt-6">{article.title}</h1>
+        <p class="mt-4 text-sm text-muted-foreground">
           <time datetime={article.createdAt.toISOString()}>
             {formatDate(article.createdAt, locale)}
           </time>
         </p>
-        {article.image && (
-          <img class="photo" src={article.image} alt="" width="1280" height="720" />
+        {article.image ? (
+          <AspectRatio ratio={16 / 9} className="my-8 overflow-hidden rounded-lg bg-muted">
+            <img class="photo" src={article.image} alt="" width="1280" height="720" />
+          </AspectRatio>
+        ) : (
+          <Separator className="my-8" />
         )}
-        <div class="article-body" style={article.image ? undefined : 'margin-top:32px'}>
+        <div class="article-body">
           {paragraphs.map((paragraph) => (
             <p>{paragraph}</p>
           ))}

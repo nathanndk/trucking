@@ -1,4 +1,5 @@
 ---
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '../ui/item';
 import { toLocale, ui } from '../../i18n';
 const t = ui(toLocale(Astro.currentLocale));
 ---
@@ -12,15 +13,25 @@ const t = ui(toLocale(Astro.currentLocale));
       <svg class="route-line" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true">
         <path data-motion-path d="M0 1H100"></path>
       </svg>
-      <ol class="route-stops">
+      <ItemGroup className="relative grid grid-cols-4 gap-6 max-md:grid-cols-1 max-md:gap-4">
         {t.route.stops.map((stop, i) => (
-          <li data-motion-marker>
-            <span class="route-num">{i + 1}</span>
-            <strong>{stop.title}</strong>
-            <span>{stop.text}</span>
-          </li>
+          <Item
+            data-motion-marker
+            className="flex-col items-start gap-3 p-0 max-md:flex-row max-md:flex-nowrap"
+          >
+            <ItemMedia
+              variant="icon"
+              className="route-num size-8 rounded-full border-2 border-foreground bg-background"
+            >
+              {i + 1}
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle className="text-base font-semibold">{stop.title}</ItemTitle>
+              <ItemDescription className="line-clamp-none text-[15px]">{stop.text}</ItemDescription>
+            </ItemContent>
+          </Item>
         ))}
-      </ol>
+      </ItemGroup>
     </div>
   </div>
 </section>

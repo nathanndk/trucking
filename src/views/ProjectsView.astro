@@ -2,7 +2,9 @@
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
 import ProjectGrid from '../components/marketing/ProjectGrid.astro';
+import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
+import { Card, CardContent } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { fill, toLocale, ui } from '../i18n';
 const locale = toLocale(Astro.currentLocale);
@@ -19,20 +21,17 @@ const clients = getPublicContent('clients', locale);
   <PageHero label={t.nav.projects} title={t.projects.h1} description={t.projects.intro} />
   <section class="section">
     <div class="wrap">
-      <h2 style="margin-bottom:32px">{t.projects.projectsHeading}</h2>
+      <h2 class="mb-8">{t.projects.projectsHeading}</h2>
       {projects.length > 0 ? (
         <ProjectGrid items={projects} full />
       ) : (
-        <p class="placeholder">
-          {t.projects.projectsEmpty}
-          <span class="marker">{t.toBeUpdated}</span>
-        </p>
+        <Placeholder text={t.projects.projectsEmpty} />
       )}
     </div>
   </section>
   <section class="section tint">
     <div class="wrap">
-      <h2 data-motion="heading" style="margin-bottom:32px">
+      <h2 data-motion="heading" class="mb-8">
         {t.projects.clientsHeading}
       </h2>
       {clients.length > 0 ? (
@@ -43,20 +42,23 @@ const clients = getPublicContent('clients', locale);
             ) : (
               client.title
             );
-            return client.website ? (
-              <a href={client.website} rel="noopener noreferrer">
-                {mark}
-              </a>
-            ) : (
-              <div>{mark}</div>
+            return (
+              <Card className="justify-center py-5">
+                <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
+                  {client.website ? (
+                    <a href={client.website} rel="noopener noreferrer">
+                      {mark}
+                    </a>
+                  ) : (
+                    mark
+                  )}
+                </CardContent>
+              </Card>
             );
           })}
         </div>
       ) : (
-        <p class="placeholder">
-          {t.projects.clientsEmpty}
-          <span class="marker">{t.toBeUpdated}</span>
-        </p>
+        <Placeholder text={t.projects.clientsEmpty} />
       )}
     </div>
   </section>

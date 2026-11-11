@@ -1,5 +1,10 @@
 ---
+import { AspectRatio } from '../ui/aspect-ratio';
+import { buttonVariants } from '../ui/button';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import Placeholder from './Placeholder.astro';
 import type { ContentRecord } from '../../lib/content-config';
+import { cn } from '../../lib/utils';
 import { localePath, toLocale, ui } from '../../i18n';
 const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
 const locale = toLocale(Astro.currentLocale);
@@ -10,47 +15,44 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 
 <div class={full ? 'service-rows' : 'services-grid'} data-motion="group">
   {items.map((item) => (
-    <article class="service-tile" data-motion-item id={item.slug}>
-      <div class="tile-photo">
+    <Card className="service-tile gap-4 overflow-hidden pt-0" data-motion-item id={item.slug}>
+      <AspectRatio ratio={16 / 10} className="tile-photo overflow-hidden bg-muted">
         {item.image && (
           <img
             data-motion-photo
+            class="photo"
             src={item.image}
             srcset={
               small(item.image) !== item.image
                 ? `${small(item.image)} 640w, ${item.image} 1280w`
                 : undefined
             }
-            sizes={small(item.image) !== item.image ? '(max-width: 800px) 100vw, 50vw' : undefined}
+            sizes={small(item.image) !== item.image ? '(max-width: 767px) 100vw, 50vw' : undefined}
             alt=""
             width="1280"
             height="800"
             loading="lazy"
           />
         )}
-      </div>
-      {full ? (
-        <div class="tile-copy">
-          <h2>{item.title}</h2>
-          <p>{item.description || item.shortDescription}</p>
-          <a class="text-link" href={`${localePath(locale, '/contact')}?service=${item.slug}`}>
-            {t.services.quote}
-          </a>
-        </div>
-      ) : (
-        <>
-          <h3>{item.title}</h3>
-          <p>{item.shortDescription}</p>
-          <a
-            class="text-link"
-            href={`${localePath(locale, '/contact')}?service=${item.slug}`}
-            aria-label={`${t.services.quoteShort}: ${item.title}`}
-          >
-            {t.services.quoteShort}
-          </a>
-        </>
-      )}
-    </article>
+      </AspectRatio>
+      <CardHeader>
+        <CardTitle>
+          {full ? <h2 class="text-2xl">{item.title}</h2> : <h3>{item.title}</h3>}
+        </CardTitle>
+        <CardDescription className="text-[15px] whitespace-pre-line">
+          {full ? item.description || item.shortDescription : item.shortDescription}
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="mt-auto">
+        <a
+          class={cn(buttonVariants({ variant: 'link' }), 'h-auto p-0')}
+          href={`${localePath(locale, '/contact')}?service=${item.slug}`}
+          aria-label={full ? undefined : `${t.services.quoteShort}: ${item.title}`}
+        >
+          {full ? t.services.quote : t.services.quoteShort}
+        </a>
+      </CardFooter>
+    </Card>
   ))}
 </div>
-{items.length === 0 && <p class="placeholder">{t.services.empty}</p>}
+{items.length === 0 && <Placeholder text={t.services.empty} marker={false} />}

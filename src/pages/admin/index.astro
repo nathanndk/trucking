@@ -1,7 +1,31 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
+import { buttonVariants } from '../../components/ui/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../../components/ui/empty';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from '../../components/ui/item';
 import { ArrowUpRight, Package, Newspaper, FolderKanban, Building2, Inbox } from 'lucide-react';
 import { db } from '../../db';
 import { inquiries } from '../../db/schema';
@@ -34,14 +58,16 @@ const latest = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).li
   <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
     {[...counts, { name: 'New inquiries', key: 'inquiries', Icon: Inbox, count: newCount }].map(
       ({ name, key, Icon, count: n }) => (
-        <a href={`/admin/${key}`}>
-          <Card className="h-full">
-            <CardContent className="pt-6">
-              <div class="flex items-center justify-between text-muted-foreground">
-                <span class="text-xs">{name}</span>
-                <Icon size={18} />
-              </div>
-              <p class="mt-5 text-3xl font-semibold tracking-tight">{n}</p>
+        <a href={`/admin/${key}`} class="rounded-xl">
+          <Card className="h-full gap-2">
+            <CardHeader>
+              <CardDescription>{name}</CardDescription>
+              <CardAction>
+                <Icon className="size-4 text-muted-foreground" />
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              <p class="text-3xl font-semibold tracking-tight">{n}</p>
             </CardContent>
           </Card>
         </a>
@@ -51,38 +77,48 @@ const latest = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).li
   <div class="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
     <Card>
       <CardHeader>
-        <div class="flex items-center justify-between">
-          <CardTitle>Recent inquiries</CardTitle>
-          <a href="/admin/inquiries" class="text-xs font-semibold">
-            View all ↗
+        <CardTitle>Recent inquiries</CardTitle>
+        <CardAction>
+          <a href="/admin/inquiries" class={buttonVariants({ variant: 'link', size: 'sm' })}>
+            View all
           </a>
-        </div>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {latest.length ? (
-          latest.map((item) => (
-            <a
-              href="/admin/inquiries"
-              class="flex items-center justify-between gap-4 border-t py-4"
-            >
-              <div>
-                <p class="text-sm font-semibold">{item.fullName}</p>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  {item.pickup} → {item.destination}
-                  {item.containerType && ` (${item.containerType})`}
-                </p>
-              </div>
-              <Badge>{item.status}</Badge>
-            </a>
-          ))
+          <ItemGroup>
+            {latest.map((item, i) => (
+              <>
+                {i > 0 && <ItemSeparator />}
+                <Item size="sm" className="px-0">
+                  <ItemContent>
+                    <ItemTitle>{item.fullName}</ItemTitle>
+                    <ItemDescription>
+                      {item.pickup} → {item.destination}
+                      {item.containerType && ` (${item.containerType})`}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <Badge variant={item.status === 'new' ? 'default' : 'secondary'}>
+                      {item.status}
+                    </Badge>
+                  </ItemActions>
+                </Item>
+              </>
+            ))}
+          </ItemGroup>
         ) : (
-          <div class="rounded-lg bg-muted p-8 text-center">
-            <Inbox className="mx-auto mb-3 text-muted-foreground" size={28} />
-            <p class="text-sm font-semibold">Ready for your next opportunity</p>
-            <p class="mt-2 text-xs text-muted-foreground">
-              Quotation requests from your contact page will appear here.
-            </p>
-          </div>
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Inbox />
+              </EmptyMedia>
+              <EmptyTitle>Ready for your next opportunity</EmptyTitle>
+              <EmptyDescription>
+                Quotation requests from your contact page will appear here.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>
@@ -90,7 +126,7 @@ const latest = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).li
       <CardHeader>
         <CardTitle>Quick actions</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-col gap-3">
         {[
           ['/admin/services', 'Update your services'],
           ['/admin/articles', 'Publish an article'],
@@ -99,10 +135,10 @@ const latest = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).li
         ].map(([href, text]) => (
           <a
             href={href}
-            class="flex items-center justify-between rounded-lg border p-4 text-sm hover:bg-muted"
+            class={buttonVariants({ variant: 'outline', className: 'justify-between' })}
           >
             {text}
-            <ArrowUpRight size={16} />
+            <ArrowUpRight className="size-4" />
           </a>
         ))}
       </CardContent>

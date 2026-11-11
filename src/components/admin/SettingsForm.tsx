@@ -1,28 +1,31 @@
 import { useState, type SubmitEvent } from 'react';
 import { actions } from 'astro:actions';
 import { toast, Toaster } from 'sonner';
-import { Save } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Input, Textarea } from '../ui/input';
-import { Label } from '../ui/label';
-import { settingFields, settingFieldsEn, type Field } from '../../lib/content-config';
+import { CircleAlert, CircleCheck, Save } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  settingFields,
+  settingFieldsEn,
+  type Field as FieldConfig,
+} from '../../lib/content-config';
 import { settingsInput } from '../../lib/validation';
 import { UploadField } from './UploadField';
 import type { z } from 'zod';
 type Settings = z.input<typeof settingsInput>;
-function Fields({ fields, settings }: { fields: Field[]; settings: Settings }) {
+function Fields({ fields, settings }: { fields: FieldConfig[]; settings: Settings }) {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <FieldGroup className="grid md:grid-cols-2">
       {fields.map((field) => (
-        <div
-          key={field.name}
-          className={`space-y-2 ${field.type === 'textarea' ? 'md:col-span-2' : ''}`}
-        >
-          <Label htmlFor={field.name}>
+        <Field key={field.name} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+          <FieldLabel htmlFor={field.name}>
             {field.label}
             {field.required ? ' *' : ''}
-          </Label>
+          </FieldLabel>
           {field.type === 'textarea' ? (
             <Textarea
               id={field.name}
@@ -39,9 +42,9 @@ function Fields({ fields, settings }: { fields: Field[]; settings: Settings }) {
               required={field.required}
             />
           )}
-        </div>
+        </Field>
       ))}
-    </div>
+    </FieldGroup>
   );
 }
 export default function SettingsForm({ settings }: { settings: Settings }) {
@@ -87,28 +90,29 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     }
   }
   return (
-    <form onSubmit={save} className="max-w-5xl space-y-6">
+    <form onSubmit={save} className="flex max-w-5xl flex-col gap-6">
       <Toaster richColors />
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-4 text-destructive">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <CircleAlert />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       {success && (
-        <p
-          role="status"
-          className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900"
-        >
-          Settings saved. The public website now uses these values.
-        </p>
+        <Alert role="status">
+          <CircleCheck />
+          <AlertDescription>
+            Settings saved. The public website now uses these values.
+          </AlertDescription>
+        </Alert>
       )}
       <Card>
         <CardHeader>
           <CardTitle>Company & contact details</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardDescription>
             Keep company information accurate. Fields marked * are required. Contact details left
             blank show as &ldquo;to be updated&rdquo; on the website.
-          </p>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Fields fields={settingFields} settings={settings} />
@@ -117,9 +121,9 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       <Card>
         <CardHeader>
           <CardTitle>English version</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardDescription>
             Shown on the English website (/en). Blank fields fall back to the Indonesian text.
-          </p>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Fields fields={settingFieldsEn} settings={settings} />
@@ -142,48 +146,48 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       <Card>
         <CardHeader>
           <CardTitle>Company facts</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardDescription>
             Up to four facts shown on the About page. Leave a row blank to omit it. Use verified
             figures only.
-          </p>
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="grid gap-3 sm:grid-cols-[140px_1fr_1fr]">
-              <div className="space-y-2">
-                <Label htmlFor={`stat-value-${i}`}>Value {i + 1}</Label>
+              <Field>
+                <FieldLabel htmlFor={`stat-value-${i}`}>Value {i + 1}</FieldLabel>
                 <Input
                   id={`stat-value-${i}`}
                   name={`stat-value-${i}`}
                   defaultValue={settings.statistics[i]?.value}
                   maxLength={20}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stat-label-${i}`}>Label {i + 1}</Label>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`stat-label-${i}`}>Label {i + 1}</FieldLabel>
                 <Input
                   id={`stat-label-${i}`}
                   name={`stat-label-${i}`}
                   defaultValue={settings.statistics[i]?.label}
                   maxLength={250}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stat-label-en-${i}`}>English label {i + 1}</Label>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`stat-label-en-${i}`}>English label {i + 1}</FieldLabel>
                 <Input
                   id={`stat-label-en-${i}`}
                   name={`stat-label-en-${i}`}
                   defaultValue={settings.statistics[i]?.labelEn}
                   maxLength={250}
                 />
-              </div>
+              </Field>
             </div>
           ))}
         </CardContent>
       </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={busy || logoBusy || faviconBusy}>
-          <Save />
+          <Save data-icon="inline-start" />
           {busy ? 'Saving…' : 'Save settings'}
         </Button>
       </div>

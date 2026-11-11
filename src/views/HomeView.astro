@@ -76,8 +76,8 @@ const faqStructured = JSON.stringify({
   <section class="section">
     <div class="wrap intro-grid">
       <div class="intro-copy">
-        <h2 data-motion="heading">{t.home.aboutHeading}</h2>
-        <p data-motion="copy">{aboutLead}</p>
+        <h2>{t.home.aboutHeading}</h2>
+        <p>{aboutLead}</p>
         <a class={link} href={href('/about')}>
           {t.home.aboutLink}
         </a>
@@ -98,9 +98,7 @@ const faqStructured = JSON.stringify({
   </section>
   <section class="section tint">
     <div class="wrap">
-      <h2 data-motion="heading" class="mb-10">
-        {t.strengths.heading}
-      </h2>
+      <h2 class="mb-10">{t.strengths.heading}</h2>
       <StrengthsBento
         items={t.strengths.items}
         route={t.route.stops}
@@ -114,7 +112,7 @@ const faqStructured = JSON.stringify({
   <section class="section" id="services">
     <div class="wrap">
       <div class="section-head">
-        <h2 data-motion="heading">{t.home.servicesHeading}</h2>
+        <h2>{t.home.servicesHeading}</h2>
         <a href={href('/services')} class={link}>
           {t.home.servicesAll}
         </a>
@@ -124,7 +122,7 @@ const faqStructured = JSON.stringify({
   </section>
   <section class="section tint">
     <div class="wrap split-list">
-      <h2 data-motion="heading">{t.area.heading}</h2>
+      <h2>{t.area.heading}</h2>
       <RuledList
         rows={[
           { label: t.area.main, title: t.area.mainValue },
@@ -137,7 +135,7 @@ const faqStructured = JSON.stringify({
     <section class="section">
       <div class="wrap">
         <div class="section-head">
-          <h2 data-motion="heading">{t.home.projectsHeading}</h2>
+          <h2>{t.home.projectsHeading}</h2>
           <a href={href('/projects')} class={link}>
             {t.home.projectsLink}
           </a>
@@ -155,7 +153,7 @@ const faqStructured = JSON.stringify({
     <section class="section tint">
       <div class="wrap">
         <div class="section-head">
-          <h2 data-motion="heading">{t.home.articlesHeading}</h2>
+          <h2>{t.home.articlesHeading}</h2>
           <a href={href('/articles')} class={link}>
             {t.home.articlesLink}
           </a>
@@ -166,7 +164,7 @@ const faqStructured = JSON.stringify({
   )}
   <section class="section" id="faq">
     <div class="wrap split-list">
-      <h2 data-motion="heading">{t.faq.heading}</h2>
+      <h2>{t.faq.heading}</h2>
       <Faq client:visible items={t.faq.items} />
     </div>
   </section>

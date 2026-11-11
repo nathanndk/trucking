@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import Database from 'better-sqlite3';
 import { mkdirSync, copyFileSync } from 'node:fs';
+import path from 'node:path';
 
 const routes = ['/', '/about', '/services', '/projects', '/articles', '/contact', '/en'];
 async function ready(page: Page, route = '/') {
@@ -65,7 +66,7 @@ for (const width of [375, 768, 1440]) {
       await scroll(page, 0);
       await expect(page.locator('h1')).toBeVisible();
       if (route === '/' && width === 375)
-        await page.screenshot({ path: 'docs/motion/home-mobile.png' });
+        await page.screenshot({ path: test.info().outputPath('home-mobile.png') });
     }
     expect(errors).toEqual([]);
   });
@@ -89,8 +90,9 @@ test('record a continuous down-up motion preview', async ({ browser }) => {
   await page.waitForTimeout(700);
   const video = page.video()!;
   await context.close();
-  mkdirSync('docs/motion', { recursive: true });
-  copyFileSync(await video.path(), 'docs/motion/scroll-once.webm');
+  const target = test.info().outputPath('scroll-once.webm');
+  mkdirSync(path.dirname(target), { recursive: true });
+  copyFileSync(await video.path(), target);
 });
 
 test('failed animation chunk keeps the server-rendered page usable', async ({ page }) => {
@@ -103,7 +105,7 @@ test('failed animation chunk keeps the server-rendered page usable', async ({ pa
   await expect(page).toHaveURL(/\/contact\?service=&container=$/);
 });
 
-test('reveals play once and stay visible after scrolling up and resizing', async ({ page }) => {
+test('only the hero moves: content is in place whenever it scrolls into view', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await ready(page);
   await expect(page.locator('[data-motion-control]')).toHaveCount(0);
@@ -111,18 +113,15 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   await page.waitForTimeout(1900);
   const hero = await position(page, '.hero-photo');
   expect(hero.scale).toBeCloseTo(1.15, 2);
-  for (const selector of ['[data-motion="heading"]', '.service-tile']) {
+  for (const selector of ['main section:nth-of-type(3) h2', '.service-tile', '#faq h2']) {
     const top = await documentTop(page, selector);
-    await scroll(page, top - 650);
-    await page.waitForTimeout(900);
-    const sample = selector;
-    const revealed = await position(page, sample);
-    expect(revealed.opacity).toBe(1);
-    expect(revealed.y).toBe(0);
+    // Sampled the moment it scrolls in: nothing fades or slides into place.
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top - 650);
+    const arrived = await position(page, selector);
+    expect(arrived.opacity, selector).toBe(1);
+    expect(arrived.y, selector).toBe(0);
     await scroll(page, 0);
-    near(await position(page, sample), revealed);
-    await scroll(page, top - 650);
-    near(await position(page, sample), revealed);
+    near(await position(page, selector), arrived);
   }
   await scroll(page, 0);
   near(await position(page, '.hero-photo'), hero);
@@ -134,7 +133,7 @@ test('reveals play once and stay visible after scrolling up and resizing', async
     expect(state.y).toBe(0);
   }
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  await page.screenshot({ path: 'docs/motion/once-mobile.png' });
+  await page.screenshot({ path: test.info().outputPath('once-mobile.png') });
 });
 
 test('content visible on arrival is never pulled back to an animation start', async ({ page }) => {
@@ -163,13 +162,11 @@ test('content visible on arrival is never pulled back to an animation start', as
       `${route} ${selector}`,
     ).toBe(true);
   }
-  // Content further down still waits for the visitor to scroll to it.
+  // Content further down is already fully there before the visitor reaches it.
   await ready(page, '/services');
-  const below = page.locator('.steps [data-motion-item]').first();
+  const below = page.locator('.steps .step').first();
   await expect(below).not.toBeInViewport();
-  expect(Number(await below.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
-  await below.scrollIntoViewIfNeeded();
-  await expect.poll(() => below.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+  expect(await below.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
 });
 
 test('public pages preload the heading font and cross-fade; the admin does not', async ({
@@ -212,7 +209,7 @@ test('animations start automatically with reduced motion and old disabled prefer
   expect((await position(page, '.service-tile')).opacity).toBe(1);
   await scroll(page, 0);
   expect((await position(page, '.service-tile')).opacity).toBe(1);
-  await page.screenshot({ path: 'docs/motion/automatic-desktop.png' });
+  await page.screenshot({ path: test.info().outputPath('automatic-desktop.png') });
 });
 
 test('no JavaScript keeps all pages visible; hash links and contact inputs remain usable', async ({
@@ -227,7 +224,7 @@ test('no JavaScript keeps all pages visible; hash links and contact inputs remai
     await expect(staticPage.locator('[data-motion-control], .pin-spacer')).toHaveCount(0);
     expect(
       await staticPage
-        .locator('[data-motion-item]')
+        .locator('main h2, .service-tile, .step')
         .evaluateAll((elements) => elements.every((el) => getComputedStyle(el).opacity === '1')),
     ).toBe(true);
   }
@@ -263,11 +260,11 @@ test('empty, changing and oversized CMS content remains usable', async ({ page }
   try {
     db.prepare('UPDATE services SET published=0').run();
     await ready(page);
-    await expect(page.locator('.services-grid [data-motion-item]')).toHaveCount(0);
+    await expect(page.locator('.services-grid .service-tile')).toHaveCount(0);
     for (const count of [1, 2, 3]) {
       db.prepare('UPDATE services SET published=1 WHERE id=?').run(records[count - 1].id);
       await ready(page);
-      await expect(page.locator('.services-grid [data-motion-item]')).toHaveCount(count);
+      await expect(page.locator('.services-grid .service-tile')).toHaveCount(count);
     }
     db.prepare('UPDATE services SET short_description=? WHERE id=?').run(
       'Deskripsi layanan panjang. '.repeat(120),

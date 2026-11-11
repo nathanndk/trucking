@@ -50,7 +50,7 @@
   --blue: #2864ac;
   --mint: #7cc3a2;
   --mist: #eef2f7;
-  --steel: #5a6b82;
+  --steel: #4a5a70;
   --line: #d5dde8;
   /* shadcn tokens. Containers are square-cornered, so the radius stays small. */
   --radius: 0.25rem;
@@ -1723,18 +1723,10 @@
   }
 }
 
-/* Scroll motion never hides the static HTML. Only the public script applies initial states. */
-[data-motion-item]:focus-within {
-  opacity: 1 !important;
-}
-[data-motion-item]:target {
-  opacity: 1 !important;
-  transform: none !important;
-}
+/* Scroll motion never hides the static HTML. Only the public script applies initial states,
+   and the one moving part left is the hero photo settling as the page opens. */
 @media (prefers-reduced-motion: reduce) {
-  html:not([data-scroll-motion='enabled']) [data-motion],
-  html:not([data-scroll-motion='enabled']) [data-motion-item],
-  html:not([data-scroll-motion='enabled']) [data-motion-photo] {
+  html:not([data-scroll-motion='enabled']) [data-motion] {
     transform: none !important;
     opacity: 1 !important;
     clip-path: none !important;

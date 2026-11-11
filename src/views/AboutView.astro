@@ -61,13 +61,11 @@ const facts = (
   <section class="section dark-section dark">
     <div class="wrap purpose">
       <div>
-        <h2 data-motion="heading">{t.about.vision}</h2>
-        <p data-motion="copy" class="purpose-vision">
-          {s.vision}
-        </p>
+        <h2>{t.about.vision}</h2>
+        <p class="purpose-vision">{s.vision}</p>
       </div>
       <div>
-        <h2 data-motion="heading">{t.about.mission}</h2>
+        <h2>{t.about.mission}</h2>
         <ul class="purpose-missions">
           {lines(s.mission).map((mission) => (
             <li>{mission}</li>
@@ -78,9 +76,7 @@ const facts = (
   </section>
   <section class="section tint">
     <div class="wrap">
-      <h2 data-motion="heading" class="mb-8">
-        {t.about.factsHeading}
-      </h2>
+      <h2 class="mb-8">{t.about.factsHeading}</h2>
       {/* The company record drawn as a container door: the data plate on the left leaf,
           the figures painted on the right one, as on the doors that arrive at the port. */}
       <div class:list={['door', s.statistics.length === 0 && 'door-single']}>

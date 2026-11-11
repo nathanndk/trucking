@@ -81,13 +81,11 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
   <ContainerScale />
   <section class="section">
     <div class="wrap">
-      <h2 data-motion="heading" class="mb-12">
-        {t.services.stepsHeading}
-      </h2>
+      <h2 class="mb-12">{t.services.stepsHeading}</h2>
       {/* Ordering is a real sequence, so its stops are numbered and joined by a line. */}
-      <ol class="steps" data-motion="group">
+      <ol class="steps">
         {t.services.steps.map((step, i) => (
-          <li class="step" data-motion-item>
+          <li class="step">
             <span class="step-num" aria-hidden="true">
               {i + 1}
             </span>

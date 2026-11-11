@@ -8,10 +8,8 @@ const t = ui(toLocale(Astro.currentLocale)).container;
 <section class="section dark-section dark" id="container">
   <div class="wrap container-scale">
     <div>
-      <h2 data-motion="heading">{t.heading}</h2>
-      <p data-motion="copy" class="mt-5 max-w-[48ch] text-muted-foreground">
-        {t.text}
-      </p>
+      <h2>{t.heading}</h2>
+      <p class="mt-5 max-w-[48ch] text-muted-foreground">{t.text}</p>
       <p class="mt-4 max-w-[48ch] text-sm text-muted-foreground">{t.note}</p>
     </div>
     <ScaleDrawing />

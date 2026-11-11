@@ -30,9 +30,7 @@ const clients = getPublicContent('clients', locale);
   {clients.length > 0 && (
     <section class="section tint">
       <div class="wrap">
-        <h2 data-motion="heading" class="mb-8">
-          {t.projects.clientsHeading}
-        </h2>
+        <h2 class="mb-8">{t.projects.clientsHeading}</h2>
         <ClientList items={clients} />
       </div>
     </section>

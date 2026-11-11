@@ -1,4 +1,7 @@
-/** Public-only enhancement: reveal each scene once per page visit, as it scrolls into view. */
+/**
+ * Public-only enhancement: the hero photo settles once as the page opens. Everything else is
+ * static; scattered fade-ins on headings and cards were removed so one moment stands out.
+ */
 export function mountScrollMotion() {
   const main = document.querySelector<HTMLElement>('main#main');
   if (!main) return () => {};
@@ -10,8 +13,6 @@ export function mountScrollMotion() {
   let disposed = false;
   let resizeTimer = 0;
   let refreshFrame = 0;
-  const all = <T extends Element = HTMLElement>(selector: string, parent: ParentNode = root) =>
-    Array.from(parent.querySelectorAll<T>(selector));
 
   async function loadEngine() {
     const [{ gsap }, { ScrollTrigger }] = await Promise.all([
@@ -46,7 +47,6 @@ export function mountScrollMotion() {
       if (disposed || ticket !== revision) return;
       const { gsap, ScrollTrigger } = engine;
       const desktop = innerWidth >= 1024;
-      const distance = desktop ? 64 : 24;
       context = gsap.context(() => {}, root);
       context.add(() => {
         function reveal(element: HTMLElement, timeline: gsap.core.Timeline) {
@@ -73,16 +73,6 @@ export function mountScrollMotion() {
             },
           });
         }
-        // Content the visitor can already see is never pulled back to an animation's start:
-        // the page was painted before this script loaded, so that would read as a flicker.
-        // Reveals are for content that scrolls into view later.
-        const alreadyVisible = (element: Element) => {
-          if (played.has(element)) return false;
-          const box = element.getBoundingClientRect();
-          if (box.bottom <= 0 || box.top >= innerHeight) return false;
-          played.add(element);
-          return true;
-        };
         const hero = root.querySelector<HTMLElement>('[data-motion="hero"]');
         if (hero) {
           const timeline = gsap.timeline({ paused: true });
@@ -93,63 +83,6 @@ export function mountScrollMotion() {
             ease: 'power2.out',
           });
           reveal(hero, timeline);
-        }
-        for (const element of all<HTMLElement>('[data-motion="heading"], [data-motion="copy"]')) {
-          if (
-            element.getBoundingClientRect().top + scrollY < innerHeight * 0.85 ||
-            alreadyVisible(element)
-          ) {
-            played.add(element);
-            continue;
-          }
-          const heading = element.dataset.motion === 'heading';
-          const timeline = gsap.timeline({ paused: true });
-          timeline.fromTo(
-            element,
-            {
-              y: heading ? distance * 0.75 : distance * 0.4,
-              opacity: 0.15,
-              ...(heading ? { clipPath: 'inset(100% 0 0 0)' } : {}),
-            },
-            {
-              y: 0,
-              opacity: 1,
-              ...(heading ? { clipPath: 'inset(0% 0 0 0)' } : {}),
-              duration: 0.85,
-              ease: 'power3.out',
-            },
-          );
-          reveal(element, timeline);
-        }
-        for (const group of all<HTMLElement>('[data-motion="group"]')) {
-          all<HTMLElement>(':scope > [data-motion-item]', group).forEach((item, i) => {
-            if (alreadyVisible(item)) return;
-            const timeline = gsap.timeline({ paused: true, delay: desktop ? (i % 3) * 0.12 : 0 });
-            timeline.fromTo(
-              item,
-              { y: distance, opacity: 0.25 },
-              {
-                y: 0,
-                opacity: 1,
-                ease: 'power3.out',
-                duration: 0.9,
-              },
-              0,
-            );
-            const photo = item.querySelector<HTMLElement>('[data-motion-photo]');
-            if (photo)
-              timeline.fromTo(
-                photo,
-                { scale: desktop ? 1.12 : 1.05 },
-                {
-                  scale: 1,
-                  duration: 1.1,
-                  ease: 'power2.out',
-                },
-                0,
-              );
-            reveal(item, timeline);
-          });
         }
       });
       ScrollTrigger.refresh();

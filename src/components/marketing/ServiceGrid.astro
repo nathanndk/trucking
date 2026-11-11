@@ -13,18 +13,16 @@ const t = ui(locale);
 const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 ---
 
-<div class="services-grid" data-motion="group">
+<div class="services-grid">
   {items.map((item) => (
     <Card
       className="service-tile gap-4 overflow-hidden pt-0 max-sm:grid max-sm:grid-cols-[88px_minmax(0,1fr)] max-sm:items-start max-sm:gap-x-4 max-sm:gap-y-2 max-sm:p-4"
-      data-motion-item
       id={item.slug}
     >
       {/* On phones each service is a compact row: a small square photo beside the text. */}
       <div class="tile-photo aspect-[16/10] overflow-hidden bg-muted max-sm:row-span-2 max-sm:aspect-square max-sm:rounded-md">
         {item.image && (
           <img
-            data-motion-photo
             class="photo"
             src={item.image}
             srcset={

@@ -133,6 +133,7 @@
   background: #fff;
   position: relative;
   z-index: 20;
+  view-transition-name: site-header;
   border-bottom: 1px solid var(--line);
 }
 .nav-inner {

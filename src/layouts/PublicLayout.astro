@@ -5,6 +5,8 @@ import Brand from '../components/Brand.astro';
 import { getPublicSettings } from '../lib/repository';
 import { origin } from '../lib/env';
 import { locales, localePath, stripLocale, toLocale, ui, type Locale } from '../i18n';
+// Headings use this file on first paint; preloading it avoids a flash of the fallback font.
+import headingFont from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 interface Props {
   title: string;
   description: string;
@@ -80,8 +82,26 @@ const structured = JSON.stringify({
     <meta property="og:image" content={absolute(image)} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#0b2545" />
+    <link rel="preload" as="font" type="font/woff2" href={headingFont} crossorigin />
     <link rel="icon" href={s.favicon || '/favicon.png'} />
     <script is:inline type="application/ld+json" set:html={structured}></script>
+    <style is:global>
+      /* Moving between public pages cross-fades instead of flashing white, and the header
+         stays in place (.navbar has a view-transition-name). Browsers without cross-document
+         view transitions simply load the page. Kept here so the admin is not affected. */
+      @view-transition {
+        navigation: auto;
+      }
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.2s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @view-transition {
+          navigation: none;
+        }
+      }
+    </style>
   </head>
   <body class="marketing">
     <a

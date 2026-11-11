@@ -138,6 +138,65 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   await page.screenshot({ path: 'docs/motion/once-mobile.png' });
 });
 
+test('content visible on arrival is never pulled back to an animation start', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  // Both elements sit in the first screen: the first service row and the route stops.
+  for (const [route, selector] of [
+    ['/services', '.service-tile'],
+    ['/', '[data-motion-marker]'],
+  ] as const) {
+    await page.goto(route);
+    await expect(page.locator(selector).first()).toBeInViewport();
+    // Sample from page load until well after the motion script has started.
+    const samples = await page.evaluate(async (target) => {
+      const element = document.querySelector(target)!;
+      const seen: [number, number][] = [];
+      for (let i = 0; i < 25; i++) {
+        const style = getComputedStyle(element);
+        seen.push([Number(style.opacity), new DOMMatrix(style.transform).m42]);
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
+      return seen;
+    }, selector);
+    await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
+    expect(
+      samples.every(([opacity, y]) => opacity === 1 && y === 0),
+      `${route} ${selector}`,
+    ).toBe(true);
+  }
+  // Content further down still waits for the visitor to scroll to it.
+  await ready(page, '/services');
+  const below = page.locator('.steps [data-motion-item]').first();
+  await expect(below).not.toBeInViewport();
+  expect(Number(await below.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
+  await below.scrollIntoViewIfNeeded();
+  await expect.poll(() => below.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+});
+
+test('public pages preload the heading font and cross-fade; the admin does not', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/about');
+  const preload = page.locator('link[rel="preload"][as="font"]');
+  await expect(preload).toHaveCount(1);
+  const font = await request.get((await preload.getAttribute('href'))!);
+  expect(font.status()).toBe(200);
+  expect(font.headers()['content-type']).toContain('font/woff2');
+  // The preloaded file is the one the page's headings actually use.
+  await page.evaluate(() => document.fonts.ready);
+  expect(
+    await page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .filter((entry) => entry.name.endsWith('.woff2'))
+        .map((entry) => new URL(entry.name).pathname),
+    ),
+  ).toEqual([await preload.getAttribute('href')]);
+  expect(await page.content()).toContain('@view-transition');
+  expect(await (await request.get('/admin/login')).text()).not.toContain('@view-transition');
+});
+
 test('animations start automatically with reduced motion and old disabled preference', async ({
   page,
 }) => {

@@ -1,4 +1,4 @@
-/** Public-only enhancement: reveal each scene once per page visit. */
+/** Public-only enhancement: reveal each scene once per page visit, as it scrolls into view. */
 export function mountScrollMotion() {
   const main = document.querySelector<HTMLElement>('main#main');
   if (!main) return () => {};
@@ -73,6 +73,16 @@ export function mountScrollMotion() {
             },
           });
         }
+        // Content the visitor can already see is never pulled back to an animation's start:
+        // the page was painted before this script loaded, so that would read as a flicker.
+        // Reveals are for content that scrolls into view later.
+        const alreadyVisible = (element: Element) => {
+          if (played.has(element)) return false;
+          const box = element.getBoundingClientRect();
+          if (box.bottom <= 0 || box.top >= innerHeight) return false;
+          played.add(element);
+          return true;
+        };
         const hero = root.querySelector<HTMLElement>('[data-motion="hero"]');
         if (hero) {
           const timeline = gsap.timeline({ paused: true });
@@ -85,7 +95,10 @@ export function mountScrollMotion() {
           reveal(hero, timeline);
         }
         for (const element of all<HTMLElement>('[data-motion="heading"], [data-motion="copy"]')) {
-          if (element.getBoundingClientRect().top + scrollY < innerHeight * 0.85) {
+          if (
+            element.getBoundingClientRect().top + scrollY < innerHeight * 0.85 ||
+            alreadyVisible(element)
+          ) {
             played.add(element);
             continue;
           }
@@ -110,6 +123,7 @@ export function mountScrollMotion() {
         }
         for (const group of all<HTMLElement>('[data-motion="group"]')) {
           all<HTMLElement>(':scope > [data-motion-item]', group).forEach((item, i) => {
+            if (alreadyVisible(item)) return;
             const timeline = gsap.timeline({ paused: true, delay: desktop ? (i % 3) * 0.12 : 0 });
             timeline.fromTo(
               item,
@@ -139,7 +153,7 @@ export function mountScrollMotion() {
         }
         for (const map of all<HTMLElement>('[data-motion="route"]')) {
           const route = map.querySelector<SVGPathElement>('[data-motion-path]');
-          if (!route) continue;
+          if (!route || alreadyVisible(map)) continue;
           const length = route.getTotalLength();
           const timeline = gsap.timeline({ paused: true });
           timeline.fromTo(

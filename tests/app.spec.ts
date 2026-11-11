@@ -107,7 +107,15 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   expect(loginPage.status()).toBe(200);
   expect(loginPage.headers()['x-robots-tag']).toContain('noindex');
   const robots = await request.get('/robots.txt');
-  expect(await robots.text()).toContain('Disallow: /admin');
+  // robots.txt is public, so it must not advertise where the CMS lives.
+  expect(await robots.text()).not.toMatch(/admin|_actions|api/i);
+  // Nothing on the public website links to or names the admin area.
+  for (const route of [...publicRoutes, '/not-a-page', '/sitemap.xml']) {
+    const html = await (await request.get(route)).text();
+    expect(html, route).not.toMatch(/\/admin|admin-|sign in/i);
+    // No developer notes in the markup (framework markers such as <!--astro:end--> are fine).
+    expect(html, route).not.toMatch(/<!--[^>]*[a-z]{3,} [a-z]{3,}[^>]*-->/i);
+  }
   const sitemap = await request.get('/sitemap.xml');
   const sitemapXml = await sitemap.text();
   expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length);
@@ -141,8 +149,15 @@ test('SEO, private routes, mutation authorization and path protection', async ({
       headers: { Origin: 'http://localhost:4322' },
       data: payload,
     });
-    expect(r.status()).toBeGreaterThanOrEqual(400);
+    // Refused before validation, so the reply says nothing about the CMS data model.
+    expect(r.status(), action).toBe(401);
+    expect(await r.text(), action).not.toMatch(/issues|companyName|collection|services/);
   }
+  const formStyle = await request.post('/contact?_action=upload', {
+    headers: { Origin: 'http://localhost:4322' },
+    multipart: { folder: 'general' },
+  });
+  expect(formStyle.status()).toBe(401);
   const cross = await request.post('/_actions/deleteContent', {
     headers: { Origin: 'https://evil.example' },
     data: { collection: 'services', id: 1 },

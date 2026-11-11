@@ -5,6 +5,7 @@ import { allowRequest } from './lib/spam';
 import { detectLocale } from './lib/geo';
 import { isPublicPage, localePath, stripLocale, type Locale } from './i18n';
 const languageCookie = 'lang';
+const publicActions = new Set(['quote']);
 // Search engines and link previews must always receive the page they asked for.
 const crawlers = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|embedly/i;
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -73,6 +74,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const session = await auth.api.getSession({ headers: request.headers });
     if (session?.user.role === 'admin') context.locals.admin = session.user;
   }
+  // Only the quotation action is public. Every other action is refused here for anyone who
+  // is not a signed-in administrator, before Astro validates the input: validation errors
+  // would otherwise describe the CMS data model (field names, collections) to anonymous callers.
+  const actionName = url.pathname.startsWith('/_actions/')
+    ? decodeURIComponent(url.pathname.slice('/_actions/'.length)).replace(/\/+$/, '')
+    : url.searchParams.get('_action');
+  if (actionName !== null && !publicActions.has(actionName) && !context.locals.admin)
+    return new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Unauthorized' }), {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'X-Robots-Tag': 'noindex, nofollow',
+      },
+    });
   if (
     (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) &&
     url.pathname !== '/admin/login' &&

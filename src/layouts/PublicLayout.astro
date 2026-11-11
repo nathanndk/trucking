@@ -41,6 +41,8 @@ const languages: Record<Locale, { code: string; name: string }> = {
   id: { code: 'ID', name: 'Bahasa Indonesia' },
   en: { code: 'EN', name: 'English' },
 };
+// Each page is written in its own language, so the <html translate="no"> attribute and the
+// Google notranslate tag below stop browsers offering machine translation.
 const pageTitle = `${title} | ${s.companyName}`;
 const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
 const structured = JSON.stringify({
@@ -61,7 +63,6 @@ const structured = JSON.stringify({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Each page is written in its own language; stop browsers offering machine translation. -->
     <meta name="google" content="notranslate" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
@@ -90,7 +91,7 @@ const structured = JSON.stringify({
     <style is:global>
       /* Moving between public pages cross-fades instead of flashing white, and the header
          stays in place (.navbar has a view-transition-name). Browsers without cross-document
-         view transitions simply load the page. Kept here so the admin is not affected. */
+         view transitions simply load the page. */
       @view-transition {
         navigation: auto;
       }
@@ -218,7 +219,6 @@ const structured = JSON.stringify({
         <div class="footer-bottom">
           <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
           <span>{s.tagline}</span>
-          <a href="/admin/login">Admin</a>
         </div>
       </div>
     </footer>

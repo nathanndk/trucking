@@ -9,4 +9,5 @@ drizzle/meta
 src/lib/geo/indonesia.json
 # shadcn CLI output is kept byte-identical to upstream so `shadcn add --diff` stays meaningful.
 src/components/ui
+src/components/kibo-ui
 src/hooks/use-mobile.ts

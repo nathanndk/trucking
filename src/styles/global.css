@@ -38,6 +38,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 :root {
   /* Brand palette, sampled from the Genesis Trans logo. */
@@ -67,14 +72,25 @@
   --border: var(--line);
   --input: #aebbcd;
   --ring: var(--blue);
-  --sidebar: #fff;
-  --sidebar-foreground: var(--navy);
+  /* The admin sidebar is the brand navy; everything beside it stays light. */
+  --sidebar: var(--navy);
+  --sidebar-foreground: #dbe5f2;
   --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: #fff;
-  --sidebar-accent: var(--mist);
-  --sidebar-accent-foreground: var(--navy);
-  --sidebar-border: var(--line);
-  --sidebar-ring: var(--blue);
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #fff;
+  --sidebar-border: rgba(255, 255, 255, 0.14);
+  --sidebar-ring: var(--mint);
+  /* Charts and status markers use the brand palette only. */
+  --chart-1: var(--blue);
+  --chart-2: var(--mint);
+  --chart-3: var(--navy);
+  --chart-4: #9aa7b8;
+  --chart-5: #9db8dd;
+  --status-new: var(--mint);
+  --status-contacted: var(--blue);
+  --status-quoted: var(--navy);
+  --status-closed: #9aa7b8;
 }
 .dark {
   --background: var(--navy);
@@ -537,6 +553,18 @@
     max-width: 60ch;
     color: var(--muted-foreground);
     margin-top: 20px;
+  }
+  /* Admin headings share the wide, bold cut of the public site's headings. */
+  .admin-title {
+    font-stretch: 116%;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+  }
+  /* Container-side stripes, used for the to-scale 20 ft / 40 ft bars on the dashboard. */
+  .container-bar {
+    border: 2px solid var(--navy);
+    border-radius: 2px;
+    background: repeating-linear-gradient(90deg, #dbe4f0 0 5px, #fff 5px 10px);
   }
   .contact-grid {
     display: grid;

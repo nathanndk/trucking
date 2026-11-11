@@ -1,6 +1,5 @@
 ---
 import '../../styles/global.css';
-import Brand from '../../components/Brand.astro';
 import Login from '../../components/admin/Login';
 import { buttonVariants } from '../../components/ui/button';
 import {
@@ -22,7 +21,7 @@ const s = getSettings();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="google" content="notranslate" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>Admin sign in · {s.companyName} CMS</title>
+    <title>Admin sign in · {s.companyName}</title>
     <link rel="icon" href={s.favicon || '/favicon.png'} />
   </head>
   <body class="min-h-screen bg-muted">
@@ -34,9 +33,7 @@ const s = getSettings();
           class="absolute inset-0 h-full w-full object-cover opacity-25"
         />
         <div class="relative">
-          <span class="text-sm font-semibold text-[#7cc3a2]">
-            {s.companyName} content workspace
-          </span>
+          <span class="text-sm font-semibold text-[#7cc3a2]">{s.companyName} website admin</span>
         </div>
         <div class="relative">
           <h1 class="text-5xl font-semibold leading-tight tracking-tight">
@@ -52,23 +49,48 @@ const s = getSettings();
           Private access · Authorized administrators only
         </p>
       </section>
-      <section class="flex items-center justify-center px-6 py-16">
-        <div class="flex w-full max-w-sm flex-col gap-6">
-          <Brand name={s.companyName} logo={s.logo} label="Website home" />
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h2 class="text-xl">Welcome back.</h2>
-              </CardTitle>
-              <CardDescription>Sign in to manage your website.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Login client:load />
-            </CardContent>
-          </Card>
-          <a href="/" class={buttonVariants({ variant: 'link', size: 'sm' })}>
-            Back to website
-          </a>
+      <section class="flex items-center justify-center overflow-hidden px-6 py-16">
+        {/* Dashed guide lines frame the form, like the lines painted on a container yard. */}
+        <div class="relative w-full max-w-sm">
+          <span
+            class="pointer-events-none absolute -inset-x-[100vw] -top-px border-t border-dashed border-border"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="pointer-events-none absolute -inset-x-[100vw] -bottom-px border-t border-dashed border-border"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="pointer-events-none absolute -inset-y-[100vh] -left-px border-l border-dashed border-border"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="pointer-events-none absolute -inset-y-[100vh] -right-px border-l border-dashed border-border"
+            aria-hidden="true"
+          ></span>
+          <div class="flex flex-col gap-6 p-6">
+            <div class="flex items-center gap-3">
+              <img src={s.favicon || '/favicon.png'} alt="" class="size-10" />
+              <div class="grid leading-tight">
+                <span class="admin-title text-lg">{s.companyName}</span>
+                <span class="text-sm text-muted-foreground">Website admin</span>
+              </div>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <h2 class="text-xl">Welcome back.</h2>
+                </CardTitle>
+                <CardDescription>Sign in to manage your website.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Login client:load />
+              </CardContent>
+            </Card>
+            <a href="/" class={buttonVariants({ variant: 'link', size: 'sm' })}>
+              Back to website
+            </a>
+          </div>
         </div>
       </section>
     </main>

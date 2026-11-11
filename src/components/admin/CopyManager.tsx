@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { actions } from 'astro:actions';
-import { CircleAlert, CircleCheck, ExternalLink, Save, Search } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { Check, CircleAlert, CircleCheck, ExternalLink, Save, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -241,7 +242,6 @@ export default function CopyManager({
 
   return (
     <div className="flex max-w-6xl flex-col gap-6">
-      <Toaster richColors />
       {error && (
         <Alert variant="destructive">
           <CircleAlert />
@@ -322,8 +322,14 @@ export default function CopyManager({
               Discard
             </Button>
             <Button type="button" disabled={!changed.length || busy} onClick={() => void save()}>
-              <Save data-icon="inline-start" />
-              {busy ? 'Saving…' : 'Save changes'}
+              {busy ? (
+                <Spinner data-icon="inline-start" />
+              ) : success ? (
+                <Check data-icon="inline-start" />
+              ) : (
+                <Save data-icon="inline-start" />
+              )}
+              {busy ? 'Saving…' : success ? 'Saved' : 'Save changes'}
             </Button>
           </div>
         </Card>

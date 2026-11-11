@@ -11,8 +11,10 @@ import {
   ArrowUpDown,
   CircleAlert,
   CircleCheck,
+  FileText,
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
+import { Pill } from '@/components/kibo-ui/pill';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -24,7 +26,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,10 +43,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -270,6 +279,7 @@ function Editor({
             Cancel
           </Button>
           <Button type="submit" disabled={busy || uploading}>
+            {busy && <Spinner data-icon="inline-start" />}
             {busy ? 'Saving…' : 'Save changes'}
           </Button>
         </Field>
@@ -277,6 +287,10 @@ function Editor({
     </form>
   );
 }
+/** English is complete when the title and, where there is one, the description are translated. */
+const hasEnglish = (item: ContentRecord) =>
+  item.titleEn.trim().length > 0 &&
+  (!item.description.trim() || item.descriptionEn.trim().length > 0);
 export default function ContentManager({
   collection,
   items,
@@ -323,7 +337,6 @@ export default function ContentManager({
   }
   return (
     <>
-      <Toaster richColors position="top-right" />
       {saved && (
         <Alert role="status" className="mb-5">
           <CircleCheck />
@@ -367,7 +380,9 @@ export default function ContentManager({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Languages</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="hidden lg:table-cell">Updated</TableHead>
               <TableHead>
                 <span className="flex items-center gap-2">
                   <ArrowUpDown className="size-3.5" />
@@ -388,7 +403,7 @@ export default function ContentManager({
                       <img
                         src={item.image || '/favicon.png'}
                         alt=""
-                        className="hidden h-12 w-16 rounded-md bg-muted object-cover sm:block"
+                        className="hidden h-14 w-20 rounded-md bg-muted object-cover sm:block"
                       />
                     )}
                     <div className="flex min-w-36 flex-col items-start gap-1">
@@ -407,9 +422,43 @@ export default function ContentManager({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={item.published ? 'default' : 'outline'}>
+                  <div className="flex items-center gap-1.5">
+                    <Pill variant="secondary" className="px-2 py-0.5 font-medium">
+                      ID
+                    </Pill>
+                    {hasEnglish(item) ? (
+                      <Pill variant="secondary" className="px-2 py-0.5 font-medium">
+                        EN
+                      </Pill>
+                    ) : (
+                      <Pill
+                        variant="outline"
+                        className="border-dashed px-2 py-0.5 text-muted-foreground"
+                      >
+                        No EN
+                      </Pill>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Pill variant="outline" className="px-2 py-0.5">
+                    <span
+                      className="size-2 rounded-full"
+                      style={{
+                        background: item.published ? 'var(--status-new)' : 'var(--status-closed)',
+                      }}
+                      aria-hidden="true"
+                    />
                     {item.published ? 'Published' : 'Draft'}
-                  </Badge>
+                  </Pill>
+                </TableCell>
+                <TableCell className="hidden text-xs text-muted-foreground lg:table-cell">
+                  {new Date(item.updatedAt).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    timeZone: 'Asia/Jakarta',
+                  })}
                 </TableCell>
                 <TableCell>{item.sortOrder}</TableCell>
                 <TableCell>
@@ -460,13 +509,31 @@ export default function ContentManager({
         {!filtered.length && (
           <Empty>
             <EmptyHeader>
-              <EmptyTitle>{items.length ? 'No matching records' : 'Nothing here yet'}</EmptyTitle>
+              <EmptyMedia variant="icon">
+                <FileText />
+              </EmptyMedia>
+              <EmptyTitle className="text-base">
+                {items.length ? 'No matching records' : `No ${config.label.toLowerCase()} yet`}
+              </EmptyTitle>
               <EmptyDescription>
                 {items.length
                   ? 'Try a different search or filter.'
-                  : `Add your first ${config.singular} to get started.`}
+                  : `The website shows a “to be updated” note until the first ${config.singular} is published.`}
               </EmptyDescription>
             </EmptyHeader>
+            {!items.length && (
+              <EmptyContent>
+                <Button
+                  onClick={() => {
+                    setEdit(null);
+                    setOpen(true);
+                  }}
+                >
+                  <Plus data-icon="inline-start" />
+                  Add the first {config.singular}
+                </Button>
+              </EmptyContent>
+            )}
           </Empty>
         )}
       </Card>

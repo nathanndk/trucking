@@ -1,13 +1,30 @@
 ---
 import '../styles/global.css';
+import { count, eq } from 'drizzle-orm';
 import AdminShell from '../components/admin/AdminShell';
-import { getSettings } from '../lib/repository';
+import { db } from '../db';
+import { inquiries } from '../db/schema';
+import { getSettings, tables } from '../lib/repository';
 interface Props {
   title: string;
   description: string;
 }
 const { title, description } = Astro.props;
 const s = getSettings();
+const total = (table: (typeof tables)[keyof typeof tables]) =>
+  db.select({ value: count() }).from(table).get()!.value;
+const counts = {
+  services: total(tables.services),
+  projects: total(tables.projects),
+  clients: total(tables.clients),
+  articles: total(tables.articles),
+  newInquiries: db
+    .select({ value: count() })
+    .from(inquiries)
+    .where(eq(inquiries.status, 'new'))
+    .get()!.value,
+};
+const admin = Astro.locals.admin;
 ---
 
 <!doctype html>
@@ -17,7 +34,7 @@ const s = getSettings();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="google" content="notranslate" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>{title} · {s.companyName} CMS</title>
+    <title>{title} · {s.companyName} admin</title>
     <link rel="icon" href={s.favicon || '/favicon.png'} />
   </head>
   <body>
@@ -31,9 +48,10 @@ const s = getSettings();
       title={title}
       description={description}
       pathname={Astro.url.pathname}
-      userName={Astro.locals.admin?.name}
+      user={admin ? { name: admin.name, email: admin.email } : undefined}
       companyName={s.companyName}
-      logo={s.logo}
+      mark={s.favicon || '/favicon.png'}
+      counts={counts}
       client:load
     >
       <slot />

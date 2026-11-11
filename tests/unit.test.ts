@@ -297,3 +297,72 @@ test('page text: every wording is editable once, edits overlay the defaults, bla
     .run();
   assert.equal(ui('id').home.h1, defaults('id').home.h1);
 });
+test('dashboard figures: status counts, weekly buckets, container split and the website checklist', async () => {
+  const { statusCounts, weeklyRequests, containerSplit, websiteChecklist } =
+    await import('../src/lib/dashboard');
+  assert.deepEqual(statusCounts([{ status: 'new' }, { status: 'new' }, { status: 'quoted' }]), {
+    new: 2,
+    contacted: 0,
+    quoted: 1,
+    closed: 0,
+  });
+  // Wednesday 11 Nov 2026, 10:00 in Jakarta. Weeks start on Monday, Jakarta time.
+  const now = new Date('2026-11-11T03:00:00Z');
+  const at = (iso: string) => ({ createdAt: new Date(iso) });
+  const weeks = weeklyRequests(
+    [
+      at('2026-11-11T02:00:00Z'), // this week
+      at('2026-11-08T17:30:00Z'), // Monday 00:30 Jakarta: still this week
+      at('2026-11-08T16:30:00Z'), // Sunday 23:30 Jakarta: last week
+      at('2026-09-01T00:00:00Z'), // older than eight weeks: not shown
+    ],
+    now,
+  );
+  assert.equal(weeks.length, 8);
+  assert.deepEqual(weeks.at(-1), { week: '9 Nov', requests: 2 });
+  assert.deepEqual(weeks.at(-2), { week: '2 Nov', requests: 1 });
+  assert.equal(
+    weeks.reduce((sum, week) => sum + week.requests, 0),
+    3,
+  );
+  assert.deepEqual(
+    containerSplit([{ containerType: '20ft' }, { containerType: '40ft' }, { containerType: '' }]),
+    { '20ft': 1, '40ft': 1 },
+  );
+  const blank = {
+    whatsapp: '',
+    phone: ' ',
+    email: 'info@genesistransindo.com',
+    address: '',
+    mapsUrl: '',
+    established: '',
+    credentials: '',
+  };
+  const empty = websiteChecklist(blank, {
+    projects: 0,
+    clients: 0,
+    articles: 0,
+    servicesWithoutEnglish: 0,
+  });
+  assert.deepEqual(
+    empty.filter((item) => item.done).map((item) => item.id),
+    ['email', 'services-english'],
+  );
+  assert.equal(empty.find((item) => item.id === 'projects')?.href, '/admin/projects');
+  const complete = websiteChecklist(
+    {
+      whatsapp: '628123456789',
+      phone: '+62 21 555 0100',
+      email: 'info@genesistransindo.com',
+      address: 'Jakarta',
+      mapsUrl: 'https://maps.example.com/x',
+      established: '2015',
+      credentials: 'NIB 123',
+    },
+    { projects: 1, clients: 2, articles: 1, servicesWithoutEnglish: 0 },
+  );
+  assert.equal(
+    complete.every((item) => item.done),
+    true,
+  );
+});

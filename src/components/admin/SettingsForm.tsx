@@ -1,12 +1,13 @@
 import { useState, type SubmitEvent } from 'react';
 import { actions } from 'astro:actions';
-import { toast, Toaster } from 'sonner';
-import { CircleAlert, CircleCheck, Save } from 'lucide-react';
+import { toast } from 'sonner';
+import { Check, CircleAlert, CircleCheck, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import {
   settingSections,
@@ -90,8 +91,11 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     }
   }
   return (
-    <form onSubmit={save} className="flex max-w-5xl flex-col gap-6">
-      <Toaster richColors />
+    <form
+      onSubmit={save}
+      onChange={() => setSuccess(false)}
+      className="flex max-w-5xl flex-col gap-6"
+    >
       {error && (
         <Alert variant="destructive">
           <CircleAlert />
@@ -203,8 +207,14 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={busy || logoBusy || faviconBusy}>
-          <Save data-icon="inline-start" />
-          {busy ? 'Saving…' : 'Save settings'}
+          {busy ? (
+            <Spinner data-icon="inline-start" />
+          ) : success ? (
+            <Check data-icon="inline-start" />
+          ) : (
+            <Save data-icon="inline-start" />
+          )}
+          {busy ? 'Saving…' : success ? 'Saved' : 'Save settings'}
         </Button>
       </div>
     </form>

@@ -3,6 +3,8 @@
 ## Interface
 
 - **shadcn/ui** — https://ui.shadcn.com/ (MIT, shadcn). All files in `src/components/ui` except `dropzone.tsx` are added unmodified with the shadcn CLI (style `new-york`, Radix primitives via the `radix-ui` package). `components.json` records aliases and style. Radix supplies accessible focus management and keyboard behavior; Sonner supplies notifications; `tw-animate-css` supplies the open/close animations.
+- **Kibo UI Kanban and Pill** — https://www.kibo-ui.com/components/kanban and https://www.kibo-ui.com/components/pill (MIT, Kibo UI). Added unmodified with the shadcn CLI into `src/components/kibo-ui`. Kanban uses dnd kit (MIT) for dragging.
+- **shadcn/ui Chart** uses Recharts (MIT).
 - **Kibo UI Dropzone** — https://www.kibo-ui.com/components/dropzone and https://www.kibo-ui.com/r/dropzone.json (MIT, Kibo UI). Source copied into `src/components/ui/dropzone.tsx` with a label/input ID addition and project import aliases. It provides react-dropzone file selection/rejection behavior, while our UploadField handles authenticated server storage.
 - **Lucide** icons — https://lucide.dev/ (ISC).
 - **Archivo** (variable, with width axis) — Fontsource package, font under SIL Open Font License. Fonts are bundled locally; no Google Fonts connection is required.

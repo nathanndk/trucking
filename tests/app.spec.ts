@@ -216,7 +216,13 @@ test('admin login, all protected routes, responsive navigation and logout', asyn
     await expect(sidebar.getByRole('link', { name: removed })).toHaveCount(0);
   for (const removed of ['/admin/fleet', '/admin/coverage'])
     expect((await page.request.get(removed)).status()).toBe(404);
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  // The dashboard leads with what needs attention.
+  await expect(page.getByRole('list', { name: 'Requests by status' })).toContainText('Quoted');
+  await expect(page.getByText('Website checklist')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp number: open Settings' })).toBeVisible();
+  // Signing out lives in the account menu at the bottom of the sidebar.
+  await page.getByRole('button', { name: /^Account menu for/ }).click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
   await page.goto('/admin/settings');
   await expect(page).toHaveURL(/\/admin\/login$/);
@@ -384,19 +390,71 @@ test('quotation persists privately, appears to admin, and status changes', async
   expect(await (await page.request.get('/contact')).text()).not.toContain(values.email);
   await page.context().addCookies(adminSession);
   await page.goto('/admin/inquiries');
-  const inquiry = page.getByRole('row').filter({ hasText: values.fullName });
-  await inquiry.getByRole('button', { name: 'View inquiry' }).click();
+  await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+  // The sidebar flags requests nobody has followed up yet.
+  await expect(page.locator('[data-slot="sidebar-menu-badge"]').last()).toHaveText('1 new');
+  // The board is the default view; each card opens the request's details.
+  await page
+    .getByRole('button', { name: `View inquiry from ${values.fullName}`, exact: true })
+    .click();
   await expect(page.getByRole('dialog')).toContainText(values.message);
   await expect(page.getByRole('dialog')).toContainText('Angkutan Kontainer');
   await expect(page.getByRole('dialog')).toContainText('40ft');
   await page.getByLabel('Inquiry status', { exact: true }).selectOption('quoted');
   await page.getByRole('button', { name: 'Update status' }).click();
-  await expect(page.getByRole('status')).toContainText('Inquiry status updated');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Inquiry status updated' }),
+  ).toBeVisible();
+  // The table view lists the same request with its new status.
+  await page.getByRole('tab', { name: 'Table' }).click();
+  const tableRow = page.getByRole('row').filter({ hasText: values.fullName });
+  await expect(tableRow).toContainText('Quoted');
+  await expect(tableRow.getByRole('button', { name: 'View inquiry' })).toBeVisible();
   const after = database();
   expect(after.prepare('SELECT status FROM inquiries WHERE id=?').get(row.id)).toEqual({
     status: 'quoted',
   });
   after.close();
+});
+test('dragging an inquiry card to another column changes its status', async ({
+  page,
+  adminSession,
+}) => {
+  await page.context().addCookies(adminSession);
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO inquiries (full_name, company, phone, email, pickup, destination, cargo, weight, vehicle, message, service_type, container_type, status, created_at, updated_at)
+     VALUES ('Drag Tester','PT Seret','+62 811 0000 1111','drag@example.com','Karawang','Tanjung Priok','','','','','Trucking Domestik','20ft','new',?,?)`,
+  ).run(now, now);
+  const status = () =>
+    (
+      db.prepare("SELECT status FROM inquiries WHERE email='drag@example.com'").get() as {
+        status: string;
+      }
+    ).status;
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/admin/inquiries');
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+    const card = (await page.getByText('Drag Tester', { exact: true }).boundingBox())!;
+    const column = (await page.getByText('Contacted', { exact: true }).boundingBox())!;
+    await page.mouse.move(card.x + 20, card.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(card.x + 40, card.y + 30, { steps: 5 });
+    await page.mouse.move(column.x + 60, column.y + 110, { steps: 15 });
+    await page.mouse.up();
+    await expect.poll(status).toBe('contacted');
+    await expect(page.getByText('Drag Tester moved to Contacted.')).toBeVisible();
+    // The board fits small screens by scrolling inside its own area.
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+  } finally {
+    db.prepare("DELETE FROM inquiries WHERE email='drag@example.com'").run();
+    db.close();
+  }
 });
 test('English pages, language switching and the English quote flow', async ({ page }) => {
   await page.goto('/en/about');
@@ -608,12 +666,18 @@ test('settings changes are reflected on public pages', async ({ page, adminSessi
   await page.getByLabel('Primary CTA text').fill('Diskusikan Muatan');
   // Indonesian and English sit side by side in the Company text card.
   await page.getByLabel('English CTA text').fill('Discuss your cargo');
+  await page.getByLabel('WhatsApp (international digits)').fill('628123456789');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Settings saved.' })).toBeVisible();
   const html = await (await page.request.get('/')).text();
   expect(html).toContain('GENESIS TEST');
   expect(html).toContain('Diskusikan Muatan');
   expect(await (await page.request.get('/en')).text()).toContain('Discuss your cargo');
+  // Filling in a missing detail takes it off the dashboard's checklist.
+  await page.goto('/admin');
+  await expect(page.getByText('Website checklist')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp number: open Settings' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Office phone: open Settings' })).toBeVisible();
 });
 
 test('invalid mutations and revoked admin roles are rejected by the server', async ({

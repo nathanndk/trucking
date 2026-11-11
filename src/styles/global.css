@@ -273,6 +273,10 @@
     gap: 12px;
     flex-wrap: wrap;
   }
+  /* The quote starter sits on the photo, so its card is see-through navy. */
+  .quick-quote > [data-slot='card'] {
+    background: rgba(16, 47, 87, 0.82);
+  }
 
   /* Shipping route: an ordered sequence, so the stops are numbered. */
   .route {
@@ -541,8 +545,14 @@
     gap: 12px 24px;
   }
   .page-hero {
+    position: relative;
+    overflow: hidden;
     padding: 48px 0 64px;
     background: var(--mist);
+  }
+  /* Above the grid texture. */
+  .page-hero .wrap {
+    position: relative;
   }
   .page-hero h1 {
     font-size: clamp(30px, 3.6vw, 50px);
@@ -576,6 +586,15 @@
   @media (max-width: 1023px) {
     .wrap {
       width: calc(100% - 64px);
+    }
+    /* On tablets the copy reaches further over the photo, so the navy wash does too. */
+    .hero:after {
+      background: linear-gradient(
+        270deg,
+        rgba(11, 37, 69, 0.95) 0%,
+        rgba(11, 37, 69, 0.9) 62%,
+        rgba(11, 37, 69, 0.5) 100%
+      );
     }
     .intro-grid,
     .split,

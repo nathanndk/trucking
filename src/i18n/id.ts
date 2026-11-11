@@ -100,6 +100,45 @@ export const id = {
     articlesEmpty: 'Belum ada artikel yang terbit.',
     articlesLink: 'Semua artikel',
   },
+  quick: {
+    heading: 'Mulai penawaran',
+    service: 'Jenis layanan',
+    container: 'Jenis kontainer',
+    containerPlaceholder: 'Pilih ukuran',
+    submit: 'Lanjut ke form',
+  },
+  faq: {
+    heading: 'Pertanyaan umum',
+    items: [
+      {
+        question: 'Layanan apa saja yang tersedia?',
+        answer:
+          'Angkutan kontainer 20 dan 40 feet, trucking domestik, angkutan dari pabrik ke pelabuhan, bantuan customs clearance, dan koordinasi pengiriman.',
+      },
+      {
+        question: 'Ukuran kontainer apa yang dilayani?',
+        answer:
+          'Kontainer 20 feet dan 40 feet. Pilih ukuran yang sesuai dengan volume muatan Anda.',
+      },
+      {
+        question: 'Di mana area operasionalnya?',
+        answer: 'Jakarta dan sekitarnya, dengan Tanjung Priok sebagai pelabuhan utama.',
+      },
+      {
+        question: 'Apakah dokumen kepabeanan dibantu?',
+        answer: 'Ya. Kami membantu pengurusan dokumen dan proses customs clearance.',
+      },
+      {
+        question: 'Apakah barang bisa diambil langsung dari pabrik?',
+        answer: 'Ya. Barang diangkut dari pabrik atau gudang Anda sampai ke Tanjung Priok.',
+      },
+      {
+        question: 'Bagaimana cara meminta penawaran?',
+        answer:
+          'Isi form penawaran dengan layanan, asal, tujuan, dan jenis kontainer. Tim kami menghubungi Anda lewat WhatsApp atau email.',
+      },
+    ],
+  },
   about: {
     title: 'Tentang Kami',
     description: 'Profil, visi, dan misi {name}, perusahaan angkutan kontainer dan logistik.',

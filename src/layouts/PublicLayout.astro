@@ -4,7 +4,7 @@ import Brand from '../components/Brand.astro';
 import SiteHeader from '../components/site/SiteHeader';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
-import { getPublicSettings } from '../lib/repository';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { origin } from '../lib/env';
 import { locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
 import { ui } from '../lib/copy';
@@ -36,6 +36,15 @@ const current = (target: string) =>
   !noAlternates && (path === target || (target !== '/' && path.startsWith(`${target}/`)))
     ? 'page'
     : undefined;
+// The Services link in the header opens a panel with one entry per service.
+const servicesMenu = {
+  all: t.home.servicesAll,
+  items: getPublicContent('services', locale).map((service) => ({
+    href: `${href('/services')}#${service.slug}`,
+    title: service.title,
+    text: service.shortDescription,
+  })),
+};
 const absolute = (target: string) => new URL(target, origin).href;
 const canonical = absolute(localePath(locale, stripLocale(Astro.url.pathname).path));
 const languages: Record<Locale, { code: string; name: string }> = {
@@ -89,6 +98,7 @@ const structured = JSON.stringify({
     <link rel="preload" as="font" type="font/woff2" href={headingFont} crossorigin />
     <link rel="icon" href={s.favicon || '/favicon.png'} />
     <script is:inline type="application/ld+json" set:html={structured}></script>
+    <slot name="head" />
     <style is:global>
       /* Moving between public pages cross-fades instead of flashing white, and the header
          stays in place (.navbar has a view-transition-name). Browsers without cross-document
@@ -115,12 +125,13 @@ const structured = JSON.stringify({
       {t.skip}
     </a>
     <SiteHeader
-      client:media="(max-width: 767px)"
+      client:idle
       brand={{ name: s.companyName, logo: s.logo, href: href('/'), label: t.nav.brandHome }}
       nav={nav.map(([target, label]) => ({
         href: href(target),
         label,
         current: current(target) === 'page',
+        ...(target === '/services' ? { menu: servicesMenu } : {}),
       }))}
       languages={locales.map((code) => ({
         ...languages[code],

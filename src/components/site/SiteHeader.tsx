@@ -1,7 +1,9 @@
-import { Menu } from 'lucide-react';
+import { ArrowRight, ChevronDown, Menu } from 'lucide-react';
+import { NavigationMenu as NavigationMenuPrimitive } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
@@ -16,13 +18,21 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
-type NavLink = { href: string; label: string; current: boolean };
+type NavLink = {
+  href: string;
+  label: string;
+  current: boolean;
+  /** Pages listed in a panel under the link. The link itself still opens `href`. */
+  menu?: { all: string; items: { href: string; title: string; text: string }[] };
+};
 type Language = { code: string; name: string; locale: string; href: string; current: boolean };
 
 /**
- * Public header. Rendered on the server; hydrated only on small screens, where the
- * navigation moves into a sheet that needs JavaScript to open.
+ * Public header. Rendered on the server and usable as plain links. Once hydrated, the
+ * Services link opens a panel listing each service, and on small screens the navigation
+ * moves into a sheet.
  */
 export default function SiteHeader({
   brand,
@@ -58,15 +68,66 @@ export default function SiteHeader({
           <NavigationMenuList>
             {nav.slice(1).map((item) => (
               <NavigationMenuItem key={item.href}>
-                <NavigationMenuLink
-                  asChild
-                  active={item.current}
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <a href={item.href} aria-current={item.current ? 'page' : undefined}>
-                    {item.label}
-                  </a>
-                </NavigationMenuLink>
+                {item.menu && item.menu.items.length > 0 ? (
+                  <>
+                    {/* A link, not a button: pointing at it opens the panel, clicking it
+                        opens the page, so nothing is lost before or without JavaScript. */}
+                    <NavigationMenuPrimitive.Trigger asChild>
+                      <a
+                        href={item.href}
+                        aria-current={item.current ? 'page' : undefined}
+                        data-active={item.current}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          'group data-[active=true]:bg-accent/50',
+                        )}
+                      >
+                        {item.label}
+                        <ChevronDown
+                          aria-hidden="true"
+                          className="ml-1 size-3 transition-transform duration-200 group-data-[state=open]:rotate-180"
+                        />
+                      </a>
+                    </NavigationMenuPrimitive.Trigger>
+                    <NavigationMenuContent>
+                      <ul className="services-menu grid w-72 gap-1 lg:w-[34rem] lg:grid-cols-2">
+                        {item.menu.items.map((entry) => (
+                          <li key={entry.href}>
+                            <NavigationMenuLink asChild>
+                              <a href={entry.href}>
+                                <span className="leading-snug font-semibold">{entry.title}</span>
+                                <span className="line-clamp-2 text-muted-foreground">
+                                  {entry.text}
+                                </span>
+                              </a>
+                            </NavigationMenuLink>
+                          </li>
+                        ))}
+                        <li className="flex items-end">
+                          <NavigationMenuLink asChild>
+                            <a
+                              href={item.href}
+                              className="w-full flex-row items-center font-semibold text-primary"
+                            >
+                              {item.menu.all}
+                              <ArrowRight aria-hidden="true" className="text-primary" />
+                            </a>
+                          </NavigationMenuLink>
+                        </li>
+                      </ul>
+                    </NavigationMenuContent>
+                  </>
+                ) : (
+                  <NavigationMenuLink
+                    asChild
+                    active={item.current}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    <a href={item.href} aria-current={item.current ? 'page' : undefined}>
+                      {item.label}
+                    </a>
+                  </NavigationMenuLink>
+                )}
               </NavigationMenuItem>
             ))}
           </NavigationMenuList>

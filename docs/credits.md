@@ -4,6 +4,8 @@
 
 - **shadcn/ui** — https://ui.shadcn.com/ (MIT, shadcn). All files in `src/components/ui` except `dropzone.tsx` are added unmodified with the shadcn CLI (style `new-york`, Radix primitives via the `radix-ui` package). `components.json` records aliases and style. Radix supplies accessible focus management and keyboard behavior; Sonner supplies notifications; `tw-animate-css` supplies the open/close animations.
 - **Kibo UI Kanban and Pill** — https://www.kibo-ui.com/components/kanban and https://www.kibo-ui.com/components/pill (MIT, Kibo UI). Added unmodified with the shadcn CLI into `src/components/kibo-ui`. Kanban uses dnd kit (MIT) for dragging.
+- **Kibo UI Choicebox** — https://www.kibo-ui.com/components/choicebox (MIT, Kibo UI). Added with the shadcn CLI into `src/components/kibo-ui`; the two import paths the CLI left pointing at Kibo's own workspace (`@repo/shadcn-ui/...`) were changed to this project's aliases.
+- **Magic UI Bento Grid and Grid Pattern** — https://magicui.design/docs/components/bento-grid and https://magicui.design/docs/components/grid-pattern (MIT, Magic UI). Added unmodified with the shadcn CLI into `src/components/ui`. Bento Grid imports Radix Icons (MIT).
 - **shadcn/ui Chart** uses Recharts (MIT).
 - **Kibo UI Dropzone** — https://www.kibo-ui.com/components/dropzone and https://www.kibo-ui.com/r/dropzone.json (MIT, Kibo UI). Source copied into `src/components/ui/dropzone.tsx` with a label/input ID addition and project import aliases. It provides react-dropzone file selection/rejection behavior, while our UploadField handles authenticated server storage.
 - **Lucide** icons — https://lucide.dev/ (ISC).
@@ -25,7 +27,7 @@ The logo and photographs were supplied by PT Genesis Trans Indonesia for this we
 
 ## MIT notice for adapted MIT components
 
-Copyright (c) the respective authors of shadcn/ui and Kibo UI.
+Copyright (c) the respective authors of shadcn/ui, Kibo UI and Magic UI.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

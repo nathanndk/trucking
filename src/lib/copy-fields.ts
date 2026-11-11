@@ -61,6 +61,17 @@ export const copyPages: CopyPage[] = [
         ],
       },
       {
+        title: 'Quick quote (in the hero)',
+        note: 'The service and container names in the two lists come from Services and from Container sizes below.',
+        fields: [
+          { key: 'quick.heading', label: 'Heading' },
+          { key: 'quick.service', label: 'Service field' },
+          { key: 'quick.container', label: 'Container field' },
+          { key: 'quick.containerPlaceholder', label: 'Container field, nothing chosen' },
+          { key: 'quick.submit', label: 'Button' },
+        ],
+      },
+      {
         title: 'Shipping route',
         fields: [
           { key: 'route.heading', label: 'Section name (screen readers)' },
@@ -79,6 +90,7 @@ export const copyPages: CopyPage[] = [
       },
       {
         title: 'Strengths (also on About)',
+        note: 'On Home, strength 1 is drawn with the two container sizes and strength 2 with the route to the port.',
         fields: [
           { key: 'strengths.heading', label: 'Heading' },
           ...items('strengths.items', 'Strength', 5),
@@ -117,6 +129,16 @@ export const copyPages: CopyPage[] = [
           { key: 'area.port', label: 'Main port label' },
           { key: 'area.portValue', label: 'Main port' },
           { key: 'area.other', label: 'Other areas label' },
+        ],
+      },
+      {
+        title: 'Common questions',
+        fields: [
+          { key: 'faq.heading', label: 'Heading' },
+          ...Array.from({ length: 6 }, (_, i) => [
+            { key: `faq.items.${i}.question`, label: `Question ${i + 1}` },
+            { key: `faq.items.${i}.answer`, label: `Answer ${i + 1}`, multiline: true },
+          ]).flat(),
         ],
       },
       {

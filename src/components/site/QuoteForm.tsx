@@ -1,17 +1,22 @@
+import {
+  Choicebox,
+  ChoiceboxIndicator,
+  ChoiceboxItem,
+  ChoiceboxItemDescription,
+  ChoiceboxItemHeader,
+  ChoiceboxItemTitle,
+} from '@/components/kibo-ui/choicebox';
 import { Button } from '@/components/ui/button';
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldLegend,
   FieldSet,
-  FieldTitle,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 
 export type QuoteFormLabels = {
@@ -32,7 +37,7 @@ export type QuoteFormLabels = {
 
 /**
  * The quotation form. It posts natively to the Astro action, so it works before React
- * loads; hydration is only needed for the container-type radio group.
+ * loads; hydration is only needed for the container-type choice boxes.
  */
 export default function QuoteForm({
   action,
@@ -114,24 +119,26 @@ export default function QuoteForm({
         </div>
         <FieldSet>
           <FieldLegend variant="label">{labels.containerType} *</FieldLegend>
-          <RadioGroup
+          <Choicebox
             name="containerType"
             defaultValue={selectedContainer || undefined}
             required
             className="grid grid-cols-2"
           >
             {containers.map((container) => (
-              <FieldLabel key={container.value} htmlFor={`container-${container.value}`}>
-                <Field orientation="horizontal">
-                  <FieldContent>
-                    <FieldTitle>{container.name}</FieldTitle>
-                    <FieldDescription>{container.detail}</FieldDescription>
-                  </FieldContent>
-                  <RadioGroupItem value={container.value} id={`container-${container.value}`} />
-                </Field>
-              </FieldLabel>
+              <ChoiceboxItem
+                key={container.value}
+                value={container.value}
+                id={`container-${container.value}`}
+              >
+                <ChoiceboxItemHeader>
+                  <ChoiceboxItemTitle>{container.name}</ChoiceboxItemTitle>
+                  <ChoiceboxItemDescription>{container.detail}</ChoiceboxItemDescription>
+                </ChoiceboxItemHeader>
+                <ChoiceboxIndicator id={`container-${container.value}`} />
+              </ChoiceboxItem>
             ))}
-          </RadioGroup>
+          </Choicebox>
         </FieldSet>
         <Field>
           <FieldLabel htmlFor="message">{labels.message}</FieldLabel>

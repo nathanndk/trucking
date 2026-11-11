@@ -99,8 +99,8 @@ test('failed animation chunk keeps the server-rendered page usable', async ({ pa
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'static');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await expect(page.locator('h1')).toBeVisible();
-  await page.locator('.hero-actions a').first().click();
-  await expect(page).toHaveURL(/\/contact$/);
+  await page.locator('.quick-quote button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/contact\?service=&container=$/);
 });
 
 test('reveals play once and stay visible after scrolling up and resizing', async ({ page }) => {

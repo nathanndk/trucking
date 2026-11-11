@@ -6,6 +6,9 @@ import ServiceGrid from '../components/marketing/ServiceGrid.astro';
 import ProjectGrid from '../components/marketing/ProjectGrid.astro';
 import ArticleList from '../components/marketing/ArticleList.astro';
 import RuledList from '../components/marketing/RuledList.astro';
+import QuickQuote from '../components/site/QuickQuote';
+import StrengthsBento from '../components/site/StrengthsBento';
+import Faq from '../components/site/Faq';
 import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
 import { AspectRatio } from '../components/ui/aspect-ratio';
@@ -13,6 +16,7 @@ import { buttonVariants } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { cn } from '../lib/utils';
+import { containerTypes } from '../lib/validation';
 import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
 const locale = toLocale(Astro.currentLocale);
@@ -26,9 +30,20 @@ const articles = getPublicContent('articles', locale).slice(0, 3);
 const aboutLead = s.about.split(/\n{2,}/)[0];
 // cn() resolves the padding conflict; buttonVariants alone would keep both classes.
 const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
+// The same questions as data search engines read (schema.org FAQPage).
+const faqStructured = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: t.faq.items.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+}).replaceAll('<', '\\u003c');
 ---
 
 <PublicLayout title={t.home.title} description={s.shortDescription}>
+  <script slot="head" is:inline type="application/ld+json" set:html={faqStructured}></script>
   <section class="hero dark" data-motion="hero">
     <div class="hero-media">
       <img
@@ -47,14 +62,16 @@ const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
         <p class="hero-tagline">{s.tagline}</p>
         <h1>{t.home.h1}</h1>
         <p class="hero-text">{s.shortDescription}</p>
-        <div class="hero-actions">
-          <a href={href('/contact')} class={buttonVariants({ size: 'lg' })}>
-            {s.ctaText}
-          </a>
-          <a href={href('/services')} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
-            {t.home.servicesLink}
-          </a>
-        </div>
+        <QuickQuote
+          action={href('/contact')}
+          services={services.map(({ slug, title }) => ({ slug, title }))}
+          containers={containerTypes.map((type) => ({
+            value: type,
+            name: t.container.sizes[type].name,
+          }))}
+          more={{ href: href('/services'), label: t.home.servicesLink }}
+          labels={{ ...t.quick, servicePlaceholder: t.contact.servicePlaceholder }}
+        />
       </div>
     </div>
   </section>
@@ -83,9 +100,15 @@ const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
     </div>
   </section>
   <section class="section tint">
-    <div class="wrap split-list">
-      <h2 data-motion="heading">{t.strengths.heading}</h2>
-      <RuledList rows={t.strengths.items} />
+    <div class="wrap">
+      <h2 data-motion="heading" class="mb-10">
+        {t.strengths.heading}
+      </h2>
+      <StrengthsBento
+        items={t.strengths.items}
+        sizes={containerTypes.map((type) => t.container.sizes[type].name)}
+        route={t.route.stops.map((stop) => stop.title)}
+      />
     </div>
   </section>
   <section class="section" id="services">
@@ -158,6 +181,12 @@ const link = cn(buttonVariants({ variant: 'link' }), 'h-auto p-0');
       ) : (
         <Placeholder text={t.home.articlesEmpty} />
       )}
+    </div>
+  </section>
+  <section class="section" id="faq">
+    <div class="wrap split-list">
+      <h2 data-motion="heading">{t.faq.heading}</h2>
+      <Faq client:visible items={t.faq.items} />
     </div>
   </section>
   <CTA text={s.ctaText} />

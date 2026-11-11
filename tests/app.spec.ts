@@ -506,6 +506,117 @@ test('English pages, language switching and the English quote flow', async ({ pa
   expect(missingHtml).toContain('<html lang="en"');
   expect(missingHtml).toContain('This page does not exist.');
 });
+test('home: quick quote, services menu and common questions, in both languages', async ({
+  page,
+  browser,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const text of [
+    {
+      home: '/',
+      prefix: '',
+      service: 'Trucking Domestik',
+      size: /40 feet/,
+      submit: 'Lanjut ke form',
+      nav: 'Navigasi utama',
+      menu: 'Layanan',
+      all: 'Semua layanan',
+      first: 'Angkutan kontainer 20 dan 40 feet, trucking domestik',
+      question: 'Ukuran kontainer apa yang dilayani?',
+      answer: 'Kontainer 20 feet dan 40 feet.',
+    },
+    {
+      home: '/en',
+      prefix: '/en',
+      service: 'Domestic Trucking',
+      size: /40-foot/,
+      submit: 'Continue to the form',
+      nav: 'Main navigation',
+      menu: 'Services',
+      all: 'All services',
+      first: '20 and 40-foot container transport, domestic trucking',
+      question: 'Which container sizes do you carry?',
+      answer: '20-foot and 40-foot containers.',
+    },
+  ]) {
+    // Quick quote: both choices arrive selected on the quote form.
+    await page.goto(text.home);
+    const quick = page.locator('.quick-quote');
+    await quick.locator('[name="service"]').selectOption({ label: text.service });
+    await quick.locator('[name="container"]').selectOption('40ft');
+    await quick.getByRole('button', { name: text.submit }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`${text.prefix}/contact\\?service=domestic-trucking&container=40ft$`),
+    );
+    await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+    await expect(page.getByRole('radio', { name: text.size })).toBeChecked();
+
+    // Services menu: pointing at the link lists every service; each entry opens its section.
+    await page.goto(text.home);
+    await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+    const nav = page.getByRole('navigation', { name: text.nav });
+    const trigger = nav.getByRole('link', { name: text.menu, exact: true });
+    await trigger.hover();
+    const panel = page.locator('.services-menu');
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('link')).toHaveCount(6);
+    expect(
+      await panel
+        .getByRole('link')
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+    ).toEqual([
+      ...[
+        'container-transportation',
+        'domestic-trucking',
+        'factory-to-port-transportation',
+        'customs-clearance-assistance',
+        'logistics-shipping-coordination',
+      ].map((slug) => `${text.prefix}/services#${slug}`),
+      `${text.prefix}/services`,
+    ]);
+    await expect(panel.getByRole('link', { name: text.all })).toBeVisible();
+    await panel.getByRole('link', { name: text.service }).click();
+    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services#domestic-trucking$`));
+    await expect(page.locator('#domestic-trucking')).toBeInViewport();
+    // The link itself still opens the Services page.
+    await page.goto(text.home);
+    await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+    await nav.getByRole('link', { name: text.menu, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${text.prefix}/services$`));
+
+    // Common questions: one answer open at a time, and the same text as structured data.
+    await page.goto(text.home);
+    const faq = page.locator('#faq');
+    await faq.scrollIntoViewIfNeeded();
+    await faq.locator('astro-island:not([ssr])').waitFor();
+    await expect(faq.getByRole('button')).toHaveCount(6);
+    await expect(faq.getByText(text.first)).toBeVisible();
+    await faq.getByRole('button', { name: text.question }).click();
+    await expect(faq.getByText(text.answer)).toBeVisible();
+    await expect(faq.getByText(text.first)).toBeHidden();
+    await faq.getByRole('button', { name: text.question }).click();
+    await expect(faq.getByText(text.answer)).toBeHidden();
+    const structured = await page
+      .locator('script[type="application/ld+json"]')
+      .evaluateAll((scripts) => scripts.map((script) => JSON.parse(script.textContent!)));
+    const faqData = structured.find((entry) => entry['@type'] === 'FAQPage');
+    expect(faqData.mainEntity).toHaveLength(6);
+    expect(faqData.mainEntity[1].name).toBe(text.question);
+    expect(faqData.mainEntity[1].acceptedAnswer.text).toContain(text.answer);
+  }
+  // Without JavaScript the quick quote and the Services link still work.
+  const context = await browser.newContext({ javaScriptEnabled: false, locale: 'id-ID' });
+  const plain = await context.newPage();
+  await plain.goto('http://localhost:4322/');
+  await plain.locator('.quick-quote [name="container"]').selectOption('20ft');
+  await plain.locator('.quick-quote button[type="submit"]').click();
+  await expect(plain).toHaveURL(/\/contact\?service=&container=20ft$/);
+  await expect(plain.locator('#container-20ft')).toHaveAttribute('aria-checked', 'true');
+  await plain.goto('http://localhost:4322/');
+  await plain.locator('.desktop-nav').getByRole('link', { name: 'Layanan', exact: true }).click();
+  await expect(plain).toHaveURL(/\/services$/);
+  await context.close();
+});
 test('the first page follows the visitor, and a manual language choice is remembered', async ({
   browser,
   page,
@@ -615,13 +726,17 @@ test('section wording is edited on the Page text screen, in both languages', asy
     await page.getByLabel('Send button (Indonesian)').fill('Kirim sekarang');
     await page.getByRole('tab', { name: 'Home' }).click();
     await expect(heading).toHaveValue('Kontainer Anda, urusan kami.');
-    await expect(page.getByText('2 unsaved changes', { exact: true })).toBeVisible();
+    // The common questions are editable too, and the structured data follows.
+    await page.getByLabel('Question 1 (Indonesian)').fill('Layanan apa yang ada?');
+    await expect(page.getByText('3 unsaved changes', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
     await expect(page.getByText('No unsaved changes')).toBeVisible();
 
     expect(await html('/')).toContain('Kontainer Anda, urusan kami.');
     expect(await html('/')).not.toContain(defaultHeading);
+    expect(await html('/')).toContain('"name":"Layanan apa yang ada?"');
+    expect(await html('/')).not.toContain('Layanan apa saja yang tersedia?');
     expect(await html('/en')).toContain('Your containers, handled.');
     expect(await html('/contact')).toContain('Kirim sekarang');
     // Only the language that was changed is affected.
@@ -636,6 +751,7 @@ test('section wording is edited on the Page text screen, in both languages', asy
     // A cleared field also goes back to its default.
     await heading.fill('');
     await page.getByLabel('Main heading (English)').fill('');
+    await page.getByLabel('Question 1 (Indonesian)').fill('');
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
     await expect(heading).toHaveValue(defaultHeading);

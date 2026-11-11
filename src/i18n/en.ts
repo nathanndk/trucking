@@ -109,6 +109,44 @@ export const en: Dictionary = {
     articlesEmpty: 'No articles have been published yet.',
     articlesLink: 'All articles',
   },
+  quick: {
+    heading: 'Start a quote',
+    service: 'Service',
+    container: 'Container type',
+    containerPlaceholder: 'Choose a size',
+    submit: 'Continue to the form',
+  },
+  faq: {
+    heading: 'Common questions',
+    items: [
+      {
+        question: 'Which services do you offer?',
+        answer:
+          '20 and 40-foot container transport, domestic trucking, factory-to-port haulage, customs clearance assistance, and shipment coordination.',
+      },
+      {
+        question: 'Which container sizes do you carry?',
+        answer: '20-foot and 40-foot containers. Choose the size that fits your cargo volume.',
+      },
+      {
+        question: 'Where do you operate?',
+        answer: 'Jakarta and the surrounding area, with Tanjung Priok as the main port.',
+      },
+      {
+        question: 'Do you help with customs documents?',
+        answer: 'Yes. We assist with the documents and the customs clearance process.',
+      },
+      {
+        question: 'Can you collect cargo straight from the factory?',
+        answer: 'Yes. Cargo is carried from your factory or warehouse to Tanjung Priok.',
+      },
+      {
+        question: 'How do I request a quote?',
+        answer:
+          'Fill in the quote form with the service, origin, destination and container type. Our team contacts you by WhatsApp or email.',
+      },
+    ],
+  },
   about: {
     title: 'About Us',
     description:

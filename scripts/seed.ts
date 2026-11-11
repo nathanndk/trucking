@@ -7,7 +7,7 @@ if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'tr
     'Seeding is disabled in production. Set ALLOW_DEMO_SEED=true explicitly for initial setup only.',
   );
 // Starting content for PT Genesis Trans Indonesia, taken from the company brief.
-// Details the company has not confirmed yet (contacts, address, year established,
+// Details the company has not confirmed yet (phone, WhatsApp, address, year established,
 // clients, projects) are left blank; the website marks them as "to be updated".
 db.transaction((tx) => {
   tx.insert(siteSettings)
@@ -35,7 +35,7 @@ db.transaction((tx) => {
       established: '',
       phone: '',
       whatsapp: '',
-      email: '',
+      email: 'info@genesistransindo.com',
       address: '',
       mapsUrl: '',
       instagram: '',

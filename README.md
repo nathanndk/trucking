@@ -21,7 +21,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Visit **http://localhost:4321**. Seeding is repeatable and never overwrites existing records. The seed holds the company profile, vision, mission and five services from the client brief, in both languages. Details the company has not confirmed yet (address, phone, WhatsApp, email, year established, clients, projects) are left blank; the public website marks them "Segera diperbarui" / "To be updated" until they are filled in under **Settings**. Photography was supplied by the client; sources are in `assets-src/genesis` and `pnpm images:optimize` regenerates the bundled WebP files.
+Visit **http://localhost:4321**. Seeding is repeatable and never overwrites existing records. The seed holds the company profile, vision, mission and five services from the client brief, in both languages. Details the company has not confirmed yet (address, phone, WhatsApp, year established, clients, projects) are left blank; the public website marks them "Segera diperbarui" / "To be updated" until they are filled in under **Settings**. Photography was supplied by the client; sources are in `assets-src/genesis` and `pnpm images:optimize` regenerates the bundled WebP files.
 
 ## First admin
 

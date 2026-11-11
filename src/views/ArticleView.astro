@@ -1,0 +1,47 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import CTA from '../components/marketing/CTA.astro';
+import type { ContentRecord } from '../lib/content-config';
+import { getPublicSettings } from '../lib/repository';
+import { formatDate, localePath, toLocale, ui } from '../i18n';
+interface Props {
+  article: ContentRecord;
+}
+const { article } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+// Article bodies are plain text. Blank lines separate paragraphs; Astro escapes the content.
+const paragraphs = article.description
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
+const summary = article.shortDescription || paragraphs[0]?.slice(0, 160) || t.articles.intro;
+---
+
+<PublicLayout title={article.title} description={summary} image={article.image || undefined}>
+  <section class="section">
+    <div class="wrap">
+      <article class="article">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href={localePath(locale, '/articles')}>{t.articles.back}</a>
+        </nav>
+        <h1>{article.title}</h1>
+        <p class="article-meta" style="margin-top:16px">
+          <time datetime={article.createdAt.toISOString()}>
+            {formatDate(article.createdAt, locale)}
+          </time>
+        </p>
+        {article.image && (
+          <img class="photo" src={article.image} alt="" width="1280" height="720" />
+        )}
+        <div class="article-body" style={article.image ? undefined : 'margin-top:32px'}>
+          {paragraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      </article>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

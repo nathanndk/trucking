@@ -1,21 +1,29 @@
 ---
-import { ArrowUpRight } from 'lucide-react';
-const { text = 'Minta Penawaran' } = Astro.props;
+import { localePath, toLocale, ui } from '../../i18n';
+const { text } = Astro.props as { text: string };
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
 ---
 
 <section class="cta-band">
-  <div class="wrap" data-motion="group">
-    <div data-motion-item>
-      <div class="eyebrow">MARI BERGERAK BERSAMA</div>
-      <h2>
-        Muatan Anda.
-        <br />
-        Komitmen kami.
-      </h2>
+  <div class="wrap">
+    <div class="cta-copy">
+      <h2>{t.cta.heading}</h2>
+      <p>{t.cta.text}</p>
+      <a href={localePath(locale, '/contact')} class="cta light">
+        {text}
+      </a>
     </div>
-    <a href="/contact" class="cta dark" data-motion-item>
-      {text}
-      <ArrowUpRight size={20} />
-    </a>
+    <div class="cta-photo">
+      <img
+        src="/images/genesis/cta-handshake-1280.webp"
+        srcset="/images/genesis/cta-handshake-640.webp 640w, /images/genesis/cta-handshake-1280.webp 1280w"
+        sizes="(max-width: 800px) 100vw, 45vw"
+        alt={t.cta.imageAlt}
+        width="1280"
+        height="720"
+        loading="lazy"
+      />
+    </div>
   </div>
 </section>

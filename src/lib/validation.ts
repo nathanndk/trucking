@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { collections } from './content-config';
+import { collections, mediaFolders } from './content-config';
 export const collectionSchema = z.enum(collections);
 export const webUrl = z
   .string()
@@ -8,6 +8,7 @@ export const webUrl = z
     (v) => !v || (/^https?:\/\//i.test(v) && URL.canParse(v)),
     'Use a complete http:// or https:// URL.',
   );
+const mediaPath = new RegExp(`^/media/(${mediaFolders.join('|')})/[a-f0-9-]+\\.webp$`);
 export const imagePath = z
   .string()
   .max(300)
@@ -15,7 +16,7 @@ export const imagePath = z
     (v) =>
       !v ||
       (/^\/images\/[a-zA-Z0-9_./-]+\.(?:jpg|jpeg|webp|png|svg)$/.test(v) && !v.includes('..')) ||
-      /^\/media\/(fleet|services|projects|clients|general)\/[a-f0-9-]+\.webp$/.test(v),
+      mediaPath.test(v),
     'Select an uploaded image.',
   );
 const short = z.string().trim().max(250);
@@ -28,9 +29,14 @@ export const contentInput = z
       .string()
       .min(2)
       .max(160)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and hyphens.'),
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and hyphens.')
+      // Locale codes are reserved path segments.
+      .refine((v) => v !== 'id' && v !== 'en', 'This slug is reserved. Choose another.'),
     shortDescription: z.string().trim().max(500).default(''),
     description: z.string().trim().max(10000).default(''),
+    titleEn: short.default(''),
+    shortDescriptionEn: z.string().trim().max(500).default(''),
+    descriptionEn: z.string().trim().max(10000).default(''),
     image: imagePath.default(''),
     published: z.boolean(),
     sortOrder: z.number().int().min(0).max(100000),
@@ -61,6 +67,7 @@ export const contentInput = z
       if (!v[k]?.trim())
         c.addIssue({ code: 'custom', path: [k], message: 'This field is required.' });
   });
+const blankOr = <T extends z.ZodType>(schema: T) => z.union([z.literal(''), schema]);
 export const settingsInput = z.object({
   companyName: short.min(2),
   legalName: short.min(2),
@@ -69,15 +76,19 @@ export const settingsInput = z.object({
   about: z.string().trim().min(10).max(10000),
   vision: z.string().trim().min(5).max(3000),
   mission: z.string().trim().min(5).max(5000),
-  established: z.string().regex(/^(19|20)\d{2}$/),
-  phone: z
-    .string()
-    .min(6)
-    .max(30)
-    .regex(/^[+\d\s()-]+$/),
-  whatsapp: z.string().regex(/^\d{8,16}$/),
-  email: z.email().max(250),
-  address: z.string().trim().min(5).max(1000),
+  // Contact details may stay blank until the company confirms them; the public
+  // website then shows a "to be updated" marker instead of a link.
+  established: blankOr(z.string().regex(/^(19|20)\d{2}$/)),
+  phone: blankOr(
+    z
+      .string()
+      .min(6)
+      .max(30)
+      .regex(/^[+\d\s()-]+$/),
+  ),
+  whatsapp: blankOr(z.string().regex(/^\d{8,16}$/)),
+  email: blankOr(z.email().max(250)),
+  address: z.string().trim().max(1000),
   mapsUrl: webUrl,
   instagram: webUrl,
   linkedin: webUrl,
@@ -85,12 +96,24 @@ export const settingsInput = z.object({
   logo: imagePath,
   favicon: imagePath,
   credentials: z.string().max(3000),
-  demoMode: z.boolean(),
+  taglineEn: short.default(''),
+  shortDescriptionEn: z.string().trim().max(1000).default(''),
+  aboutEn: z.string().trim().max(10000).default(''),
+  visionEn: z.string().trim().max(3000).default(''),
+  missionEn: z.string().trim().max(5000).default(''),
+  ctaTextEn: short.default(''),
+  credentialsEn: z.string().max(3000).default(''),
   statistics: z
-    .array(z.object({ value: z.string().trim().min(1).max(20), label: short.min(1) }))
-    .min(1)
+    .array(
+      z.object({
+        value: z.string().trim().min(1).max(20),
+        label: short.min(1),
+        labelEn: short.default(''),
+      }),
+    )
     .max(4),
 });
+export const containerTypes = ['20ft', '40ft'] as const;
 export const quoteInput = z.object({
   fullName: short.min(2),
   company: short.min(2),
@@ -103,9 +126,9 @@ export const quoteInput = z.object({
   email: z.email().trim().max(250),
   pickup: short.min(2),
   destination: short.min(2),
-  cargo: short.min(2),
-  weight: short.min(1),
-  vehicle: short.nullish().transform((v) => v ?? ''),
+  /** Slug of a published service; the action stores the service title. */
+  serviceType: short.min(2),
+  containerType: z.enum(containerTypes),
   message: z
     .string()
     .trim()

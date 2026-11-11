@@ -1,0 +1,20 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import { localePath, toLocale, ui } from '../i18n';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+---
+
+<PublicLayout title={t.notFound.title} description={t.notFound.description} noAlternates>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.notFound.h1}</h1>
+      <p class="lede" style="margin:20px 0 32px">
+        {t.notFound.text}
+      </p>
+      <a class="cta" href={localePath(locale, '/')}>
+        {t.notFound.back}
+      </a>
+    </div>
+  </section>
+</PublicLayout>

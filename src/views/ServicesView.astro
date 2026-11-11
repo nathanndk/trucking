@@ -1,0 +1,37 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ServiceGrid from '../components/marketing/ServiceGrid.astro';
+import ContainerScale from '../components/marketing/ContainerScale.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { toLocale, ui } from '../i18n';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const items = getPublicContent('services', locale);
+---
+
+<PublicLayout title={t.services.title} description={t.services.description}>
+  <PageHero label={t.nav.services} title={t.services.h1} description={t.services.intro} />
+  <section class="section">
+    <div class="wrap">
+      <ServiceGrid items={items} full />
+    </div>
+  </section>
+  <ContainerScale />
+  <section class="section">
+    <div class="wrap">
+      <h2 data-motion="heading">{t.services.stepsHeading}</h2>
+      <ol class="steps" data-motion="group">
+        {t.services.steps.map((step) => (
+          <li data-motion-item>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

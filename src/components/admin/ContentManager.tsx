@@ -142,6 +142,36 @@ function Editor({
           maxLength={10000}
         />
       </div>
+      <fieldset className="space-y-5 rounded-md border p-4">
+        <legend className="px-2 text-sm font-semibold">English version</legend>
+        <p className="text-xs text-muted-foreground">
+          Shown on the English website (/en). Blank fields fall back to the Indonesian text.
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="titleEn">English title</Label>
+          <Input id="titleEn" name="titleEn" defaultValue={item?.titleEn} maxLength={250} />
+        </div>
+        {collection !== 'coverage' && collection !== 'clients' && (
+          <div className="space-y-2">
+            <Label htmlFor="shortDescriptionEn">English short description</Label>
+            <Input
+              id="shortDescriptionEn"
+              name="shortDescriptionEn"
+              defaultValue={item?.shortDescriptionEn}
+              maxLength={500}
+            />
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="descriptionEn">English description</Label>
+          <Textarea
+            id="descriptionEn"
+            name="descriptionEn"
+            defaultValue={item?.descriptionEn}
+            maxLength={10000}
+          />
+        </div>
+      </fieldset>
       {config.fields.map((field) => (
         <div className="space-y-2" key={field.name}>
           <Label htmlFor={field.name}>
@@ -162,9 +192,7 @@ function Editor({
               type={field.type || 'text'}
               step={field.type === 'number' ? 'any' : undefined}
               required={field.required}
-              defaultValue={String(
-                item?.[field.name as keyof ContentRecord] ?? (field.name === 'icon' ? 'Truck' : ''),
-              )}
+              defaultValue={String(item?.[field.name as keyof ContentRecord] ?? '')}
               maxLength={500}
             />
           )}
@@ -325,7 +353,7 @@ export default function ContentManager({
                   <div className="flex items-center gap-3">
                     {config.image && (
                       <img
-                        src={item.image || '/favicon.svg'}
+                        src={item.image || '/favicon.png'}
                         alt=""
                         className="hidden h-12 w-16 rounded-md bg-muted object-cover sm:block"
                       />

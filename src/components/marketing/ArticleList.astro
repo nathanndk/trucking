@@ -1,0 +1,23 @@
+---
+import type { ContentRecord } from '../../lib/content-config';
+import { formatDate, localePath, toLocale } from '../../i18n';
+const { items } = Astro.props as { items: ContentRecord[] };
+const locale = toLocale(Astro.currentLocale);
+---
+
+<div class="article-list" data-motion="group">
+  {items.map((item) => (
+    <article class="article-card" data-motion-item>
+      <div class="tile-photo">
+        {item.image && (
+          <img data-motion-photo src={item.image} alt="" width="800" height="500" loading="lazy" />
+        )}
+      </div>
+      <time datetime={item.createdAt.toISOString()}>{formatDate(item.createdAt, locale)}</time>
+      <h3>
+        <a href={localePath(locale, `/articles/${item.slug}`)}>{item.title}</a>
+      </h3>
+      {item.shortDescription && <p>{item.shortDescription}</p>}
+    </article>
+  ))}
+</div>

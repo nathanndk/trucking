@@ -1,0 +1,64 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ProjectGrid from '../components/marketing/ProjectGrid.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { fill, toLocale, ui } from '../i18n';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const projects = getPublicContent('projects', locale);
+const clients = getPublicContent('clients', locale);
+---
+
+<PublicLayout
+  title={t.projects.title}
+  description={fill(t.projects.description, { name: s.legalName })}
+>
+  <PageHero label={t.nav.projects} title={t.projects.h1} description={t.projects.intro} />
+  <section class="section">
+    <div class="wrap">
+      <h2 style="margin-bottom:32px">{t.projects.projectsHeading}</h2>
+      {projects.length > 0 ? (
+        <ProjectGrid items={projects} full />
+      ) : (
+        <p class="placeholder">
+          {t.projects.projectsEmpty}
+          <span class="marker">{t.toBeUpdated}</span>
+        </p>
+      )}
+    </div>
+  </section>
+  <section class="section tint">
+    <div class="wrap">
+      <h2 data-motion="heading" style="margin-bottom:32px">
+        {t.projects.clientsHeading}
+      </h2>
+      {clients.length > 0 ? (
+        <div class="client-grid">
+          {clients.map((client) => {
+            const mark = client.image ? (
+              <img src={client.image} alt={client.title} width="240" height="80" loading="lazy" />
+            ) : (
+              client.title
+            );
+            return client.website ? (
+              <a href={client.website} rel="noopener noreferrer">
+                {mark}
+              </a>
+            ) : (
+              <div>{mark}</div>
+            );
+          })}
+        </div>
+      ) : (
+        <p class="placeholder">
+          {t.projects.clientsEmpty}
+          <span class="marker">{t.toBeUpdated}</span>
+        </p>
+      )}
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

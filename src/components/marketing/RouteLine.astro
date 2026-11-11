@@ -1,0 +1,26 @@
+---
+import { toLocale, ui } from '../../i18n';
+const t = ui(toLocale(Astro.currentLocale));
+---
+
+<section class="route" aria-labelledby="route-heading">
+  <div class="wrap">
+    <h2 id="route-heading" class="sr-only">
+      {t.route.heading}
+    </h2>
+    <div class="route-track" data-motion="route">
+      <svg class="route-line" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true">
+        <path data-motion-path d="M0 1H100"></path>
+      </svg>
+      <ol class="route-stops">
+        {t.route.stops.map((stop, i) => (
+          <li data-motion-marker>
+            <span class="route-num">{i + 1}</span>
+            <strong>{stop.title}</strong>
+            <span>{stop.text}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>

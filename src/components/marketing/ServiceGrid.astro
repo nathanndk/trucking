@@ -1,33 +1,56 @@
 ---
-import { Truck, Package, Warehouse, Container, Route, Handshake } from 'lucide-react';
 import type { ContentRecord } from '../../lib/content-config';
+import { localePath, toLocale, ui } from '../../i18n';
 const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
-const icons: Record<string, typeof Truck> = {
-  Truck,
-  Package,
-  Warehouse,
-  Container,
-  Route,
-  Handshake,
-};
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+/** Bundled photos ship in two widths; uploaded media has a single file. */
+const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 ---
 
-<div class="services-grid" data-motion="group">
-  {items.map((item, i) => {
-    const Icon = icons[item.icon || 'Truck'] || Truck;
-    return (
-      <article class="service-tile" data-motion-item id={item.slug}>
-        <span class="tile-num">{String(i + 1).padStart(2, '0')}</span>
-        <Icon />
-        <h3>{item.title}</h3>
-        <p>{full ? item.description : item.shortDescription}</p>
-        {full && (
-          <a href="/contact" class="text-link" style="margin-top:24px;color:#c9f36a">
-            Diskusikan kebutuhan Anda <span aria-hidden="true">↗</span>
-          </a>
+<div class={full ? 'service-rows' : 'services-grid'} data-motion="group">
+  {items.map((item) => (
+    <article class="service-tile" data-motion-item id={item.slug}>
+      <div class="tile-photo">
+        {item.image && (
+          <img
+            data-motion-photo
+            src={item.image}
+            srcset={
+              small(item.image) !== item.image
+                ? `${small(item.image)} 640w, ${item.image} 1280w`
+                : undefined
+            }
+            sizes={small(item.image) !== item.image ? '(max-width: 800px) 100vw, 50vw' : undefined}
+            alt=""
+            width="1280"
+            height="800"
+            loading="lazy"
+          />
         )}
-      </article>
-    );
-  })}
+      </div>
+      {full ? (
+        <div class="tile-copy">
+          <h2>{item.title}</h2>
+          <p>{item.description || item.shortDescription}</p>
+          <a class="text-link" href={`${localePath(locale, '/contact')}?service=${item.slug}`}>
+            {t.services.quote}
+          </a>
+        </div>
+      ) : (
+        <>
+          <h3>{item.title}</h3>
+          <p>{item.shortDescription}</p>
+          <a
+            class="text-link"
+            href={`${localePath(locale, '/contact')}?service=${item.slug}`}
+            aria-label={`${t.services.quoteShort}: ${item.title}`}
+          >
+            {t.services.quoteShort}
+          </a>
+        </>
+      )}
+    </article>
+  ))}
 </div>
-{items.length === 0 && <p>Layanan sedang diperbarui. Hubungi tim kami untuk informasi.</p>}
+{items.length === 0 && <p class="placeholder">{t.services.empty}</p>}

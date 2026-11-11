@@ -1,6 +1,6 @@
-# Lintas — trucking website & admin CMS
+# PT Genesis Trans Indonesia — website & admin CMS
 
-A single Astro SSR application for an Indonesian logistics company. Seven public pages, a protected CMS, local image storage, and a private quotation inbox. The public pages are server-rendered; React is hydrated only for interactive admin forms and controls.
+A single Astro SSR application for PT Genesis Trans Indonesia, a container trucking and logistics company in Jakarta. Six public pages plus article pages, each in Indonesian and English, a protected CMS, local image storage, and a private quotation inbox. The public pages are server-rendered; React is hydrated only for interactive admin forms and controls.
 
 ## Local setup
 
@@ -21,7 +21,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Visit **http://localhost:4321**. Seeding is repeatable and never overwrites existing records. The fictional LINTAS brand, clients, company history, fleet specifications, numbers, addresses, and projects are explicitly marked as demonstration content. Photography is illustrative, not proof of an owned fleet. Replace and verify it before launch.
+Visit **http://localhost:4321**. Seeding is repeatable and never overwrites existing records. The seed holds the company profile, vision, mission and five services from the client brief, in both languages. Details the company has not confirmed yet (address, phone, WhatsApp, email, year established, clients, projects) are left blank; the public website marks them "Segera diperbarui" / "To be updated" until they are filled in under **Settings**. Photography was supplied by the client; sources are in `assets-src/genesis` and `pnpm images:optimize` regenerates the bundled WebP files.
 
 ## First admin
 
@@ -31,37 +31,46 @@ Set `ADMIN_EMAIL`, `ADMIN_NAME`, and a unique `ADMIN_PASSWORD` of at least 12 ch
 pnpm admin:bootstrap
 ```
 
-Sign in at `/admin/login`. Remove `ADMIN_PASSWORD` from `.env` immediately afterward. There are no default credentials and no public signup. Bootstrap refuses to overwrite an existing user. All created accounts have the simple admin role. For recovery, run the separate local `admin:reset` command described below; there is no email/reset service dependency.
+Sign in at `/admin/login`. Run the command once per administrator, with a different `ADMIN_EMAIL` each time, to create more than one account. Remove `ADMIN_PASSWORD` from `.env` immediately afterward. There are no default credentials and no public signup. Bootstrap refuses to overwrite an existing user. All created accounts have the simple admin role. For recovery, run the separate local `admin:reset` command described below; there is no email/reset service dependency.
 
 ## Routes
 
-| Public      | Purpose                                                                 |
-| ----------- | ----------------------------------------------------------------------- |
-| `/`         | Hero, services, fleet, company facts, coverage, projects, clients, CTAs |
-| `/about`    | Profile, history, vision, mission, values, safety, credentials          |
-| `/services` | Published service records                                               |
-| `/fleet`    | Published vehicles, specifications, capacities                          |
-| `/coverage` | Published cities/provinces and illustrative route diagram               |
-| `/projects` | Published projects and client logos                                     |
-| `/contact`  | Validated quotation form                                                |
+| Public             | Purpose                                                                      |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `/`                | Hero, shipping route, profile, services, container sizes, projects, articles |
+| `/about`           | Profile, vision, mission, strengths, company details                         |
+| `/services`        | Published services, container sizes, how to order                            |
+| `/projects`        | Published projects and client logos                                          |
+| `/articles`        | Published articles, newest first                                             |
+| `/articles/[slug]` | One article                                                                  |
+| `/contact`         | Validated quotation form and contact details                                 |
+
+Every public page also exists in English under `/en` (`/en/about`, `/en/articles/[slug]`, …).
 
 | Admin              | Purpose                                                              |
 | ------------------ | -------------------------------------------------------------------- |
 | `/admin/login`     | Better Auth email/password login                                     |
 | `/admin`           | Overview and recent inquiries                                        |
 | `/admin/services`  | Service CRUD, publication, ordering, images                          |
-| `/admin/fleet`     | Vehicle CRUD, publication, ordering, images                          |
-| `/admin/coverage`  | Coverage CRUD, publication, ordering, optional map coordinates       |
+| `/admin/fleet`     | Vehicle CRUD (kept in the CMS, hidden from the public website)       |
+| `/admin/coverage`  | Coverage CRUD (kept in the CMS, hidden from the public website)      |
 | `/admin/projects`  | Project CRUD, publication, ordering, images                          |
 | `/admin/clients`   | Client CRUD, publication, ordering, logos                            |
+| `/admin/articles`  | Article CRUD, publication, ordering, images                          |
 | `/admin/inquiries` | Private inquiry detail and new/contacted/quoted/closed status        |
 | `/admin/settings`  | Company information, contacts, social URLs, logo/favicon, statistics |
 
-Supporting routes: `/api/auth/[...all]`, `/_actions/*`, `/media/[...path]`, `/robots.txt`, `/sitemap.xml`, and a custom 404 page. CMS collection routes share one Astro route template. Slugs are persisted and unique so service detail pages can be added later.
+Supporting routes: `/api/auth/[...all]`, `/_actions/*`, `/media/[...path]`, `/robots.txt`, `/sitemap.xml`, and a custom 404 page. CMS collection routes share one Astro route template. Slugs are unique per collection and shared by both languages; `id` and `en` are reserved.
+
+## Languages
+
+Indonesian is the default and has no URL prefix; English lives under `/en` (Astro `i18n` in `astro.config.mjs`). Each page body is a component in `src/views/`; the files in `src/pages/` and `src/pages/en/` are thin route wrappers. Interface text is in `src/i18n/id.ts` and `src/i18n/en.ts` (same shape, type-checked). CMS content has paired English fields ("English title", "English description", and the "English version" card in Settings). `getPublicContent` and `getPublicSettings` in `src/lib/repository.ts` return the English value when one was entered and fall back to Indonesian otherwise. The admin interface is English only.
+
+Fleet and Coverage are switched off for the public website through the `public` flag in `src/lib/content-config.ts`. Their tables and admin screens remain; public pages for them would need to be designed before the flag is turned on.
 
 ## CMS workflow
 
-Create a record with the Add button. Use Edit to update copy, upload/replace images, set publication, and change **Sort order** (smaller numbers come first; ID breaks ties). Row menus also provide publish/unpublish and confirmed deletion. Drafts never appear in public queries. Clients support publication as an additional convenience. Coverage uses the shared `title` column for the city name.
+Create a record with the Add button. Use Edit to update copy, upload/replace images, set publication, and change **Sort order** (smaller numbers come first; ID breaks ties). Row menus also provide publish/unpublish and confirmed deletion. Drafts never appear in public queries. Articles are plain text: a blank line starts a new paragraph, and HTML is displayed as text rather than rendered. Articles with the same sort order are listed newest first. Clients support publication as an additional convenience. Coverage uses the shared `title` column for the city name.
 
 Uploads accept JPEG, PNG and WebP up to 5 MB and 40 million decoded pixels. The server checks the decoded type, strips metadata by re-encoding, downsizes to 1920 pixels, and writes randomized WebP filenames. SVG upload is deliberately unsupported. Bundled client SVG illustrations are trusted source assets. Public media can only be served through a validated path with a corresponding database record. Treat any uploaded image as publicly accessible; do not upload confidential material.
 
@@ -80,7 +89,7 @@ Browser → Nginx (HTTPS) → Astro Node standalone
                               └─ persistent uploads/
 ```
 
-Schema: `src/db/schema.ts`. SQL migrations and snapshots: `drizzle/`. Tables: `user`, `session`, `account`, `verification`, `site_settings`, `services`, `fleet`, `coverage`, `projects`, `clients`, `inquiries`, `media`, and `rate_limit`. Auth has foreign keys and relevant indexes; content has unique slugs and publication/order indexes; inquiries have a status/date index. SQLite enables foreign keys, WAL and a 5-second busy timeout. Dates use millisecond timestamps.
+Schema: `src/db/schema.ts`. SQL migrations and snapshots: `drizzle/`. Tables: `user`, `session`, `account`, `verification`, `site_settings`, `services`, `fleet`, `coverage`, `projects`, `clients`, `articles`, `inquiries`, `media`, and `rate_limit`. Auth has foreign keys and relevant indexes; content has unique slugs and publication/order indexes; inquiries have a status/date index. SQLite enables foreign keys, WAL and a 5-second busy timeout. Dates use millisecond timestamps.
 
 ```sh
 pnpm db:generate   # after an intentional schema change; review generated SQL
@@ -125,7 +134,7 @@ pnpm start
 4. Run migrations as the service user with that environment. For first installation only, explicitly set `ALLOW_DEMO_SEED=true` to seed, then replace the sample content while access is restricted. Bootstrap the admin with temporary environment credentials. Do not keep the bootstrap password in the service environment.
 5. Install `deploy/lintas.service`, adjust the Node executable path if needed, reload systemd and enable/start the service. The service only has write access to `/var/lib/lintas`; builds and dependencies should be read-only to it. The application uses Better Auth sessions, not Astro's optional file-session API.
 6. Configure Nginx using `deploy/nginx.conf`. Issue a TLS certificate with your preferred ACME client, then enable the HTTPS block. Validate with `nginx -t` before reloading. Only expose ports 80/443 publicly; port 4321 remains loopback-only. Use one Node process for this SQLite deployment.
-7. Replace all demo data, test an actual quote and admin login over HTTPS, verify secure cookies, disable demo notices only after content review, and set up backups before launch.
+7. Fill in the contact details and any remaining placeholders in Settings, test an actual quote and admin login over HTTPS, verify secure cookies, and set up backups before launch.
 
 The proxy applies a 6 MB request-body limit (covering 5 MB images plus multipart overhead), buffers uploads, and overwrites forwarding headers. Do not configure CDN/public caching for admin, actions, auth, or contact pages. The quote token is generated on every page request. Immutable uploaded files may be cached. A domain/TLS certificate and real company data are deployment inputs; no hosting vendor or paid backend is required.
 

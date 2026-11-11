@@ -1,43 +1,33 @@
 ---
-import { ArrowUpRight } from 'lucide-react';
 import type { ContentRecord } from '../../lib/content-config';
+import { fill, toLocale, ui } from '../../i18n';
 const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
+const t = ui(toLocale(Astro.currentLocale));
 ---
 
 <div class="projects-grid" data-motion="group">
   {items.map((item) => (
     <article data-motion-item id={item.slug}>
       <div class="project-photo-frame">
-        <img
-          data-motion-photo
-          class="project-image"
-          src={item.image || '/images/port.jpg'}
-          alt={`Ilustrasi ${item.title}`}
-          width="800"
-          height="470"
-          loading="lazy"
-        />
+        {item.image && (
+          <img
+            data-motion-photo
+            class="project-image"
+            src={item.image}
+            alt={fill(t.projects.imageAlt, { title: item.title })}
+            width="800"
+            height="470"
+            loading="lazy"
+          />
+        )}
       </div>
       <div class="project-caption">
-        <div>
-          <span class="micro-label">{item.shortDescription || item.projectYear}</span>
-          <h3>{item.title}</h3>
-          {full && (
-            <>
-              <p>
-                {item.clientName} · {item.projectYear}
-              </p>
-              <p>{item.description}</p>
-            </>
-          )}
-        </div>
-        <a href="/contact" aria-label={`Diskusikan proyek seperti ${item.title}`}>
-          <ArrowUpRight size={24} />
-        </a>
+        <h3>{item.title}</h3>
+        <span class="project-meta">
+          {[item.clientName, item.projectYear].filter(Boolean).join(', ')}
+        </span>
+        <p>{full ? item.description || item.shortDescription : item.shortDescription}</p>
       </div>
     </article>
   ))}
 </div>
-{!items.length && (
-  <p class="empty-public">Cerita proyek akan tersedia setelah mendapat persetujuan klien.</p>
-)}

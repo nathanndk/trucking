@@ -6,13 +6,14 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { media } from '../db/schema';
 import { uploadsDir } from './env';
-export const mediaPattern = /^(fleet|services|projects|clients|general)\/([a-f0-9-]+\.webp)$/;
+import { mediaFolders } from './content-config';
+export const mediaPattern = new RegExp(`^(${mediaFolders.join('|')})/([a-f0-9-]+\\.webp)$`);
 export function mediaFile(relative: string) {
   if (!mediaPattern.test(relative)) throw new Error('Invalid media path');
   return path.join(uploadsDir, relative);
 }
 export async function saveImage(file: File, folder: string) {
-  if (!['fleet', 'services', 'projects', 'clients', 'general'].includes(folder))
+  if (!(mediaFolders as readonly string[]).includes(folder))
     throw new Error('Invalid upload category.');
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
     throw new Error('Choose a JPEG, PNG or WebP image.');

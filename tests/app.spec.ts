@@ -28,7 +28,9 @@ const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
     { auto: true },
   ],
 });
-const publicRoutes = ['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'];
+const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+// Every page exists in Indonesian (no prefix) and English (/en).
+const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p}`))];
 const adminRoutes = [
   '/admin',
   '/admin/services',
@@ -36,6 +38,7 @@ const adminRoutes = [
   '/admin/coverage',
   '/admin/projects',
   '/admin/clients',
+  '/admin/articles',
   '/admin/inquiries',
   '/admin/settings',
 ];
@@ -81,8 +84,12 @@ for (const [name, width, height] of [
         await page.screenshot({ path: testInfo.outputPath(`${name}-home.png`), fullPage: true });
     }
     if (name === 'mobile') {
+      await page.goto('/');
       await page.getByLabel('Buka navigasi').click();
       await expect(page.getByRole('navigation', { name: 'Navigasi seluler' })).toBeVisible();
+      await page.goto('/en');
+      await page.getByLabel('Open navigation').click();
+      await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible();
     }
   });
 }
@@ -98,7 +105,13 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   const robots = await request.get('/robots.txt');
   expect(await robots.text()).toContain('Disallow: /admin');
   const sitemap = await request.get('/sitemap.xml');
-  expect((await sitemap.text()).match(/<url>/g)).toHaveLength(7);
+  const sitemapXml = await sitemap.text();
+  expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length);
+  expect(sitemapXml).toContain('/en/services</loc>');
+  expect(sitemapXml).not.toContain('/fleet');
+  // Fleet and coverage stay in the CMS but are hidden from the public website.
+  for (const hidden of ['/fleet', '/coverage', '/en/fleet'])
+    expect((await request.get(hidden)).status()).toBe(404);
   for (const action of [
     'deleteContent',
     'publishContent',
@@ -147,7 +160,7 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   const db = database();
   expect(db.prepare('SELECT count(*) AS n FROM user').get()).toEqual({ n: 1 });
   expect(db.pragma('journal_mode', { simple: true })).toBe('wal');
-  expect(db.prepare('SELECT count(*) AS n FROM services').get()).toEqual({ n: 6 });
+  expect(db.prepare('SELECT count(*) AS n FROM services').get()).toEqual({ n: 5 });
   db.close();
 });
 test('admin login, all protected routes, responsive navigation and logout', async ({
@@ -181,18 +194,40 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
   adminSession,
 }, testInfo) => {
   await page.context().addCookies(adminSession);
-  for (const [collection, singular, titleLabel, extras] of [
-    ['services', 'service', 'Title', {}],
-    ['fleet', 'vehicle', 'Vehicle name', { 'Vehicle type': 'Heavy duty', Capacity: '10 ton' }],
-    ['coverage', 'service area', 'City', { Province: 'Jawa Barat' }],
-    ['projects', 'project', 'Title', { 'Client name': 'Test Client', 'Project year': '2026' }],
-    ['clients', 'client', 'Client name', { 'Website (optional)': 'https://example.com' }],
+  // The last entry is the public page a published record appears on (null: hidden collection).
+  for (const [collection, singular, titleLabel, extras, route] of [
+    ['services', 'service', 'Title', {}, '/services'],
+    [
+      'fleet',
+      'vehicle',
+      'Vehicle name',
+      { 'Vehicle type': 'Heavy duty', Capacity: '10 ton' },
+      null,
+    ],
+    ['coverage', 'service area', 'City', { Province: 'Jawa Barat' }, null],
+    [
+      'projects',
+      'project',
+      'Title',
+      { 'Client name': 'Test Client', 'Project year': '2026' },
+      '/projects',
+    ],
+    [
+      'clients',
+      'client',
+      'Client name',
+      { 'Website (optional)': 'https://example.com' },
+      '/projects',
+    ],
+    ['articles', 'article', 'Title', {}, '/articles'],
   ] as const) {
+    const publicHtml = async (prefix = '') => (await page.request.get(`${prefix}${route}`)).text();
     await page.goto(`/admin/${collection}`);
     const title = `Test ${collection}`;
     await page.getByRole('button', { name: `Add ${singular}`, exact: true }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel(new RegExp(`^${titleLabel}`)).fill(title);
+    await dialog.getByLabel('English title').fill(`${title} in English`);
     for (const [label, value] of Object.entries(extras))
       await dialog.getByLabel(label, { exact: false }).fill(value);
     await dialog
@@ -202,7 +237,7 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     if (collection !== 'coverage') {
       await dialog
         .locator('input[type=file]')
-        .setInputFiles(path.resolve('public/images/fleet.jpg'));
+        .setInputFiles(path.resolve('public/images/genesis/service-trucking-640.webp'));
       await expect(dialog.getByAltText(/preview/)).toBeVisible();
     }
     if (collection === 'services') {
@@ -233,14 +268,19 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
       expect(image.headers()['content-type']).toBe('image/webp');
     }
     db.close();
-    const route = collection === 'clients' ? '/projects' : `/${collection}`;
-    expect(await (await page.request.get(route)).text()).not.toContain(title);
+    if (route) expect(await publicHtml()).not.toContain(title);
     await page.getByRole('button', { name: `Actions for ${title}` }).click();
     await page.getByRole('menuitem', { name: 'Publish', exact: true }).click();
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    expect(await (await page.request.get(route)).text()).toContain(title);
+    if (route) {
+      expect(await publicHtml()).toContain(title);
+      expect(await publicHtml()).not.toContain(`${title} in English`);
+      expect(await publicHtml('/en')).toContain(`${title} in English`);
+    } else {
+      expect((await page.request.get(`/${collection}`)).status()).toBe(404);
+    }
     await page.getByRole('button', { name: title, exact: true }).click();
     await page
       .getByRole('dialog')
@@ -259,7 +299,7 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     await expect(
       page.getByRole('status').filter({ hasText: 'Changes saved successfully' }),
     ).toBeVisible();
-    expect(await (await page.request.get(route)).text()).not.toContain(`${title} edited`);
+    if (route) expect(await publicHtml()).not.toContain(`${title} edited`);
     await page.getByRole('button', { name: `Actions for ${title} edited` }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     await page.getByRole('button', { name: 'Delete permanently' }).click();
@@ -280,22 +320,27 @@ test('quotation persists privately, appears to admin, and status changes', async
     phone: '+62 812 3456 7890',
     email: 'dewi@example.com',
     pickup: 'Bekasi',
-    destination: 'Surabaya',
-    cargo: 'Barang palet',
-    weight: '5 ton',
+    destination: 'Tanjung Priok',
     message: 'Delivery next week.',
   };
   for (const [name, value] of Object.entries(values))
     await page.locator(`[name="${name}"]`).fill(value);
+  await page.locator('[name="serviceType"]').selectOption('container-transportation');
+  await page.locator('[name="containerType"][value="40ft"]').check();
   await page.waitForTimeout(2100);
-  await page.getByRole('button', { name: 'Kirim Permintaan' }).click();
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact\?sent=1$/);
   await expect(page.getByRole('status')).toContainText('Permintaan Anda berhasil dikirim');
   const db = database();
   const row = db.prepare('SELECT * FROM inquiries WHERE email=?').get(values.email) as {
     id: number;
     status: string;
+    service_type: string;
+    container_type: string;
   };
   expect(row.status).toBe('new');
+  expect(row.service_type).toBe('Angkutan Kontainer');
+  expect(row.container_type).toBe('40ft');
   db.close();
   expect(await (await page.request.get('/contact')).text()).not.toContain(values.email);
   await page.context().addCookies(adminSession);
@@ -303,6 +348,8 @@ test('quotation persists privately, appears to admin, and status changes', async
   const inquiry = page.getByRole('row').filter({ hasText: values.fullName });
   await inquiry.getByRole('button', { name: 'View inquiry' }).click();
   await expect(page.getByRole('dialog')).toContainText(values.message);
+  await expect(page.getByRole('dialog')).toContainText('Angkutan Kontainer');
+  await expect(page.getByRole('dialog')).toContainText('40ft');
   await page.getByLabel('Inquiry status', { exact: true }).selectOption('quoted');
   await page.getByRole('button', { name: 'Update status' }).click();
   await expect(page.getByRole('status')).toContainText('Inquiry status updated');
@@ -312,15 +359,102 @@ test('quotation persists privately, appears to admin, and status changes', async
   });
   after.close();
 });
+test('English pages, language switching and the English quote flow', async ({ page }) => {
+  await page.goto('/en/about');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/en\/about$/);
+  await expect(page.locator('link[hreflang="id"]')).toHaveAttribute('href', /[^n]\/about$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('logistics company');
+  // English CMS text is used where it exists.
+  await page.goto('/en/services');
+  await expect(page.getByRole('heading', { name: 'Customs Clearance Assistance' })).toBeVisible();
+  await page.locator('.desktop-nav').waitFor();
+  await page.locator('.nav-actions a[hreflang="id"]').click();
+  await expect(page).toHaveURL(/[^n]\/services$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
+  await expect(page.getByRole('heading', { name: 'Bantuan Customs Clearance' })).toBeVisible();
+  await page.locator('.nav-actions a[hreflang="en"]').click();
+  await expect(page).toHaveURL(/\/en\/services$/);
+  // The container diagram hands the chosen size to the quote form.
+  await page.locator('.scale-box.is-20').click();
+  await expect(page).toHaveURL(/\/en\/contact\?container=20ft$/);
+  await expect(page.locator('[name="containerType"][value="20ft"]')).toBeChecked();
+  const values = {
+    fullName: 'Evan English',
+    company: 'Test Exports Ltd',
+    phone: '+62 811 2222 3333',
+    email: 'evan@example.com',
+    pickup: 'Cikarang',
+    destination: 'Tanjung Priok',
+  };
+  for (const [name, value] of Object.entries(values))
+    await page.locator(`[name="${name}"]`).fill(value);
+  await page.locator('[name="serviceType"]').selectOption({ label: 'Domestic Trucking' });
+  await page.waitForTimeout(2100);
+  await page.getByRole('button', { name: 'Send request' }).click();
+  await expect(page).toHaveURL(/\/en\/contact\?sent=1$/);
+  await expect(page.getByRole('status')).toContainText('Your request has been sent');
+  const db = database();
+  expect(
+    db
+      .prepare('SELECT service_type, container_type FROM inquiries WHERE email=?')
+      .get(values.email),
+  ).toEqual({ service_type: 'Trucking Domestik', container_type: '20ft' });
+  db.close();
+  // Unknown English URLs get the English 404 page.
+  const missing = await page.goto('/en/not-a-page');
+  expect(missing?.status()).toBe(404);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('does not exist');
+});
+test('articles are public only while published, in both languages', async ({ page }) => {
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO articles (title, slug, short_description, description, title_en, description_en, published, sort_order, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,1,0,?,?)`,
+  ).run(
+    'Jadwal Operasional',
+    'jadwal-operasional',
+    'Ringkasan jadwal.',
+    'Paragraf pertama.\n\nParagraf kedua <b>tanpa HTML</b>.',
+    'Operating Schedule',
+    'First paragraph.',
+    now,
+    now,
+  );
+  try {
+    await page.goto('/articles');
+    await page.getByRole('link', { name: 'Jadwal Operasional' }).click();
+    await expect(page).toHaveURL(/\/articles\/jadwal-operasional$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jadwal Operasional');
+    await expect(page.locator('.article-body p')).toHaveCount(2);
+    // The body is plain text: markup typed by an editor is shown, never executed.
+    await expect(page.locator('.article-body b')).toHaveCount(0);
+    await page.goto('/en/articles/jadwal-operasional');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Operating Schedule');
+    await expect(page.locator('.article-body')).toContainText('First paragraph.');
+    expect(await (await page.request.get('/sitemap.xml')).text()).toContain(
+      '/en/articles/jadwal-operasional</loc>',
+    );
+    db.prepare('UPDATE articles SET published=0 WHERE slug=?').run('jadwal-operasional');
+    for (const url of ['/articles/jadwal-operasional', '/en/articles/jadwal-operasional'])
+      expect((await page.request.get(url)).status()).toBe(404);
+    expect(await (await page.request.get('/articles')).text()).not.toContain('Jadwal Operasional');
+  } finally {
+    db.prepare('DELETE FROM articles WHERE slug=?').run('jadwal-operasional');
+    db.close();
+  }
+});
 test('settings changes are reflected on public pages', async ({ page, adminSession }) => {
   await page.context().addCookies(adminSession);
   await page.goto('/admin/settings');
-  await page.getByLabel('Company name', { exact: false }).first().fill('LINTAS TEST');
+  await page.getByLabel('Company name', { exact: false }).first().fill('GENESIS TEST');
   await page.getByLabel('Primary CTA text').fill('Diskusikan Muatan');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Settings saved.' })).toBeVisible();
   const html = await (await page.request.get('/')).text();
-  expect(html).toContain('LINTAS TEST');
+  expect(html).toContain('GENESIS TEST');
   expect(html).toContain('Diskusikan Muatan');
 });
 

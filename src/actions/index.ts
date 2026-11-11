@@ -1,11 +1,11 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '../db';
-import { inquiries, siteSettings } from '../db/schema';
+import { inquiries, services, siteSettings } from '../db/schema';
 import { auth } from '../lib/auth';
 import { collectionSchema, contentInput, quoteInput, settingsInput } from '../lib/validation';
-import { contentConfig } from '../lib/content-config';
+import { contentConfig, mediaFolders } from '../lib/content-config';
 import { tables } from '../lib/repository';
 import { assertMediaReference, saveImage } from '../lib/media';
 import { allowRequest, verifyToken } from '../lib/spam';
@@ -42,6 +42,9 @@ export const server = {
           slug,
           description,
           shortDescription,
+          titleEn,
+          shortDescriptionEn,
+          descriptionEn,
           image,
           published,
           sortOrder,
@@ -51,6 +54,9 @@ export const server = {
           slug,
           description,
           shortDescription,
+          titleEn,
+          shortDescriptionEn,
+          descriptionEn,
           image,
           published,
           sortOrder,
@@ -109,7 +115,7 @@ export const server = {
     accept: 'form',
     input: z.object({
       file: z.instanceof(File),
-      folder: z.enum(['fleet', 'services', 'projects', 'clients', 'general']),
+      folder: z.enum(mediaFolders),
     }),
     handler: async ({ file, folder }, context) => {
       await requireAdmin(context.request);
@@ -164,15 +170,13 @@ export const server = {
       }
     },
   }),
+  // Public. Error messages are shown translated by the contact page, keyed on the error code.
   quote: defineAction({
     accept: 'form',
     input: quoteInput,
     handler: async (input, context) => {
       if (input.website || !verifyToken(input.token))
-        throw new ActionError({
-          code: 'BAD_REQUEST',
-          message: 'Silakan muat ulang formulir dan coba lagi.',
-        });
+        throw new ActionError({ code: 'BAD_REQUEST', message: 'Invalid or expired form token.' });
       let address = 'unknown';
       try {
         address = context.clientAddress;
@@ -182,19 +186,21 @@ export const server = {
       if (process.env.TRUST_PROXY === 'true')
         address = context.request.headers.get('x-real-ip') || address;
       if (!allowRequest(`quote:${address}`, 5, 60 * 60 * 1000))
-        throw new ActionError({
-          code: 'TOO_MANY_REQUESTS',
-          message:
-            'Terlalu banyak permintaan. Coba lagi dalam satu jam atau hubungi kami langsung.',
-        });
+        throw new ActionError({ code: 'TOO_MANY_REQUESTS', message: 'Too many requests.' });
+      const service = db
+        .select({ title: services.title })
+        .from(services)
+        .where(and(eq(services.slug, input.serviceType), eq(services.published, true)))
+        .get();
+      if (!service)
+        throw new ActionError({ code: 'BAD_REQUEST', message: 'Unknown service selected.' });
       if (!allowRequest(`quote-token:${input.token}`, 1, 2 * 60 * 60 * 1000))
-        throw new ActionError({
-          code: 'CONFLICT',
-          message: 'Formulir ini sudah dikirim. Muat ulang untuk permintaan baru.',
-        });
+        throw new ActionError({ code: 'CONFLICT', message: 'This form was already submitted.' });
       const { website: _website, token: _token, ...values } = input;
       try {
-        db.insert(inquiries).values(values).run();
+        db.insert(inquiries)
+          .values({ ...values, serviceType: service.title })
+          .run();
         return { success: true };
       } catch (e) {
         safeError(e);

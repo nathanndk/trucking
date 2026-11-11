@@ -1,7 +1,18 @@
 import type { APIRoute } from 'astro';
 import { origin } from '../lib/env';
-export const GET: APIRoute = () =>
-  new Response(
-    `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'].map((p) => `<url><loc>${origin}${p}</loc></url>`).join('')}</urlset>`,
+import { listContent } from '../lib/repository';
+import { locales, localePath } from '../i18n';
+const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact'];
+export const GET: APIRoute = () => {
+  const paths = [
+    ...pages,
+    ...listContent('articles', true).map((article) => `/articles/${article.slug}`),
+  ];
+  const urls = paths.flatMap((path) =>
+    locales.map((locale) => `<url><loc>${origin}${localePath(locale, path)}</loc></url>`),
+  );
+  return new Response(
+    `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`,
     { headers: { 'Content-Type': 'application/xml' } },
   );
+};

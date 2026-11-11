@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Brand from '../components/Brand.astro';
 import Logout from '../components/admin/Logout';
+import { getSettings } from '../lib/repository';
 import {
   LayoutDashboard,
   Truck,
@@ -9,6 +10,7 @@ import {
   MapPin,
   FolderKanban,
   Building2,
+  Newspaper,
   Inbox,
   Settings,
   ArrowUpRight,
@@ -19,6 +21,7 @@ interface Props {
   description: string;
 }
 const { title, description } = Astro.props;
+const s = getSettings();
 const links = [
   { href: '/admin', label: 'Overview', Icon: LayoutDashboard },
   { href: '/admin/services', label: 'Services', Icon: Package },
@@ -26,6 +29,7 @@ const links = [
   { href: '/admin/coverage', label: 'Coverage', Icon: MapPin },
   { href: '/admin/projects', label: 'Projects', Icon: FolderKanban },
   { href: '/admin/clients', label: 'Clients', Icon: Building2 },
+  { href: '/admin/articles', label: 'Articles', Icon: Newspaper },
   { href: '/admin/inquiries', label: 'Inquiries', Icon: Inbox },
   { href: '/admin/settings', label: 'Settings', Icon: Settings },
 ];
@@ -37,8 +41,8 @@ const links = [
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>{title} · Lintas CMS</title>
-    <link rel="icon" href="/favicon.svg" />
+    <title>{title} · {s.companyName} CMS</title>
+    <link rel="icon" href={s.favicon || '/favicon.png'} />
   </head>
   <body class="admin-body">
     <a
@@ -48,7 +52,7 @@ const links = [
       Skip to content
     </a>
     <aside class="admin-sidebar">
-      <Brand href="/admin" />
+      <Brand name={s.companyName} logo={s.logo} href="/admin" label="Admin overview" />
       <p class="mb-4 px-3 text-[10px] font-semibold tracking-widest text-muted-foreground">
         WORKSPACE
       </p>

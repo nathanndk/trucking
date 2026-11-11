@@ -86,7 +86,7 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
                     {item.pickup} → {item.destination}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {item.cargo} · {item.weight}
+                    {[item.serviceType, item.containerType].filter(Boolean).join(', ')}
                   </p>
                 </TableCell>
                 <TableCell>
@@ -159,11 +159,14 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
                   ['Company', selected.company],
                   ['WhatsApp / phone', selected.phone],
                   ['Email', selected.email],
-                  ['Pickup', selected.pickup],
+                  ['Service needed', selected.serviceType || 'Not specified'],
+                  ['Container type', selected.containerType || 'Not specified'],
+                  ['Origin', selected.pickup],
                   ['Destination', selected.destination],
-                  ['Cargo', selected.cargo],
-                  ['Weight', selected.weight],
-                  ['Preferred vehicle', selected.vehicle || 'Please advise'],
+                  // Requests sent through the earlier form carry these legacy details.
+                  ...(selected.cargo ? [['Cargo', selected.cargo]] : []),
+                  ...(selected.weight ? [['Weight', selected.weight]] : []),
+                  ...(selected.vehicle ? [['Preferred vehicle', selected.vehicle]] : []),
                   [
                     'Received',
                     new Date(selected.createdAt).toLocaleString('en-GB', {

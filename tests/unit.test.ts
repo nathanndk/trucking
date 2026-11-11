@@ -12,7 +12,9 @@ process.env.DATABASE_PATH = path.join(dir, 'app.db');
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString('hex');
 const { db, sqlite } = await import('../src/db');
 migrate(db, { migrationsFolder: './drizzle' });
-const { contentInput, imagePath, webUrl, quoteInput } = await import('../src/lib/validation');
+const { contentInput, imagePath, webUrl, quoteInput, settingsInput } =
+  await import('../src/lib/validation');
+const { localePath, stripLocale } = await import('../src/i18n');
 const { formToken, verifyToken, allowRequest } = await import('../src/lib/spam');
 const { mediaFile, saveImage } = await import('../src/lib/media');
 after(() => {
@@ -74,12 +76,76 @@ test('quotation input requires genuine contact and route fields', () => {
       email: 'test@example.com',
       pickup: 'Jakarta',
       destination: 'Bandung',
-      cargo: 'Pallet',
-      weight: '1 ton',
+      serviceType: 'container-transportation',
+      containerType: '40ft',
       token: 'token',
     }).success,
     true,
   );
+  const quote = {
+    fullName: 'Test User',
+    company: 'PT Test',
+    phone: '+62 812345678',
+    email: 'test@example.com',
+    pickup: 'Jakarta',
+    destination: 'Bandung',
+    serviceType: 'container-transportation',
+    token: 'token',
+  };
+  assert.equal(quoteInput.safeParse({ ...quote, containerType: '45ft' }).success, false);
+  assert.equal(quoteInput.safeParse(quote).success, false);
+});
+test('locale codes are reserved slugs and English content fields are optional', () => {
+  const record = { collection: 'articles', title: 'Test', published: true, sortOrder: 0 };
+  for (const slug of ['id', 'en'])
+    assert.equal(contentInput.safeParse({ ...record, slug }).success, false);
+  const parsed = contentInput.parse({ ...record, slug: 'test' });
+  assert.equal(parsed.titleEn, '');
+  assert.equal(contentInput.parse({ ...record, slug: 'test', titleEn: 'Hello' }).titleEn, 'Hello');
+  assert.equal(imagePath.safeParse(`/media/articles/${'a'.repeat(8)}.webp`).success, true);
+});
+test('settings accept blank contact details but reject malformed ones', () => {
+  const settings = {
+    companyName: 'Genesis Trans Indonesia',
+    legalName: 'PT Genesis Trans Indonesia',
+    tagline: 'Your Trusted Partner',
+    shortDescription: 'Angkutan kontainer 20 dan 40 feet.',
+    about: 'Profil perusahaan untuk pengujian.',
+    vision: 'Visi perusahaan.',
+    mission: 'Misi perusahaan.',
+    established: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    address: '',
+    mapsUrl: '',
+    instagram: '',
+    linkedin: '',
+    ctaText: 'Minta penawaran',
+    logo: '',
+    favicon: '',
+    credentials: '',
+    statistics: [],
+  };
+  assert.equal(settingsInput.safeParse(settings).success, true);
+  assert.equal(settingsInput.safeParse({ ...settings, whatsapp: '0812-abc' }).success, false);
+  assert.equal(settingsInput.safeParse({ ...settings, email: 'not-an-email' }).success, false);
+  assert.equal(settingsInput.safeParse({ ...settings, established: '20' }).success, false);
+  assert.equal(
+    settingsInput.safeParse({ ...settings, whatsapp: '628123456789', established: '2015' }).success,
+    true,
+  );
+});
+test('locale paths: Indonesian is unprefixed and English lives under /en', () => {
+  assert.equal(localePath('id', '/about'), '/about');
+  assert.equal(localePath('en', '/about'), '/en/about');
+  assert.equal(localePath('en', '/'), '/en');
+  assert.deepEqual(stripLocale('/en'), { locale: 'en', path: '/' });
+  assert.deepEqual(stripLocale('/en/'), { locale: 'en', path: '/' });
+  assert.deepEqual(stripLocale('/en/articles/berita/'), { locale: 'en', path: '/articles/berita' });
+  assert.deepEqual(stripLocale('/services'), { locale: 'id', path: '/services' });
+  // "/english" is an ordinary Indonesian path, not the English locale.
+  assert.deepEqual(stripLocale('/english'), { locale: 'id', path: '/english' });
 });
 test('signed form tokens reject rushed, expired and forged submissions', () => {
   assert.equal(verifyToken(formToken()), false);

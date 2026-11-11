@@ -1,0 +1,185 @@
+---
+import { actions, isInputError } from 'astro:actions';
+import type { ActionError } from 'astro:actions';
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { formToken } from '../lib/spam';
+import { containerTypes } from '../lib/validation';
+import { toLocale, ui } from '../i18n';
+interface Props {
+  /** Error from a submitted quote, passed down by the route file. */
+  error?: ActionError;
+}
+const { error } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const c = t.contact;
+const s = getPublicSettings(locale);
+const services = getPublicContent('services', locale);
+const success = Astro.url.searchParams.get('sent') === '1';
+const selectedService = Astro.url.searchParams.get('service') || '';
+const selectedContainer = Astro.url.searchParams.get('container') || '';
+const errorText = !error
+  ? ''
+  : isInputError(error)
+    ? c.errors.invalid
+    : (c.errors[error.code as keyof typeof c.errors] ?? c.errors.generic);
+const textFields = [
+  ['fullName', c.fullName, 'text', 'name'],
+  ['company', c.company, 'text', 'organization'],
+  ['phone', c.phoneField, 'tel', 'tel'],
+  ['email', c.emailField, 'email', 'email'],
+] as const;
+const routeFields = [
+  ['pickup', c.pickup],
+  ['destination', c.destination],
+] as const;
+const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
+---
+
+<PublicLayout title={c.title} description={c.description}>
+  <PageHero label={t.nav.contact} title={c.h1} description={c.intro} />
+  <section class="section">
+    <div class="wrap contact-grid">
+      <aside>
+        <h2>{c.infoHeading}</h2>
+        <dl class="contact-list">
+          <div>
+            <dt>{c.whatsapp}</dt>
+            <dd>
+              {s.whatsapp ? (
+                <a href={`https://wa.me/${s.whatsapp}`} rel="noopener noreferrer">
+                  +{s.whatsapp}
+                </a>
+              ) : (
+                <span class="marker">{t.toBeUpdated}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{c.phone}</dt>
+            <dd>
+              {s.phone ? (
+                <a href={phoneHref}>{s.phone}</a>
+              ) : (
+                <span class="marker">{t.toBeUpdated}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{c.email}</dt>
+            <dd>
+              {s.email ? (
+                <a href={`mailto:${s.email}`}>{s.email}</a>
+              ) : (
+                <span class="marker">{t.toBeUpdated}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{c.office}</dt>
+            <dd>{s.address || <span class="marker">{t.toBeUpdated}</span>}</dd>
+            {s.mapsUrl && (
+              <dd>
+                <a href={s.mapsUrl} rel="noopener noreferrer">
+                  {c.maps}
+                </a>
+              </dd>
+            )}
+          </div>
+        </dl>
+      </aside>
+      <div class="form-card">
+        <h2>{c.formHeading}</h2>
+        <p class="form-note">{c.required}</p>
+        {success && (
+          <div class="form-result" role="status">
+            <strong>{c.successTitle}</strong>
+            <p>{c.successText}</p>
+          </div>
+        )}
+        {errorText && (
+          <div class="form-result error" role="alert">
+            {errorText}
+          </div>
+        )}
+        <form method="POST" action={actions.quote} class="form-grid" style="margin-top:24px">
+          <input type="hidden" name="token" value={formToken()} />
+          <div
+            style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"
+            aria-hidden="true"
+          >
+            <label for="website">Website</label>
+            <input id="website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          {textFields.map(([name, label, type, autocomplete]) => (
+            <div class="form-field">
+              <label for={name}>{label} *</label>
+              <input
+                id={name}
+                name={name}
+                type={type}
+                autocomplete={autocomplete}
+                required
+                minlength={name === 'phone' ? 8 : 2}
+                maxlength={name === 'phone' ? 30 : 250}
+              />
+            </div>
+          ))}
+          <div class="form-field full">
+            <label for="serviceType">{c.serviceType} *</label>
+            <select id="serviceType" name="serviceType" required>
+              <option value="">{c.servicePlaceholder}</option>
+              {services.map((service) => (
+                <option value={service.slug} selected={selectedService === service.slug}>
+                  {service.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          {routeFields.map(([name, label]) => (
+            <div class="form-field">
+              <label for={name}>{label} *</label>
+              <input id={name} name={name} type="text" required minlength="2" maxlength="250" />
+            </div>
+          ))}
+          <fieldset class="choice-group full">
+            <legend>{c.containerType} *</legend>
+            <div class="choices">
+              {containerTypes.map((type) => (
+                <label class:list={['choice', type === '20ft' ? 'is-20' : 'is-40']}>
+                  <input
+                    type="radio"
+                    name="containerType"
+                    value={type}
+                    required
+                    checked={selectedContainer === type}
+                  />
+                  <span class="choice-shape" aria-hidden="true" />
+                  <span class="choice-name">{t.container.sizes[type].name}</span>
+                  <span class="choice-length">
+                    {`${t.container.lengthLabel} ${t.container.sizes[type].length}`}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div class="form-field full">
+            <label for="message">{c.message}</label>
+            <textarea
+              id="message"
+              name="message"
+              maxlength="3000"
+              placeholder={c.messagePlaceholder}
+            ></textarea>
+          </div>
+          <p class="form-note full">{c.privacy}</p>
+          <button type="submit" class="cta full">
+            {c.submit}
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</PublicLayout>

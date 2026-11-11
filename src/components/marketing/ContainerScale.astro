@@ -1,0 +1,30 @@
+---
+import { localePath, toLocale, ui } from '../../i18n';
+import { containerTypes } from '../../lib/validation';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale).container;
+---
+
+<section class="section dark-section" id="container">
+  <div class="wrap container-scale">
+    <div class="scale-copy">
+      <h2 data-motion="heading">{t.heading}</h2>
+      <p data-motion="copy">{t.text}</p>
+      <p class="scale-note">{t.note}</p>
+    </div>
+    <div class="scale">
+      {containerTypes.map((type) => (
+        <a
+          class:list={['scale-box', type === '20ft' ? 'is-20' : 'is-40']}
+          href={`${localePath(locale, '/contact')}?container=${type}`}
+          aria-label={`${t.sizes[type].action} (${t.lengthLabel.toLowerCase()} ${t.sizes[type].length})`}
+        >
+          <span class="scale-body">
+            <span class="scale-name">{t.sizes[type].name}</span>
+          </span>
+          <span class="scale-dim">{t.sizes[type].length}</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

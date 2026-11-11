@@ -1,53 +1,84 @@
 ---
 import '../styles/global.css';
-import { ArrowUpRight, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Brand from '../components/Brand.astro';
-import { getSettings } from '../lib/repository';
+import { getPublicSettings } from '../lib/repository';
 import { origin } from '../lib/env';
+import { locales, localePath, stripLocale, toLocale, ui, type Locale } from '../i18n';
 interface Props {
   title: string;
   description: string;
+  /** Social sharing image. Defaults to the bundled port photo. */
+  image?: string;
+  /** Pages without a counterpart in the other language (the 404 page). */
+  noAlternates?: boolean;
 }
-const { title, description } = Astro.props;
-const s = getSettings();
-const pathname = Astro.url.pathname;
+const { title, description, image = '/images/genesis/og.jpg', noAlternates = false } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const path = noAlternates ? '/' : stripLocale(Astro.url.pathname).path;
+const href = (target: string) => localePath(locale, target);
 const nav = [
-  ['/', 'Beranda'],
-  ['/about', 'Tentang Kami'],
-  ['/services', 'Layanan'],
-  ['/fleet', 'Armada'],
-  ['/coverage', 'Jangkauan'],
-  ['/projects', 'Proyek'],
-];
-const canonical = new URL(pathname, origin).href;
+  ['/', t.nav.home],
+  ['/about', t.nav.about],
+  ['/services', t.nav.services],
+  ['/projects', t.nav.projects],
+  ['/articles', t.nav.articles],
+  ['/contact', t.nav.contact],
+] as const;
+const current = (target: string) =>
+  !noAlternates && (path === target || (target !== '/' && path.startsWith(`${target}/`)))
+    ? 'page'
+    : undefined;
+const absolute = (target: string) => new URL(target, origin).href;
+const canonical = absolute(localePath(locale, stripLocale(Astro.url.pathname).path));
+const languages: Record<Locale, { code: string; name: string }> = {
+  id: { code: 'ID', name: 'Bahasa Indonesia' },
+  en: { code: 'EN', name: 'English' },
+};
+const pageTitle = `${title} | ${s.companyName}`;
+const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
 const structured = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: s.legalName,
   url: origin,
   description: s.shortDescription,
-  ...(s.logo ? { logo: new URL(s.logo, origin).href } : {}),
-  ...(!s.demoMode ? { telephone: s.phone, email: s.email, address: s.address } : {}),
+  ...(s.logo ? { logo: absolute(s.logo) } : {}),
+  ...(s.phone ? { telephone: s.phone } : {}),
+  ...(s.email ? { email: s.email } : {}),
+  ...(s.address ? { address: s.address } : {}),
 }).replaceAll('<', '\\u003c');
 ---
 
 <!doctype html>
-<html lang="id">
+<html lang={t.htmlLang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} | {s.companyName} Logistics</title>
+    <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noAlternates ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={canonical} />
+        {locales.map((code) => (
+          <link rel="alternate" hreflang={code} href={absolute(localePath(code, path))} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={absolute(localePath('id', path))} />
+      </>
+    )}
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={`${title} | ${s.companyName} Logistics`} />
+    <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content="id_ID" />
-    <meta property="og:image" content={new URL('/images/hero.jpg', origin).href} />
+    <meta property="og:locale" content={t.ogLocale} />
+    <meta property="og:image" content={absolute(image)} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#142b28" />
-    <link rel="icon" href={s.favicon || '/favicon.svg'} />
+    <meta name="theme-color" content="#0b2545" />
+    <link rel="icon" href={s.favicon || '/favicon.png'} />
     <script is:inline type="application/ld+json" set:html={structured}></script>
   </head>
   <body class="marketing">
@@ -55,40 +86,71 @@ const structured = JSON.stringify({
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:z-50 focus:bg-white focus:p-4"
     >
-      Langsung ke konten
+      {t.skip}
     </a>
-    <div class="topbar">
-      <div class="wrap">
-        <span>INDONESIA, CONNECTED. &nbsp; / &nbsp; ROAD FREIGHT SOLUTIONS</span>
-        <span>
-          {s.email} &nbsp; · &nbsp; {s.phone}
-        </span>
-      </div>
-    </div>
     <header class="navbar">
       <div class="wrap nav-inner">
-        <Brand name={s.companyName} logo={s.logo} />
-        <nav class="desktop-nav" aria-label="Navigasi utama">
-          {nav.map(([href, label]) => (
-            <a href={href} aria-current={pathname === href ? 'page' : undefined}>
+        <Brand name={s.companyName} logo={s.logo} href={href('/')} label={t.nav.brandHome} />
+        <nav class="desktop-nav" aria-label={t.nav.main}>
+          {nav.slice(1).map(([target, label]) => (
+            <a href={href(target)} aria-current={current(target)}>
               {label}
             </a>
           ))}
         </nav>
-        <a href="/contact" class="cta">
-          {s.ctaText}
-          <ArrowUpRight size={17} />
-        </a>
+        <div class="nav-actions">
+          <div class="lang-switch" role="group" aria-label={t.nav.language}>
+            {locales.map((code, i) => (
+              <>
+                {i > 0 && (
+                  <span class="sep" aria-hidden="true">
+                    /
+                  </span>
+                )}
+                <a
+                  href={localePath(code, path)}
+                  hreflang={code}
+                  lang={code}
+                  aria-label={languages[code].name}
+                  aria-current={code === locale ? 'true' : undefined}
+                >
+                  {languages[code].code}
+                </a>
+              </>
+            ))}
+          </div>
+          <a href={href('/contact')} class="cta">
+            {s.ctaText}
+          </a>
+        </div>
         <details class="mobile-nav">
-          <summary aria-label="Buka navigasi">
+          <summary aria-label={t.nav.open}>
             <Menu size={26} />
           </summary>
-          <nav aria-label="Navigasi seluler">
-            {[...nav, ['/contact', 'Hubungi Kami']].map(([href, label]) => (
-              <a href={href} aria-current={pathname === href ? 'page' : undefined}>
+          <nav aria-label={t.nav.mobile}>
+            {nav.map(([target, label]) => (
+              <a href={href(target)} aria-current={current(target)}>
                 {label}
               </a>
             ))}
+            <div class="lang-switch" role="group" aria-label={t.nav.language}>
+              {locales.map((code, i) => (
+                <>
+                  {i > 0 && (
+                    <span class="sep" aria-hidden="true">
+                      /
+                    </span>
+                  )}
+                  <a
+                    href={localePath(code, path)}
+                    lang={code}
+                    aria-current={code === locale ? 'true' : undefined}
+                  >
+                    {languages[code].name}
+                  </a>
+                </>
+              ))}
+            </div>
           </nav>
         </details>
       </div>
@@ -99,31 +161,54 @@ const structured = JSON.stringify({
     <footer class="footer">
       <div class="wrap">
         <div class="footer-grid">
-          <div>
-            <Brand name={s.companyName} logo={s.logo} />
+          <div class="footer-about">
+            <Brand name={s.companyName} logo={s.logo} href={href('/')} label={t.nav.brandHome} />
             <p>{s.shortDescription}</p>
           </div>
           <div>
-            <h3>JELAJAHI</h3>
+            <h2>{t.footer.explore}</h2>
             <ul>
-              {nav.slice(1).map(([href, label]) => (
+              {nav.slice(1).map(([target, label]) => (
                 <li>
-                  <a href={href}>{label}</a>
+                  <a href={href(target)}>{label}</a>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <h3>TERHUBUNG</h3>
-            <ul>
+            <h2>{t.footer.contact}</h2>
+            <ul class="footer-contact">
               <li>
-                <a href="/contact">Minta penawaran</a>
+                <span>{t.footer.whatsapp}</span>
+                {s.whatsapp ? (
+                  <a href={`https://wa.me/${s.whatsapp}`} rel="noopener noreferrer">
+                    +{s.whatsapp}
+                  </a>
+                ) : (
+                  <span>
+                    <span class="marker">{t.toBeUpdated}</span>
+                  </span>
+                )}
               </li>
               <li>
-                <a href={`mailto:${s.email}`}>Email kami</a>
+                <span>{t.footer.email}</span>
+                {s.email ? (
+                  <a href={`mailto:${s.email}`}>{s.email}</a>
+                ) : (
+                  <span>
+                    <span class="marker">{t.toBeUpdated}</span>
+                  </span>
+                )}
               </li>
               <li>
-                <a href={`https://wa.me/${s.whatsapp}`}>WhatsApp</a>
+                <span>{t.footer.phone}</span>
+                {s.phone ? (
+                  <a href={phoneHref}>{s.phone}</a>
+                ) : (
+                  <span>
+                    <span class="marker">{t.toBeUpdated}</span>
+                  </span>
+                )}
               </li>
               {s.instagram && (
                 <li>
@@ -142,23 +227,18 @@ const structured = JSON.stringify({
             </ul>
           </div>
           <div>
-            <h3>KANTOR KAMI</h3>
-            <p style="margin-top:0;white-space:pre-line">{s.address}</p>
-            <p>
-              <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>
-            </p>
+            <h2>{t.footer.office}</h2>
+            {s.address ? (
+              <p class="footer-address">{s.address}</p>
+            ) : (
+              <span class="marker">{t.toBeUpdated}</span>
+            )}
           </div>
         </div>
         <div class="footer-bottom">
-          <span>
-            © {new Date().getFullYear()} {s.legalName}.
-          </span>
-          <span>
-            {s.demoMode
-              ? 'Website demo · profil, proyek, dan klien adalah ilustrasi.'
-              : 'Menghubungkan bisnis. Menggerakkan Indonesia.'}
-          </span>
-          <a href="/admin/login">Admin ↗</a>
+          <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
+          <span>{s.tagline}</span>
+          <a href="/admin/login">Admin</a>
         </div>
       </div>
     </footer>

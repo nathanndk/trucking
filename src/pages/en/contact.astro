@@ -1,0 +1,9 @@
+---
+import { actions } from 'astro:actions';
+import ContactView from '../../views/ContactView.astro';
+// Only a route file may answer with a redirect, so the result is read here.
+const result = Astro.getActionResult(actions.quote);
+if (result?.data?.success) return Astro.redirect('/en/contact?sent=1', 303);
+---
+
+<ContactView error={result?.error} />

@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import Database from 'better-sqlite3';
 import { mkdirSync, copyFileSync } from 'node:fs';
 
-const routes = ['/', '/about', '/services', '/fleet', '/coverage', '/projects', '/contact'];
+const routes = ['/', '/about', '/services', '/projects', '/articles', '/contact', '/en'];
 async function ready(page: Page, route = '/') {
   await page.goto(route);
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
@@ -41,7 +41,7 @@ function near(a: Awaited<ReturnType<typeof position>>, b: typeof a) {
 }
 
 for (const width of [375, 768, 1440]) {
-  test(`all seven pages remain usable during fast two-way scroll at ${width}px`, async ({
+  test(`all public pages remain usable during fast two-way scroll at ${width}px`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -80,7 +80,7 @@ test('record a continuous down-up motion preview', async ({ browser }) => {
   const page = await context.newPage();
   await page.goto('http://localhost:4322');
   await expect(page.locator('main')).toHaveAttribute('data-motion-state', 'ready');
-  const end = await documentTop(page, '[data-motion="route"]');
+  const end = await documentTop(page, '.cta-band');
   for (let i = 0; i <= 200; i++) {
     const progress = i <= 100 ? i / 100 : (200 - i) / 100;
     await page.evaluate((y) => window.scrollTo(0, y), end * progress);
@@ -111,12 +111,7 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   await page.waitForTimeout(1900);
   const hero = await position(page, '.hero-photo');
   expect(hero.scale).toBeCloseTo(1.15, 2);
-  for (const selector of [
-    '[data-motion="heading"]',
-    '.service-tile',
-    '.fleet-card',
-    '[data-motion="route"]',
-  ]) {
+  for (const selector of ['[data-motion="heading"]', '.service-tile', '[data-motion="route"]']) {
     const top = await documentTop(page, selector);
     await scroll(page, top - 650);
     await page.waitForTimeout(900);
@@ -134,7 +129,7 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   near(await position(page, '.hero-photo'), hero);
   await page.setViewportSize({ width: 375, height: 812 });
   await page.waitForTimeout(500);
-  for (const selector of ['.service-tile', '.fleet-card']) {
+  for (const selector of ['.service-tile']) {
     const state = await position(page, selector);
     expect(state.opacity).toBe(1);
     expect(state.y).toBe(0);
@@ -179,8 +174,8 @@ test('no JavaScript keeps all pages visible; hash links and contact inputs remai
     ).toBe(true);
   }
   await context.close();
-  await ready(page, '/#wingbox');
-  await expect(page.locator('#wingbox')).toBeInViewport();
+  await ready(page, '/#domestic-trucking');
+  await expect(page.locator('#domestic-trucking')).toBeInViewport();
   await ready(page, '/contact');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
@@ -200,30 +195,35 @@ test('no JavaScript keeps all pages visible; hash links and contact inputs remai
 
 test('empty, changing and oversized CMS content remains usable', async ({ page }) => {
   const db = new Database(process.env.DATABASE_PATH!);
-  const records = db.prepare('SELECT id, published, short_description FROM fleet').all() as {
+  const records = db
+    .prepare('SELECT id, published, short_description FROM services ORDER BY sort_order, id')
+    .all() as {
     id: number;
     published: number;
     short_description: string;
   }[];
   try {
-    db.prepare('UPDATE fleet SET published=0').run();
+    db.prepare('UPDATE services SET published=0').run();
     await ready(page);
-    await expect(page.locator('#armada [data-motion-item]')).toHaveCount(0);
+    await expect(page.locator('.services-grid [data-motion-item]')).toHaveCount(0);
     for (const count of [1, 2, 3]) {
-      db.prepare('UPDATE fleet SET published=1 WHERE id=?').run(records[count - 1].id);
+      db.prepare('UPDATE services SET published=1 WHERE id=?').run(records[count - 1].id);
       await ready(page);
-      await expect(page.locator('#armada [data-motion-item]')).toHaveCount(count);
+      await expect(page.locator('.services-grid [data-motion-item]')).toHaveCount(count);
     }
-    db.prepare('UPDATE fleet SET short_description=? WHERE id=?').run(
-      'Deskripsi armada panjang. '.repeat(120),
+    db.prepare('UPDATE services SET short_description=? WHERE id=?').run(
+      'Deskripsi layanan panjang. '.repeat(120),
       records[0].id,
     );
     await ready(page);
-    await page.locator('#armada .capacity a').first().click();
-    await expect(page).toHaveURL(/\/contact\?vehicle=/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+    await page.locator('.services-grid .service-tile a').first().click();
+    await expect(page).toHaveURL(/\/contact\?service=/);
   } finally {
     for (const row of records)
-      db.prepare('UPDATE fleet SET published=?, short_description=? WHERE id=?').run(
+      db.prepare('UPDATE services SET published=?, short_description=? WHERE id=?').run(
         row.published,
         row.short_description,
         row.id,

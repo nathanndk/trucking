@@ -1,20 +1,22 @@
 ---
+import { localePath, toLocale, ui } from '../../i18n';
 const { title, label, description } = Astro.props as {
   title: string;
   label: string;
   description: string;
 };
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
 ---
 
 <section class="page-hero">
   <div class="wrap">
-    <div class="breadcrumb">
-      <a href="/">Beranda</a>
-      <span>/</span>
-      <span>{label}</span>
-    </div>
-    <div class="eyebrow">{label}</div>
-    <h1 data-motion="heading">{title}</h1>
-    <p data-motion="copy">{description}</p>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={localePath(locale, '/')}>{t.nav.home}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{label}</span>
+    </nav>
+    <h1>{title}</h1>
+    <p>{description}</p>
   </div>
 </section>

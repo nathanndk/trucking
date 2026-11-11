@@ -41,7 +41,7 @@ test('maintenance: seed repeatability, admin recovery, media pruning, paired bac
     run('seed');
     run('bootstrap');
     let db = new Database(env.DATABASE_PATH);
-    assert.equal((db.prepare('SELECT count(*) AS n FROM services').get() as { n: number }).n, 6);
+    assert.equal((db.prepare('SELECT count(*) AS n FROM services').get() as { n: number }).n, 5);
     const admin = db.prepare('SELECT id FROM user WHERE email=?').get(env.ADMIN_EMAIL) as {
       id: string;
     };
@@ -91,7 +91,7 @@ test('maintenance: seed repeatability, admin recovery, media pruning, paired bac
     assert.equal(restoredDb.pragma('integrity_check', { simple: true }), 'ok');
     assert.equal(
       (restoredDb.prepare('SELECT count(*) AS n FROM services').get() as { n: number }).n,
-      6,
+      5,
     );
     const logo = restoredDb.prepare('SELECT logo FROM site_settings').get() as { logo: string };
     assert.equal(

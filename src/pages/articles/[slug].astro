@@ -1,0 +1,10 @@
+---
+import ArticleView from '../../views/ArticleView.astro';
+import { getPublicBySlug } from '../../lib/repository';
+import { toLocale } from '../../i18n';
+const article = getPublicBySlug('articles', Astro.params.slug ?? '', toLocale(Astro.currentLocale));
+// Missing and unpublished articles fall through to the localized 404 page.
+if (!article) return new Response(null, { status: 404 });
+---
+
+<ArticleView article={article} />

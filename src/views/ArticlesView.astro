@@ -1,0 +1,29 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ArticleList from '../components/marketing/ArticleList.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { fill, toLocale, ui } from '../i18n';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+const articles = getPublicContent('articles', locale);
+---
+
+<PublicLayout
+  title={t.articles.title}
+  description={fill(t.articles.description, { name: s.legalName })}
+>
+  <PageHero label={t.nav.articles} title={t.articles.h1} description={t.articles.intro} />
+  <section class="section">
+    <div class="wrap">
+      {articles.length > 0 ? (
+        <ArticleList items={articles} />
+      ) : (
+        <p class="placeholder">{t.articles.empty}</p>
+      )}
+    </div>
+  </section>
+  <CTA text={s.ctaText} />
+</PublicLayout>

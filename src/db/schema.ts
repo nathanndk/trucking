@@ -135,6 +135,18 @@ export const siteSettings = sqliteTable('site_settings', {
   demoMode: integer('demo_mode', { mode: 'boolean' }).notNull().default(true),
   ...timestamps(),
 });
+/**
+ * Wording an administrator changed on the Page text screen. Keys are dictionary paths
+ * such as "home.h1". A blank value means "use the default text from src/i18n".
+ */
+export const siteCopy = sqliteTable('site_copy', {
+  key: text('key').primaryKey(),
+  id: text('id').notNull().default(''),
+  en: text('en').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
 export const inquiries = sqliteTable(
   'inquiries',
   {

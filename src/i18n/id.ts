@@ -156,7 +156,6 @@ export const id = {
     h1: 'Artikel dan berita perusahaan.',
     intro: 'Kabar terbaru dan informasi seputar pengiriman kontainer.',
     empty: 'Belum ada artikel yang terbit.',
-    read: 'Baca artikel',
     back: 'Semua artikel',
   },
   contact: {

@@ -5,7 +5,8 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/
 import Placeholder from './Placeholder.astro';
 import type { ContentRecord } from '../../lib/content-config';
 import { cn } from '../../lib/utils';
-import { localePath, toLocale, ui } from '../../i18n';
+import { localePath, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
 const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);

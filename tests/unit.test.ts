@@ -245,3 +245,55 @@ test('visitor location: Indonesian addresses, foreign addresses and addresses wi
   assert.equal(detectLocale({ address: '127.0.0.1', acceptLanguage: 'id-ID' }), 'id');
   assert.equal(detectLocale({ address: 'unknown', acceptLanguage: null }), 'id');
 });
+test('page text: every wording is editable once, edits overlay the defaults, blanks fall back', async () => {
+  const { defaults, flattenText, applyText } = await import('../src/i18n');
+  const { copyPages, copyKeys, technicalKeys } = await import('../src/lib/copy-fields');
+  const { copyInput } = await import('../src/lib/validation');
+  const { ui } = await import('../src/lib/copy');
+  const { siteCopy } = await import('../src/db/schema');
+  // The admin screen lists exactly the texts the dictionaries contain, in both languages.
+  const listed = copyPages.flatMap((page) =>
+    page.sections.flatMap((section) => section.fields.map((field) => field.key)),
+  );
+  assert.equal(listed.length, copyKeys.size, 'a text is listed twice');
+  for (const locale of ['id', 'en'] as const)
+    assert.deepEqual(
+      Object.keys(flattenText(defaults(locale)))
+        .filter((key) => !technicalKeys.includes(key))
+        .sort(),
+      [...copyKeys].sort(),
+    );
+
+  const edited = applyText(defaults('id'), {
+    'home.h1': 'Judul baru',
+    'route.stops.1.title': 'Truk',
+    'home.title': '   ',
+    'not.a.key': 'ignored',
+    'route.stops': 'ignored',
+  });
+  assert.equal(edited.home.h1, 'Judul baru');
+  assert.equal(edited.route.stops[1].title, 'Truk');
+  assert.equal(edited.home.title, defaults('id').home.title);
+  assert.equal(edited.route.stops.length, 4);
+  assert.notEqual(defaults('id').home.h1, 'Judul baru', 'defaults must not be mutated');
+
+  const entry = { key: 'home.h1', id: 'Judul', en: 'Heading' };
+  assert.equal(copyInput.safeParse({ entries: [entry] }).success, true);
+  assert.equal(copyInput.safeParse({ entries: [] }).success, false);
+  assert.equal(copyInput.safeParse({ entries: [{ ...entry, key: 'htmlLang' }] }).success, false);
+  assert.equal(copyInput.safeParse({ entries: [{ ...entry, key: 'nope' }] }).success, false);
+  assert.equal(
+    copyInput.safeParse({ entries: [{ ...entry, en: 'x'.repeat(2001) }] }).success,
+    false,
+  );
+
+  // The reader the pages use: defaults first, then saved edits, per language.
+  assert.equal(ui('id').home.h1, defaults('id').home.h1);
+  db.insert(siteCopy).values({ key: 'home.h1', id: 'Judul uji', en: '' }).run();
+  assert.equal(ui('id').home.h1, 'Judul uji');
+  assert.equal(ui('en').home.h1, defaults('en').home.h1);
+  db.update(siteCopy)
+    .set({ id: '', updatedAt: new Date(Date.now() + 1000) })
+    .run();
+  assert.equal(ui('id').home.h1, defaults('id').home.h1);
+});

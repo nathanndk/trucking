@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { collections, mediaFolders } from './content-config';
+import { copyKeys } from './copy-fields';
 export const collectionSchema = z.enum(collections);
 export const webUrl = z
   .string()
@@ -128,4 +129,17 @@ export const quoteInput = z.object({
     .nullish()
     .transform((v) => v ?? ''),
   token: z.string().max(300),
+});
+/** Wording saved from the Page text screen. A blank text returns that field to its default. */
+export const copyInput = z.object({
+  entries: z
+    .array(
+      z.object({
+        key: z.string().refine((key) => copyKeys.has(key), 'Unknown text field.'),
+        id: z.string().trim().max(2000),
+        en: z.string().trim().max(2000),
+      }),
+    )
+    .min(1)
+    .max(400),
 });

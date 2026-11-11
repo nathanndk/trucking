@@ -1,6 +1,7 @@
 ---
 import { AspectRatio } from '../ui/aspect-ratio';
-import { localePath, toLocale, ui } from '../../i18n';
+import { localePath, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
 import { containerTypes } from '../../lib/validation';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale).container;

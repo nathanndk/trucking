@@ -33,6 +33,7 @@ const pages = ['/', '/about', '/services', '/projects', '/articles', '/contact']
 const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p}`))];
 const adminRoutes = [
   '/admin',
+  '/admin/text',
   '/admin/services',
   '/admin/projects',
   '/admin/clients',
@@ -123,6 +124,7 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   for (const hidden of ['/fleet', '/coverage', '/en/fleet'])
     expect((await request.get(hidden)).status()).toBe(404);
   for (const action of [
+    'saveCopy',
     'deleteContent',
     'publishContent',
     'saveContent',
@@ -517,16 +519,84 @@ test('articles are public only while published, in both languages', async ({ pag
     db.close();
   }
 });
+test('section wording is edited on the Page text screen, in both languages', async ({
+  page,
+  adminSession,
+}) => {
+  await page.context().addCookies(adminSession);
+  const html = async (route: string) => (await page.request.get(route)).text();
+  const defaultHeading = 'Dari pabrik ke Tanjung Priok, kontainer Anda kami antar.';
+  try {
+    await page.goto('/admin/text');
+    // Wait for the editor to become interactive before typing into it.
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+    const heading = page.getByLabel('Main heading (Indonesian)');
+    await expect(heading).toHaveValue(defaultHeading);
+    await heading.fill('Kontainer Anda, urusan kami.');
+    await page.getByLabel('Main heading (English)').fill('Your containers, handled.');
+    await expect(page.getByText('1 unsaved change', { exact: true })).toBeVisible();
+    // Edits survive switching between page tabs.
+    await page.getByRole('tab', { name: 'Contact' }).click();
+    await page.getByLabel('Send button (Indonesian)').fill('Kirim sekarang');
+    await page.getByRole('tab', { name: 'Home' }).click();
+    await expect(heading).toHaveValue('Kontainer Anda, urusan kami.');
+    await expect(page.getByText('2 unsaved changes', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
+    await expect(page.getByText('No unsaved changes')).toBeVisible();
+
+    expect(await html('/')).toContain('Kontainer Anda, urusan kami.');
+    expect(await html('/')).not.toContain(defaultHeading);
+    expect(await html('/en')).toContain('Your containers, handled.');
+    expect(await html('/contact')).toContain('Kirim sekarang');
+    // Only the language that was changed is affected.
+    expect(await html('/en/contact')).toContain('Send request');
+
+    // Search finds wording on any page; Reset returns it to the default.
+    await page.getByLabel('Search text').fill('Kirim sekarang');
+    await expect(page.getByText('Contact / Quote form')).toBeVisible();
+    await expect(page.getByLabel('Send button (Indonesian)')).toHaveValue('Kirim sekarang');
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await page.getByLabel('Search text').fill('');
+    // A cleared field also goes back to its default.
+    await heading.fill('');
+    await page.getByLabel('Main heading (English)').fill('');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Text saved' })).toBeVisible();
+    await expect(heading).toHaveValue(defaultHeading);
+    expect(await html('/')).toContain(defaultHeading);
+    expect(await html('/contact')).toContain('Kirim permintaan');
+    expect(await html('/en')).toContain('we deliver your containers');
+    const db = database();
+    expect(db.prepare("SELECT count(*) AS n FROM site_copy WHERE id<>'' OR en<>''").get()).toEqual({
+      n: 0,
+    });
+    db.close();
+    // Small screens keep the form inside the viewport.
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+  } finally {
+    // Never leave edited wording behind for the other tests.
+    const db = database();
+    db.prepare('DELETE FROM site_copy').run();
+    db.close();
+  }
+});
 test('settings changes are reflected on public pages', async ({ page, adminSession }) => {
   await page.context().addCookies(adminSession);
   await page.goto('/admin/settings');
   await page.getByLabel('Company name', { exact: false }).first().fill('GENESIS TEST');
   await page.getByLabel('Primary CTA text').fill('Diskusikan Muatan');
+  // Indonesian and English sit side by side in the Company text card.
+  await page.getByLabel('English CTA text').fill('Discuss your cargo');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Settings saved.' })).toBeVisible();
   const html = await (await page.request.get('/')).text();
   expect(html).toContain('GENESIS TEST');
   expect(html).toContain('Diskusikan Muatan');
+  expect(await (await page.request.get('/en')).text()).toContain('Discuss your cargo');
 });
 
 test('invalid mutations and revoked admin roles are rejected by the server', async ({

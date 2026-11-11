@@ -2,7 +2,8 @@
 import { AspectRatio } from '../ui/aspect-ratio';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import type { ContentRecord } from '../../lib/content-config';
-import { fill, toLocale, ui } from '../../i18n';
+import { fill, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
 const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
 const t = ui(toLocale(Astro.currentLocale));
 ---

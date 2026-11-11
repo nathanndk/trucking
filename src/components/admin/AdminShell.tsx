@@ -8,6 +8,7 @@ import {
   Newspaper,
   Package,
   Settings,
+  Type,
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -37,6 +38,7 @@ import Logout from './Logout';
 
 const links = [
   { href: '/admin', label: 'Overview', Icon: LayoutDashboard },
+  { href: '/admin/text', label: 'Page text', Icon: Type },
   { href: '/admin/services', label: 'Services', Icon: Package },
   { href: '/admin/projects', label: 'Projects', Icon: FolderKanban },
   { href: '/admin/clients', label: 'Clients', Icon: Building2 },

@@ -68,6 +68,12 @@ Every control on the public website and in the admin comes from [shadcn/ui](http
 - The admin frame is the shadcn `Sidebar`; forms use `Field`, `NativeSelect`, `Checkbox`, `Alert`, `AlertDialog` and `Empty`.
 - Layout that is specific to this brand (hero, shipping route line, to-scale container boxes, section grids) is plain CSS in the `components` layer of `global.css`, so Tailwind utilities on shadcn components always take precedence.
 
+## Page text
+
+Every heading, button, label and message on the public website can be changed under **Page text** (`/admin/text`), with Indonesian and English side by side. Fields are grouped by page and section; a search box finds wording on any page, and Reset (or clearing a field) returns a text to its default.
+
+The defaults are the dictionaries in `src/i18n/id.ts` and `src/i18n/en.ts`. Only wording an administrator changed is stored, in the `site_copy` table, keyed by dictionary path (`home.h1`, `route.stops.0.title`). `ui()` in `src/lib/copy.ts` lays those edits over the defaults and is what pages call. `src/lib/copy-fields.ts` describes the screen (page → section → field); a unit test fails if a dictionary text is missing from it, so new wording added to the dictionaries must be listed there too. Lists keep their length: the four route steps, five strengths and three ordering steps can be reworded but not added to or removed. Company profile, vision, mission, tagline and button text are company data and stay under Settings → Company text.
+
 ## Languages
 
 Indonesian is the default and has no URL prefix; English lives under `/en` (Astro `i18n` in `astro.config.mjs`). Each page body is a component in `src/views/`; the files in `src/pages/` and `src/pages/en/` are thin route wrappers. Interface text is in `src/i18n/id.ts` and `src/i18n/en.ts` (same shape, type-checked). CMS content has paired English fields ("English title", "English description", and the "English version" card in Settings). `getPublicContent` and `getPublicSettings` in `src/lib/repository.ts` return the English value when one was entered and fall back to Indonesian otherwise. The admin interface is English only.

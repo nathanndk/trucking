@@ -9,42 +9,42 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  settingFields,
-  settingFieldsEn,
+  settingSections,
+  settingTextPairs,
   type Field as FieldConfig,
 } from '../../lib/content-config';
 import { settingsInput } from '../../lib/validation';
 import { UploadField } from './UploadField';
 import type { z } from 'zod';
 type Settings = z.input<typeof settingsInput>;
-function Fields({ fields, settings }: { fields: FieldConfig[]; settings: Settings }) {
+function Control({
+  field,
+  settings,
+  wide = field.type === 'textarea',
+}: {
+  field: FieldConfig;
+  settings: Settings;
+  /** Span both columns of the surrounding grid. */
+  wide?: boolean;
+}) {
+  const props = {
+    id: field.name,
+    name: field.name,
+    defaultValue: String(settings[field.name as keyof Settings] ?? ''),
+    required: field.required,
+  };
   return (
-    <FieldGroup className="grid md:grid-cols-2">
-      {fields.map((field) => (
-        <Field key={field.name} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-          <FieldLabel htmlFor={field.name}>
-            {field.label}
-            {field.required ? ' *' : ''}
-          </FieldLabel>
-          {field.type === 'textarea' ? (
-            <Textarea
-              id={field.name}
-              name={field.name}
-              defaultValue={String(settings[field.name as keyof Settings] ?? '')}
-              required={field.required}
-            />
-          ) : (
-            <Input
-              id={field.name}
-              name={field.name}
-              defaultValue={String(settings[field.name as keyof Settings] ?? '')}
-              type={field.type || 'text'}
-              required={field.required}
-            />
-          )}
-        </Field>
-      ))}
-    </FieldGroup>
+    <Field className={wide ? 'md:col-span-2' : ''}>
+      <FieldLabel htmlFor={field.name}>
+        {field.label}
+        {field.required ? ' *' : ''}
+      </FieldLabel>
+      {field.type === 'textarea' ? (
+        <Textarea {...props} />
+      ) : (
+        <Input {...props} type={field.type || 'text'} />
+      )}
+    </Field>
   );
 }
 export default function SettingsForm({ settings }: { settings: Settings }) {
@@ -106,27 +106,43 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
           </AlertDescription>
         </Alert>
       )}
+      {settingSections.map((section) => (
+        <Card key={section.title}>
+          <CardHeader>
+            <CardTitle>{section.title}</CardTitle>
+            <CardDescription>{section.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup className="grid md:grid-cols-2">
+              {section.fields.map((field) => (
+                <Control key={field.name} field={field} settings={settings} />
+              ))}
+            </FieldGroup>
+          </CardContent>
+        </Card>
+      ))}
       <Card>
         <CardHeader>
-          <CardTitle>Company & contact details</CardTitle>
+          <CardTitle>Company text</CardTitle>
           <CardDescription>
-            Keep company information accurate. Fields marked * are required. Contact details left
-            blank show as &ldquo;to be updated&rdquo; on the website.
+            Indonesian on the left, English on the right. A blank English text falls back to the
+            Indonesian one. Headings, buttons and form labels are edited under{' '}
+            <a href="/admin/text" className="underline underline-offset-4 hover:text-primary">
+              Page text
+            </a>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Fields fields={settingFields} settings={settings} />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>English version</CardTitle>
-          <CardDescription>
-            Shown on the English website (/en). Blank fields fall back to the Indonesian text.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Fields fields={settingFieldsEn} settings={settings} />
+          <FieldGroup>
+            {settingTextPairs.map(([indonesian, english]) => (
+              <div key={indonesian.name} className="grid gap-5 md:grid-cols-2">
+                {[indonesian, english].map((field) => (
+                  <Control key={field.name} field={field} settings={settings} wide={false} />
+                ))}
+              </div>
+            ))}
+          </FieldGroup>
         </CardContent>
       </Card>
       <Card>

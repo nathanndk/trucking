@@ -8,7 +8,8 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '../components/ui/empty';
-import { localePath, toLocale, ui } from '../i18n';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
 ---

@@ -2,9 +2,16 @@ import { defineAction, ActionError } from 'astro:actions';
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db';
-import { inquiries, services, siteSettings } from '../db/schema';
+import { inquiries, services, siteCopy, siteSettings } from '../db/schema';
 import { auth } from '../lib/auth';
-import { collectionSchema, contentInput, quoteInput, settingsInput } from '../lib/validation';
+import {
+  collectionSchema,
+  contentInput,
+  copyInput,
+  quoteInput,
+  settingsInput,
+} from '../lib/validation';
+import { defaults, flattenText } from '../i18n';
 import { contentConfig, mediaFolders } from '../lib/content-config';
 import { tables } from '../lib/repository';
 import { assertMediaReference, saveImage } from '../lib/media';
@@ -143,6 +150,32 @@ export const server = {
           .set({ ...input, updatedAt: new Date() })
           .where(eq(siteSettings.id, 1))
           .run();
+        return { success: true };
+      } catch (e) {
+        safeError(e);
+      }
+    },
+  }),
+  saveCopy: defineAction({
+    input: copyInput,
+    handler: async ({ entries }, context) => {
+      await requireAdmin(context.request);
+      try {
+        const base = { id: flattenText(defaults('id')), en: flattenText(defaults('en')) };
+        db.transaction((tx) => {
+          for (const entry of entries) {
+            // Text equal to the default is not stored, so later default changes still apply.
+            const values = {
+              id: entry.id === base.id[entry.key] ? '' : entry.id,
+              en: entry.en === base.en[entry.key] ? '' : entry.en,
+              updatedAt: new Date(),
+            };
+            tx.insert(siteCopy)
+              .values({ key: entry.key, ...values })
+              .onConflictDoUpdate({ target: siteCopy.key, set: values })
+              .run();
+          }
+        });
         return { success: true };
       } catch (e) {
         safeError(e);

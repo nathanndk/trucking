@@ -6,7 +6,8 @@ import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { getPublicSettings } from '../lib/repository';
 import { origin } from '../lib/env';
-import { locales, localePath, stripLocale, toLocale, ui, type Locale } from '../i18n';
+import { locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
+import { ui } from '../lib/copy';
 // Headings use this file on first paint; preloading it avoids a flash of the fallback font.
 import headingFont from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 interface Props {

@@ -166,7 +166,6 @@ export const en: Dictionary = {
     h1: 'Company articles and news.',
     intro: 'Recent news and practical information about container shipping.',
     empty: 'No articles have been published yet.',
-    read: 'Read article',
     back: 'All articles',
   },
   contact: {

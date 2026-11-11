@@ -69,32 +69,62 @@ export type ContentRecord = {
   projectYear?: string;
   website?: string;
 };
-export const settingFields: Field[] = [
-  { name: 'companyName', label: 'Company name', required: true },
-  { name: 'legalName', label: 'Legal company name', required: true },
-  { name: 'tagline', label: 'Tagline', required: true },
-  { name: 'shortDescription', label: 'Short description', type: 'textarea', required: true },
-  { name: 'about', label: 'About the company', type: 'textarea', required: true },
-  { name: 'vision', label: 'Vision', type: 'textarea', required: true },
-  { name: 'mission', label: 'Mission (one per line)', type: 'textarea', required: true },
-  { name: 'established', label: 'Year established' },
-  { name: 'phone', label: 'Phone' },
-  { name: 'whatsapp', label: 'WhatsApp (international digits)' },
-  { name: 'email', label: 'Email' },
-  { name: 'address', label: 'Office address', type: 'textarea' },
-  { name: 'mapsUrl', label: 'Google Maps URL', type: 'url' },
-  { name: 'instagram', label: 'Instagram URL', type: 'url' },
-  { name: 'linkedin', label: 'LinkedIn URL', type: 'url' },
-  { name: 'ctaText', label: 'Primary CTA text', required: true },
-  { name: 'credentials', label: 'Verified credentials (one per line)', type: 'textarea' },
+/** Settings screen: plain company details, one card per section. */
+export const settingSections: { title: string; description: string; fields: Field[] }[] = [
+  {
+    title: 'Company',
+    description: 'Names and facts about the company. Fields marked * are required.',
+    fields: [
+      { name: 'companyName', label: 'Company name', required: true },
+      { name: 'legalName', label: 'Legal company name', required: true },
+      { name: 'established', label: 'Year established' },
+    ],
+  },
+  {
+    title: 'Contact',
+    description: 'Details left blank show as “to be updated” on the website.',
+    fields: [
+      { name: 'whatsapp', label: 'WhatsApp (international digits)' },
+      { name: 'phone', label: 'Phone' },
+      { name: 'email', label: 'Email' },
+      { name: 'mapsUrl', label: 'Google Maps URL', type: 'url' },
+      { name: 'address', label: 'Office address', type: 'textarea' },
+      { name: 'instagram', label: 'Instagram URL', type: 'url' },
+      { name: 'linkedin', label: 'LinkedIn URL', type: 'url' },
+    ],
+  },
 ];
-/** English versions. A blank value falls back to the Indonesian text on /en pages. */
-export const settingFieldsEn: Field[] = [
-  { name: 'taglineEn', label: 'English tagline' },
-  { name: 'ctaTextEn', label: 'English CTA text' },
-  { name: 'shortDescriptionEn', label: 'English short description', type: 'textarea' },
-  { name: 'aboutEn', label: 'English about text', type: 'textarea' },
-  { name: 'visionEn', label: 'English vision', type: 'textarea' },
-  { name: 'missionEn', label: 'English mission (one per line)', type: 'textarea' },
-  { name: 'credentialsEn', label: 'English credentials (one per line)', type: 'textarea' },
+/**
+ * Company wording, Indonesian and English side by side. A blank English text falls back
+ * to the Indonesian one on /en pages.
+ */
+export const settingTextPairs: [Field, Field][] = [
+  [
+    { name: 'tagline', label: 'Tagline', required: true },
+    { name: 'taglineEn', label: 'English tagline' },
+  ],
+  [
+    { name: 'ctaText', label: 'Primary CTA text', required: true },
+    { name: 'ctaTextEn', label: 'English CTA text' },
+  ],
+  [
+    { name: 'shortDescription', label: 'Short description', type: 'textarea', required: true },
+    { name: 'shortDescriptionEn', label: 'English short description', type: 'textarea' },
+  ],
+  [
+    { name: 'about', label: 'About the company', type: 'textarea', required: true },
+    { name: 'aboutEn', label: 'English about text', type: 'textarea' },
+  ],
+  [
+    { name: 'vision', label: 'Vision', type: 'textarea', required: true },
+    { name: 'visionEn', label: 'English vision', type: 'textarea' },
+  ],
+  [
+    { name: 'mission', label: 'Mission (one per line)', type: 'textarea', required: true },
+    { name: 'missionEn', label: 'English mission (one per line)', type: 'textarea' },
+  ],
+  [
+    { name: 'credentials', label: 'Verified credentials (one per line)', type: 'textarea' },
+    { name: 'credentialsEn', label: 'English credentials (one per line)', type: 'textarea' },
+  ],
 ];

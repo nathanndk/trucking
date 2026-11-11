@@ -42,13 +42,28 @@ const mark = await sharp(`${source}/1.png`)
   .extract({ left: 0, top: 0, width: 184, height: 192 })
   .toBuffer();
 const globe = await sharp(mark).trim().toBuffer();
+// The favicon has no background. The logo was supplied on white, so white is turned into
+// transparency: how far a pixel is from white decides its opacity, and the colour is then
+// worked back so the pixel looks the same over white. Lines stay anti-aliased, and the
+// solid parts keep the logo's own colours, so the mark also reads on dark browser tabs.
+const { data, info } = await sharp(globe).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+const cutout = Buffer.alloc(info.width * info.height * 4);
+const solidAt = 96; // a channel this far below white counts as fully opaque line colour
+for (let i = 0; i < info.width * info.height; i++) {
+  const [r, g, b] = [data[i * 3], data[i * 3 + 1], data[i * 3 + 2]];
+  const alpha = Math.min(1, (255 - Math.min(r, g, b)) / solidAt);
+  const lift = (channel) =>
+    alpha ? Math.max(0, Math.min(255, Math.round((channel - (1 - alpha) * 255) / alpha))) : 0;
+  cutout.set([lift(r), lift(g), lift(b), Math.round(alpha * 255)], i * 4);
+}
+const clear = { r: 0, g: 0, b: 0, alpha: 0 };
 for (const [size, file] of [
   [180, `${output}/favicon.png`],
   [180, 'public/favicon.png'],
 ])
-  await sharp(globe)
-    .resize({ width: size - 24, height: size - 24, fit: 'contain', background: '#ffffff' })
-    .extend({ top: 12, bottom: 12, left: 12, right: 12, background: '#ffffff' })
-    .png({ palette: true })
+  await sharp(cutout, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .resize({ width: size - 12, height: size - 12, fit: 'contain', background: clear })
+    .extend({ top: 6, bottom: 6, left: 6, right: 6, background: clear })
+    .png({ compressionLevel: 9 })
     .toFile(file);
 console.log('Brand images generated.');

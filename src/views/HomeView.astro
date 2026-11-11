@@ -1,8 +1,9 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import ServiceGrid from '../components/marketing/ServiceGrid.astro';
-import ProjectGrid from '../components/marketing/ProjectGrid.astro';
-import ArticleList from '../components/marketing/ArticleList.astro';
+import ProjectLedger from '../components/marketing/ProjectLedger.astro';
+import ClientList from '../components/marketing/ClientList.astro';
+import ArticleIndex from '../components/marketing/ArticleIndex.astro';
 import RuledList from '../components/marketing/RuledList.astro';
 import QuickQuote from '../components/site/QuickQuote';
 import StrengthsBento from '../components/site/StrengthsBento.astro';
@@ -10,7 +11,6 @@ import Faq from '../components/site/Faq';
 import CTA from '../components/marketing/CTA.astro';
 import { AspectRatio } from '../components/ui/aspect-ratio';
 import { buttonVariants } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { cn } from '../lib/utils';
 import { containerTypes } from '../lib/validation';
@@ -142,26 +142,10 @@ const faqStructured = JSON.stringify({
             {t.home.projectsLink}
           </a>
         </div>
-        {projects.length > 0 && <ProjectGrid items={projects} />}
+        {projects.length > 0 && <ProjectLedger items={projects} summary />}
         {clients.length > 0 && (
-          <div class:list={['client-grid', projects.length > 0 && 'mt-10']}>
-            {clients.map((client) => (
-              <Card className="justify-center py-5">
-                <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
-                  {client.image ? (
-                    <img
-                      src={client.image}
-                      alt={client.title}
-                      width="240"
-                      height="80"
-                      loading="lazy"
-                    />
-                  ) : (
-                    client.title
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+          <div class:list={[projects.length > 0 && 'mt-14']}>
+            <ClientList items={clients} />
           </div>
         )}
       </div>
@@ -176,7 +160,7 @@ const faqStructured = JSON.stringify({
             {t.home.articlesLink}
           </a>
         </div>
-        <ArticleList items={articles} />
+        <ArticleIndex items={articles} />
       </div>
     </section>
   )}

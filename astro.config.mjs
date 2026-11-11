@@ -21,6 +21,8 @@ export default defineConfig({
       include: [
         'gsap',
         'gsap/ScrollTrigger',
+        // The beam and figure ticker on Home (Magic UI components).
+        'motion/react',
         'react',
         'react-dom',
         'react-dom/client',

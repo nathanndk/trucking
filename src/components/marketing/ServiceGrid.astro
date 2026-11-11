@@ -1,5 +1,4 @@
 ---
-import { AspectRatio } from '../ui/aspect-ratio';
 import { buttonVariants } from '../ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import Placeholder from './Placeholder.astro';
@@ -16,8 +15,13 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 
 <div class="services-grid" data-motion="group">
   {items.map((item) => (
-    <Card className="service-tile gap-4 overflow-hidden pt-0" data-motion-item id={item.slug}>
-      <AspectRatio ratio={16 / 10} className="tile-photo overflow-hidden bg-muted">
+    <Card
+      className="service-tile gap-4 overflow-hidden pt-0 max-sm:grid max-sm:grid-cols-[88px_minmax(0,1fr)] max-sm:items-start max-sm:gap-x-4 max-sm:gap-y-2 max-sm:p-4"
+      data-motion-item
+      id={item.slug}
+    >
+      {/* On phones each service is a compact row: a small square photo beside the text. */}
+      <div class="tile-photo aspect-[16/10] overflow-hidden bg-muted max-sm:row-span-2 max-sm:aspect-square max-sm:rounded-md">
         {item.image && (
           <img
             data-motion-photo
@@ -28,15 +32,15 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
                 ? `${small(item.image)} 640w, ${item.image} 1280w`
                 : undefined
             }
-            sizes={small(item.image) !== item.image ? '(max-width: 767px) 100vw, 50vw' : undefined}
+            sizes={small(item.image) !== item.image ? '(max-width: 639px) 88px, 50vw' : undefined}
             alt=""
             width="1280"
             height="800"
             loading="lazy"
           />
         )}
-      </AspectRatio>
-      <CardHeader>
+      </div>
+      <CardHeader className="max-sm:gap-1 max-sm:px-0">
         <CardTitle>
           <h3>{item.title}</h3>
         </CardTitle>
@@ -44,7 +48,7 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
           {item.shortDescription}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="mt-auto">
+      <CardFooter className="mt-auto max-sm:col-start-2 max-sm:px-0">
         <a
           class={cn(buttonVariants({ variant: 'link' }), 'h-auto p-0')}
           href={`${localePath(locale, '/contact')}?service=${item.slug}`}

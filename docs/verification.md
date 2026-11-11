@@ -55,3 +55,20 @@ Refactoring UI diagnostic: **9/10**. Hierarchy, grayscale readability, whitespac
 Public pages use a shared Astro-loaded GSAP/ScrollTrigger module. Animations now start automatically and reveal each scene once per page visit. Scrolling up or resizing preserves previously revealed content. The earlier reversible pinning and manual activation control have been removed. Scroll reveals run even with the browser's reduced-motion preference, as explicitly requested; decorative CSS motion still follows the device preference.
 
 The production browser suite covers public layouts, CMS flows and one-time scroll behavior, including automatic activation, static no-JavaScript fallback, direct links, stable forms, and empty/changing/oversized CMS content. Current screenshots and a down/up recording are described in [motion notes and evidence](motion/README.md).
+
+## Genesis Trans Indonesia rebrand
+
+Verified on 11 November 2026 using Node 26.9.0 and pnpm 12.5.1. Earlier sections describe the LINTAS demonstration build and are kept as history; the palette, typography, routes and test counts in them no longer apply.
+
+| Check               | Result                                                       |
+| ------------------- | ------------------------------------------------------------ |
+| `pnpm check`        | 0 errors, 0 warnings, 0 hints                                |
+| `pnpm format:check` | Pass                                                         |
+| `pnpm test:unit`    | 10 tests passed                                              |
+| `pnpm build`        | Pass                                                         |
+| `pnpm test`         | 20 production-browser tests passed (11 app, 9 scroll motion) |
+| Migration `0001`    | Additive only: one new table and `ALTER TABLE … ADD` columns |
+
+The browser suite now also covers: every public page in Indonesian and English at three widths; `hreflang` and canonical links; the language switch; the English quotation flow and the container diagram handing its size to the form; service type and container type stored with each inquiry; articles visible only while published, in both languages, with their body rendered as plain text; `/fleet` and `/coverage` returning the localized 404 page; and English CMS fields on every collection.
+
+Not covered by automated tests: the visual design itself (reviewed by eye at 375px and 1440px in both languages), real contact details (still blank, shown as "Segera diperbarui" / "To be updated"), and a production deployment.

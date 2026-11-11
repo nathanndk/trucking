@@ -401,11 +401,13 @@ test('English pages, language switching and the English quote flow', async ({ pa
       .get(values.email),
   ).toEqual({ service_type: 'Trucking Domestik', container_type: '20ft' });
   db.close();
-  // Unknown English URLs get the English 404 page.
-  const missing = await page.goto('/en/not-a-page');
-  expect(missing?.status()).toBe(404);
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('does not exist');
+  // Unknown English URLs get the English 404 page. Fetched without the page so the
+  // expected 404 is not reported as a browser console error.
+  const missing = await page.request.get('/en/not-a-page');
+  expect(missing.status()).toBe(404);
+  const missingHtml = await missing.text();
+  expect(missingHtml).toContain('<html lang="en">');
+  expect(missingHtml).toContain('This page does not exist.');
 });
 test('articles are public only while published, in both languages', async ({ page }) => {
   const db = database();

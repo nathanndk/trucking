@@ -1,38 +1,44 @@
 ---
-import { AspectRatio } from '../ui/aspect-ratio';
+import { MessageCircle } from 'lucide-react';
 import { buttonVariants } from '../ui/button';
+import { getPublicSettings } from '../../lib/repository';
+import { cn } from '../../lib/utils';
 import { localePath, toLocale } from '../../i18n';
 import { ui } from '../../lib/copy';
+/**
+ * The closing call to action on every page: the two ways to start, a quote request and (when a
+ * number is set) WhatsApp. No stock photo; a ribbed container strip runs along the bottom edge.
+ */
 const { text } = Astro.props as { text: string };
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
+const s = getPublicSettings(locale);
 ---
 
 <section class="cta-band dark">
-  <div class="wrap">
+  <div class="wrap cta-inner">
     <div class="cta-copy">
       <h2>{t.cta.heading}</h2>
       <p>{t.cta.text}</p>
+    </div>
+    <div class="cta-actions">
       <a
         href={localePath(locale, '/contact')}
         class={buttonVariants({ variant: 'secondary', size: 'lg' })}
       >
         {text}
       </a>
-    </div>
-    <div class="cta-photo">
-      <AspectRatio ratio={16 / 9} className="md:h-full">
-        <img
-          class="photo"
-          src="/images/genesis/cta-handshake-1280.webp"
-          srcset="/images/genesis/cta-handshake-640.webp 640w, /images/genesis/cta-handshake-1280.webp 1280w"
-          sizes="(max-width: 767px) 100vw, 45vw"
-          alt={t.cta.imageAlt}
-          width="1280"
-          height="720"
-          loading="lazy"
-        />
-      </AspectRatio>
+      {s.whatsapp && (
+        <a
+          href={`https://wa.me/${s.whatsapp}`}
+          rel="noopener noreferrer"
+          class={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}
+        >
+          <MessageCircle data-icon="inline-start" />
+          {t.contact.whatsappCta}
+        </a>
+      )}
     </div>
   </div>
+  <div class="cta-strip" aria-hidden="true"></div>
 </section>

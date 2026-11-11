@@ -29,7 +29,6 @@ export const id = {
   cta: {
     heading: 'Punya kontainer yang perlu dikirim?',
     text: 'Kirim detail pengiriman Anda. Kami siapkan penawarannya.',
-    imageAlt: 'Dua orang berjabat tangan',
   },
   route: {
     stops: [
@@ -87,7 +86,7 @@ export const id = {
     heroAlt: 'Kapal kontainer bersandar di dermaga pelabuhan, dilihat dari udara',
     servicesLink: 'Lihat layanan',
     aboutHeading: 'Mitra angkutan kontainer untuk pabrik dan eksportir.',
-    aboutAlt: 'Jabat tangan di depan tumpukan kontainer',
+    aboutAlt: 'Tim memeriksa dokumen pengiriman di gudang',
     aboutLink: 'Profil perusahaan',
     servicesHeading: 'Lima layanan, satu alur pengiriman.',
     servicesAll: 'Semua layanan',

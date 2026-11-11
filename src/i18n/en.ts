@@ -30,7 +30,6 @@ export const en: Dictionary = {
   cta: {
     heading: 'Have a container to move?',
     text: 'Send us your shipment details. We will prepare a quote.',
-    imageAlt: 'Two people shaking hands',
   },
   route: {
     stops: [
@@ -96,7 +95,7 @@ export const en: Dictionary = {
     heroAlt: 'Aerial view of a container ship berthed at a port terminal',
     servicesLink: 'View services',
     aboutHeading: 'A container trucking partner for factories and exporters.',
-    aboutAlt: 'A handshake in front of stacked containers',
+    aboutAlt: 'The team checking shipping documents in a warehouse',
     aboutLink: 'Company profile',
     servicesHeading: 'Five services, one shipping flow.',
     servicesAll: 'All services',

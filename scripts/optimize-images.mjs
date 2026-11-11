@@ -16,9 +16,7 @@ const photos = {
   'service-factory-port': ['4.jpg', [640], { left: 602, top: 270, width: 716, height: 537 }],
   'service-customs': ['10.jpg', [640, 1280]],
   'service-coordination': ['5.jpg', [640, 1280]],
-  'about-handshake': ['2.jpg', [640, 1280]],
   'about-team': ['9.jpg', [640, 1280]],
-  'cta-handshake': ['11.jpg', [640, 1280]],
 };
 for (const [name, [file, widths, region]] of Object.entries(photos))
   for (const width of widths) {

@@ -381,7 +381,6 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'cta.heading', label: 'Heading' },
           { key: 'cta.text', label: 'Text', multiline: true },
-          { key: 'cta.imageAlt', label: 'Photo description' },
         ],
       },
       {

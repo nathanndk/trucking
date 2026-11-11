@@ -727,25 +727,36 @@
     line-height: 1.65;
     color: var(--foreground);
   }
-  .cta-band .wrap {
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    align-items: stretch;
+  .cta-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px 64px;
+    padding: 80px 0;
   }
   .cta-copy {
-    padding: 72px 56px 72px 0;
     display: grid;
-    gap: 16px;
-    align-content: center;
-    justify-items: start;
+    gap: 14px;
+    max-width: 34rem;
   }
   .cta-copy p {
     color: var(--muted-foreground);
-    margin-bottom: 12px;
   }
-  .cta-photo {
-    overflow: hidden;
-    min-height: 280px;
+  .cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  /* The side of a container, ribbed, as the band's bottom edge. */
+  .cta-strip {
+    height: 14px;
+    border-top: 2px solid rgba(255, 255, 255, 0.28);
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.16) 0 3px,
+      transparent 3px 10px
+    );
   }
   .footer {
     background: var(--mist);
@@ -1652,15 +1663,8 @@
     .services-grid > .service-tile:nth-child(-n + 2) {
       grid-column: span 1;
     }
-    .cta-band .wrap {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .cta-copy {
-      padding: 56px 0 40px;
-    }
-    .cta-photo {
-      min-height: 0;
-      margin-bottom: 40px;
+    .cta-inner {
+      padding: 56px 0;
     }
     .footer-grid {
       grid-template-columns: 1fr 1fr;

@@ -15,7 +15,8 @@ db.transaction((tx) => {
       id: 1,
       companyName: 'Genesis Trans Indonesia',
       legalName: 'PT Genesis Trans Indonesia',
-      tagline: 'Your Trusted Partner in Logistics & Transportation',
+      tagline: 'Mitra terpercaya untuk logistik dan transportasi',
+      taglineEn: 'Your Trusted Partner in Logistics & Transportation',
       shortDescription:
         'Angkutan kontainer 20 dan 40 feet dari pabrik atau gudang ke Pelabuhan Tanjung Priok, lengkap dengan bantuan pengurusan kepabeanan.',
       shortDescriptionEn:

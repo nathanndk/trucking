@@ -250,8 +250,25 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     const title = `Test ${collection}`;
     await page.getByRole('button', { name: `Add ${singular}`, exact: true }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel(new RegExp(`^${titleLabel}`)).fill(title);
-    await dialog.getByLabel('English title').fill(`${title} in English`);
+    const titleField = dialog.getByLabel(new RegExp(`^${titleLabel}`));
+    const englishTitle = dialog.getByLabel(new RegExp(`^English ${titleLabel}$`, 'i'));
+    if (collection === 'services') {
+      // The editor shows one language at a time, Indonesian first.
+      await expect(titleField).toBeVisible();
+      await expect(englishTitle).toBeHidden();
+      // Saving from the English tab with the required Indonesian title missing brings
+      // the Indonesian tab back instead of failing silently.
+      await dialog.getByRole('tab', { name: 'English' }).click();
+      await expect(titleField).toBeHidden();
+      await dialog.getByRole('button', { name: 'Save changes' }).click();
+      await expect(titleField).toBeVisible();
+    }
+    await titleField.fill(title);
+    await dialog.getByRole('tab', { name: 'English' }).click();
+    await englishTitle.fill(`${title} in English`);
+    // Switching back keeps what was typed in the other language.
+    await dialog.getByRole('tab', { name: 'Indonesian' }).click();
+    await expect(titleField).toHaveValue(title);
     for (const [label, value] of Object.entries(extras))
       await dialog.getByLabel(label, { exact: false }).fill(value);
     await dialog

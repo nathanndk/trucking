@@ -43,14 +43,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import {
@@ -61,6 +54,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { contentConfig, type Collection, type ContentRecord } from '../../lib/content-config';
 import { contentInput } from '../../lib/validation';
@@ -81,6 +75,8 @@ function Editor({
   const [error, setError] = useState('');
   const [slug, setSlug] = useState(item?.slug || '');
   const hasSummary = collection !== 'clients';
+  const titleLabel = collection === 'clients' ? 'Client name' : 'Title';
+  const [language, setLanguage] = useState('id');
   async function save(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
@@ -112,7 +108,9 @@ function Editor({
     }
   }
   return (
-    <form onSubmit={save}>
+    // A required Indonesian field can be hidden behind the English tab; show it when the
+    // browser reports it missing, so the built-in message has something to point at.
+    <form onSubmit={save} onInvalidCapture={() => setLanguage('id')}>
       <FieldGroup>
         {error && (
           <Alert variant="destructive">
@@ -120,92 +118,101 @@ function Editor({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="title">
-              {collection === 'clients' ? 'Client name' : 'Title'} *
-            </FieldLabel>
-            <Input
-              id="title"
-              name="title"
-              defaultValue={item?.title}
-              required
-              maxLength={250}
-              onChange={(e) => {
-                if (!item)
-                  setSlug(
-                    e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-|-$/g, ''),
-                  );
-              }}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="slug">Slug *</FieldLabel>
-            <Input
-              id="slug"
-              name="slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-              maxLength={160}
-            />
-          </Field>
-        </div>
-        {hasSummary && (
-          <Field>
-            <FieldLabel htmlFor="shortDescription">Short description</FieldLabel>
-            <Input
-              id="shortDescription"
-              name="shortDescription"
-              defaultValue={item?.shortDescription}
-              maxLength={500}
-            />
-          </Field>
-        )}
-        <Field>
-          <FieldLabel htmlFor="description">Description</FieldLabel>
-          <Textarea
-            id="description"
-            name="description"
-            defaultValue={item?.description}
-            maxLength={10000}
-          />
-        </Field>
-        <FieldSet className="rounded-lg border p-4">
-          <FieldLegend>English version</FieldLegend>
-          <FieldDescription>
-            Shown on the English website (/en). Blank fields fall back to the Indonesian text.
-          </FieldDescription>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="titleEn">English title</FieldLabel>
-              <Input id="titleEn" name="titleEn" defaultValue={item?.titleEn} maxLength={250} />
-            </Field>
-            {hasSummary && (
+        {/* One language at a time. Both panels stay mounted so the form submits both. */}
+        <Tabs value={language} onValueChange={setLanguage} className="gap-5">
+          <TabsList aria-label="Content language">
+            <TabsTrigger value="id">Indonesian</TabsTrigger>
+            <TabsTrigger value="en">English</TabsTrigger>
+          </TabsList>
+          <TabsContent value="id" forceMount className="data-[state=inactive]:hidden">
+            <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="shortDescriptionEn">English short description</FieldLabel>
+                <FieldLabel htmlFor="title">{titleLabel} *</FieldLabel>
                 <Input
-                  id="shortDescriptionEn"
-                  name="shortDescriptionEn"
-                  defaultValue={item?.shortDescriptionEn}
-                  maxLength={500}
+                  id="title"
+                  name="title"
+                  defaultValue={item?.title}
+                  required
+                  maxLength={250}
+                  onChange={(e) => {
+                    if (!item)
+                      setSlug(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, '-')
+                          .replace(/^-|-$/g, ''),
+                      );
+                  }}
                 />
               </Field>
-            )}
-            <Field>
-              <FieldLabel htmlFor="descriptionEn">English description</FieldLabel>
-              <Textarea
-                id="descriptionEn"
-                name="descriptionEn"
-                defaultValue={item?.descriptionEn}
-                maxLength={10000}
-              />
-            </Field>
-          </FieldGroup>
-        </FieldSet>
+              {hasSummary && (
+                <Field>
+                  <FieldLabel htmlFor="shortDescription">Short description</FieldLabel>
+                  <Input
+                    id="shortDescription"
+                    name="shortDescription"
+                    defaultValue={item?.shortDescription}
+                    maxLength={500}
+                  />
+                </Field>
+              )}
+              <Field>
+                <FieldLabel htmlFor="description">Description</FieldLabel>
+                <Textarea
+                  id="description"
+                  name="description"
+                  defaultValue={item?.description}
+                  maxLength={10000}
+                />
+              </Field>
+            </FieldGroup>
+          </TabsContent>
+          <TabsContent value="en" forceMount className="data-[state=inactive]:hidden">
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="titleEn">English {titleLabel.toLowerCase()}</FieldLabel>
+                <Input id="titleEn" name="titleEn" defaultValue={item?.titleEn} maxLength={250} />
+              </Field>
+              {hasSummary && (
+                <Field>
+                  <FieldLabel htmlFor="shortDescriptionEn">English short description</FieldLabel>
+                  <Input
+                    id="shortDescriptionEn"
+                    name="shortDescriptionEn"
+                    defaultValue={item?.shortDescriptionEn}
+                    maxLength={500}
+                  />
+                </Field>
+              )}
+              <Field>
+                <FieldLabel htmlFor="descriptionEn">English description</FieldLabel>
+                <Textarea
+                  id="descriptionEn"
+                  name="descriptionEn"
+                  defaultValue={item?.descriptionEn}
+                  maxLength={10000}
+                />
+                <FieldDescription>
+                  Shown on the English website (/en). Blank fields fall back to the Indonesian text.
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+          </TabsContent>
+        </Tabs>
+        <Field>
+          <FieldLabel htmlFor="slug">Slug *</FieldLabel>
+          <Input
+            id="slug"
+            name="slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            required
+            maxLength={160}
+          />
+          <FieldDescription>
+            The last part of the page address. Shared by both languages.
+          </FieldDescription>
+        </Field>
         {config.fields.map((field) => (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>

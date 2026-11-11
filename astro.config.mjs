@@ -14,8 +14,28 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    // Pre-bundle lazy motion imports at startup, before the first browser request.
-    optimizeDeps: { include: ['gsap', 'gsap/ScrollTrigger'] },
+    // Pre-bundle at startup, before the first browser request. Without this the dev server
+    // discovers these on the first visit to a page that uses them and re-optimizes mid-load,
+    // which can leave React islands (login form, quote form, header) unhydrated.
+    optimizeDeps: {
+      include: [
+        'gsap',
+        'gsap/ScrollTrigger',
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'radix-ui',
+        'cn',
+        'class-variance-authority',
+        'clsx',
+        'tailwind-merge',
+        'lucide-react',
+        'sonner',
+        'react-dropzone',
+        'better-auth/react',
+        'zod',
+      ],
+    },
   },
   devToolbar: { enabled: false },
   security: { checkOrigin: true },

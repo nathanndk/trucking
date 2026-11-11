@@ -35,7 +35,9 @@ export default function Login() {
     }
   }
   return (
-    <form onSubmit={submit}>
+    // method="post": if the script has not loaded yet, a submit must never put the
+    // password in the address bar (the browser default for a form is GET).
+    <form onSubmit={submit} method="post">
       <FieldGroup>
         {error && (
           <Alert variant="destructive">

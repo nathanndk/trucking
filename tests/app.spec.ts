@@ -397,6 +397,9 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
   ] as const) {
     const publicHtml = async (prefix = '') => (await page.request.get(`${prefix}${route}`)).text();
     await page.goto(`/admin/${collection}`);
+    // The editor is a React island: clicking before it has hydrated does nothing, which made
+    // this test fail now and then.
+    await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
     const title = `Test ${collection}`;
     await page.getByRole('button', { name: `Add ${singular}`, exact: true }).click();
     const dialog = page.getByRole('dialog');

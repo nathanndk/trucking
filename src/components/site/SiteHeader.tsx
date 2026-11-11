@@ -70,10 +70,11 @@ function Languages({
           href={language.href}
           hrefLang={language.locale}
           lang={language.locale}
-          aria-label={language.name}
           aria-current={language.current ? 'true' : undefined}
         >
+          {/* The visible code starts the accessible name (WCAG 2.5.3), so "ID" works by voice. */}
           {language.code}
+          <span className="sr-only"> ({language.name})</span>
         </a>
       ))}
     </div>
@@ -121,7 +122,7 @@ export default function SiteHeader({
   const logo = (
     <a href={brand.href} className="brand" aria-label={`${brand.name}, ${brand.label}`}>
       {brand.logo ? (
-        <img className="brand-logo" src={brand.logo} alt="" />
+        <img className="brand-logo" src={brand.logo} alt="" width={585} height={192} />
       ) : (
         <span className="brand-word">{brand.name}</span>
       )}
@@ -238,7 +239,7 @@ export default function SiteHeader({
                   <SheetTitle className="sr-only">{brand.name}</SheetTitle>
                   <SheetDescription className="sr-only">{labels.mobile}</SheetDescription>
                   {brand.logo ? (
-                    <img className="h-9 w-auto" src={brand.logo} alt="" />
+                    <img className="h-9 w-auto" src={brand.logo} alt="" width={585} height={192} />
                   ) : (
                     <span className="brand-word">{brand.name}</span>
                   )}

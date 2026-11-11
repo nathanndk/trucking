@@ -10,13 +10,13 @@ await mkdir(output, { recursive: true });
 /** name → [source file, widths, optional crop region in source pixels] */
 const photos = {
   'hero-port': ['3.jpg', [768, 1280, 1920]],
-  'service-container': ['8.jpg', [640, 1280]],
-  'service-trucking': ['6.jpg', [640, 1280]],
+  'service-container': ['8.jpg', [320, 640, 1280]],
+  'service-trucking': ['6.jpg', [320, 640, 1280]],
   // The source is a portrait photo padded with white bars; keep only the photo itself.
-  'service-factory-port': ['4.jpg', [640], { left: 602, top: 270, width: 716, height: 537 }],
-  'service-customs': ['10.jpg', [640, 1280]],
-  'service-coordination': ['5.jpg', [640, 1280]],
-  'about-team': ['9.jpg', [640, 1280]],
+  'service-factory-port': ['4.jpg', [320, 640], { left: 602, top: 270, width: 716, height: 537 }],
+  'service-customs': ['10.jpg', [320, 640, 1280]],
+  'service-coordination': ['5.jpg', [320, 640, 1280]],
+  'about-team': ['9.jpg', [320, 640, 1280]],
 };
 for (const [name, [file, widths, region]] of Object.entries(photos))
   for (const width of widths) {
@@ -64,4 +64,10 @@ for (const [size, file] of [
     .extend({ top: 6, bottom: 6, left: 6, right: 6, background: clear })
     .png({ compressionLevel: 9 })
     .toFile(file);
+// The mark on its own, small and in WebP, for places that show it inside the page (Home's
+// coordination drawing); the PNG above stays the browser favicon.
+await sharp(cutout, { raw: { width: info.width, height: info.height, channels: 4 } })
+  .resize({ width: 96, height: 96, fit: 'contain', background: clear })
+  .webp({ quality: 90 })
+  .toFile(`${output}/mark-96.webp`);
 console.log('Brand images generated.');

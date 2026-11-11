@@ -1,5 +1,6 @@
 import { test as base, expect, type Page, type Cookie } from '@playwright/test';
 import Database from 'better-sqlite3';
+import { AxeBuilder } from '@axe-core/playwright';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
@@ -230,6 +231,29 @@ test('data that is not there is not shown: no markers, no empty sections, no dea
     for (const [table, ids] of Object.entries(published))
       for (const id of ids) db.prepare(`UPDATE ${table} SET published=1 WHERE id=?`).run(id);
     db.close();
+  }
+});
+
+test('public pages have no WCAG 2.1 A/AA violations, on desktop and phone', async ({ page }) => {
+  for (const [width, height] of [
+    [1440, 900],
+    [375, 812],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    for (const route of [...publicRoutes, '/articles/e2e-articles']) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      // Islands that load when visible stay server-rendered here; the header must be live.
+      await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+      const { violations } = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(
+        violations.map(
+          (v) => `${v.impact} ${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
+        ),
+        `${route} at ${width}px`,
+      ).toEqual([]);
+    }
   }
 });
 

@@ -18,7 +18,7 @@ const { rows } = Astro.props;
   {rows.map((row, i) => (
     <>
       {i > 0 && <ItemSeparator />}
-      <Item className="px-0">
+      <Item role="listitem" className="px-0">
         <ItemContent>
           {row.label && <ItemDescription className="line-clamp-none">{row.label}</ItemDescription>}
           {row.title && (

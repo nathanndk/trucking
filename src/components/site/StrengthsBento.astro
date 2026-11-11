@@ -57,7 +57,7 @@ const panel = 'flex flex-1 items-center rounded-md bg-muted p-5';
                 aria-hidden="true"
               />
               {route.map((stop, n) => (
-                <Item className="flex-nowrap items-start gap-3 p-0">
+                <Item role="listitem" className="flex-nowrap items-start gap-3 p-0">
                   <ItemMedia
                     variant="icon"
                     className={cn(

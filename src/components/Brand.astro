@@ -10,5 +10,11 @@ const { name, logo, href = '/', label = 'Home' } = Astro.props;
 ---
 
 <a href={href} class="brand" aria-label={`${name}, ${label}`}>
-  {logo ? <img class="brand-logo" src={logo} alt="" /> : <span class="brand-word">{name}</span>}
+  {logo ? (
+    // Width and height give the browser the logo's proportions before it loads (the CSS
+    // sets the height), so nothing shifts; they match the bundled 585×192 logo.
+    <img class="brand-logo" src={logo} alt="" width="585" height="192" />
+  ) : (
+    <span class="brand-word">{name}</span>
+  )}
 </a>

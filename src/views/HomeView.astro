@@ -103,7 +103,11 @@ const faqStructured = JSON.stringify({
         items={t.strengths.items}
         route={t.route.stops}
         statistics={s.statistics}
-        mark={s.favicon || '/images/genesis/favicon.png'}
+        mark={
+          !s.favicon || s.favicon === '/images/genesis/favicon.png'
+            ? '/images/genesis/mark-96.webp'
+            : s.favicon
+        }
         name={s.companyName}
         numberLocale={locale === 'id' ? 'id-ID' : 'en-US'}
       />

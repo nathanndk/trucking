@@ -7,14 +7,13 @@ import CTA from '../components/marketing/CTA.astro';
 import { buttonVariants } from '../components/ui/button';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { cn } from '../lib/utils';
+import { responsive } from '../lib/images';
 import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
 const s = getPublicSettings(locale);
 const items = getPublicContent('services', locale);
-/** Bundled photos ship in two widths; uploaded media has a single file. */
-const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 // Services read as a catalogue: the names stay in view on the left and mark the one being
 // read; each service is a row with its photo, full description and quote link.
 ---
@@ -41,17 +40,7 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
                   {item.image && (
                     <img
                       class="photo"
-                      src={item.image}
-                      srcset={
-                        small(item.image) !== item.image
-                          ? `${small(item.image)} 640w, ${item.image} 1280w`
-                          : undefined
-                      }
-                      sizes={
-                        small(item.image) !== item.image
-                          ? '(max-width: 1023px) 100vw, 360px'
-                          : undefined
-                      }
+                      {...responsive(item.image, '(max-width: 1023px) 100vw, 360px')}
                       alt=""
                       width="1280"
                       height="960"

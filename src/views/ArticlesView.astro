@@ -7,6 +7,7 @@ import CTA from '../components/marketing/CTA.astro';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { fill, localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
+import { responsive } from '../lib/images';
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
 const s = getPublicSettings(locale);
@@ -27,7 +28,13 @@ const [lead, ...rest] = getPublicContent('articles', locale);
           <article class:list={['article-lead', !lead.image && 'article-lead-text']}>
             {lead.image && (
               <div class="article-lead-photo" aria-hidden="true">
-                <img class="photo" src={lead.image} alt="" width="1280" height="720" />
+                <img
+                  class="photo"
+                  {...responsive(lead.image, '(max-width: 1023px) 100vw, 680px')}
+                  alt=""
+                  width="1280"
+                  height="720"
+                />
               </div>
             )}
             <div class="article-lead-copy">

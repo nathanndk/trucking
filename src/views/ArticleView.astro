@@ -15,6 +15,7 @@ import type { ContentRecord } from '../lib/content-config';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
+import { responsive } from '../lib/images';
 interface Props {
   article: ContentRecord;
 }
@@ -59,7 +60,13 @@ const others = getPublicContent('articles', locale)
         </header>
         {article.image && (
           <div class="article-photo">
-            <img class="photo" src={article.image} alt="" width="1280" height="720" />
+            <img
+              class="photo"
+              {...responsive(article.image, '(max-width: 1240px) 100vw, 1200px')}
+              alt=""
+              width="1280"
+              height="720"
+            />
           </div>
         )}
         <div class="article-body">

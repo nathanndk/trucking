@@ -2,6 +2,7 @@
 import DateMark from './DateMark.astro';
 import type { ContentRecord } from '../../lib/content-config';
 import { localePath, toLocale } from '../../i18n';
+import { responsive } from '../../lib/images';
 /**
  * Articles as an index: one ruled row each, the date marking on the left, title and summary in
  * the middle, a small photo on the right. The title is the link; the whole row answers clicks.
@@ -24,7 +25,14 @@ const locale = toLocale(Astro.currentLocale);
       </div>
       {item.image && (
         <div class="article-row-photo" aria-hidden="true">
-          <img class="photo" src={item.image} alt="" width="640" height="480" loading="lazy" />
+          <img
+            class="photo"
+            {...responsive(item.image, '(max-width: 767px) 96px, 200px')}
+            alt=""
+            width="640"
+            height="480"
+            loading="lazy"
+          />
         </div>
       )}
     </li>

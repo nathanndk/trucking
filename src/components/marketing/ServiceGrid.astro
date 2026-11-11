@@ -4,13 +4,12 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/
 import Placeholder from './Placeholder.astro';
 import type { ContentRecord } from '../../lib/content-config';
 import { cn } from '../../lib/utils';
+import { responsive } from '../../lib/images';
 import { localePath, toLocale } from '../../i18n';
 import { ui } from '../../lib/copy';
 const { items } = Astro.props as { items: ContentRecord[] };
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
-/** Bundled photos ship in two widths; uploaded media has a single file. */
-const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 ---
 
 <div class="services-grid">
@@ -24,13 +23,7 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
         {item.image && (
           <img
             class="photo"
-            src={item.image}
-            srcset={
-              small(item.image) !== item.image
-                ? `${small(item.image)} 640w, ${item.image} 1280w`
-                : undefined
-            }
-            sizes={small(item.image) !== item.image ? '(max-width: 639px) 88px, 50vw' : undefined}
+            {...responsive(item.image, '(max-width: 639px) 88px, (max-width: 1023px) 50vw, 400px')}
             alt=""
             width="1280"
             height="800"

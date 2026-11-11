@@ -183,7 +183,7 @@ const link = cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto p-0');
           {[...todo, ...checklist.filter((item) => item.done)].map((item, i) => (
             <>
               {i > 0 && <ItemSeparator />}
-              <Item size="sm" className="px-0">
+              <Item role="listitem" size="sm" className="px-0">
                 <ItemMedia>
                   {item.done ? (
                     <Check className="size-4 text-[var(--mint)]" aria-label="Done" />
@@ -231,7 +231,7 @@ const link = cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto p-0');
             {latest.map((item, i) => (
               <>
                 {i > 0 && <ItemSeparator />}
-                <Item size="sm" className="px-0">
+                <Item role="listitem" size="sm" className="px-0">
                   <ItemContent>
                     <ItemTitle>{item.fullName}</ItemTitle>
                     <ItemDescription>
@@ -279,7 +279,7 @@ const link = cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto p-0');
           {content.map((entry, i) => (
             <>
               {i > 0 && <ItemSeparator />}
-              <Item size="sm" className="px-0">
+              <Item role="listitem" size="sm" className="px-0">
                 <ItemContent>
                   <ItemTitle>{entry.label}</ItemTitle>
                   <ItemDescription>

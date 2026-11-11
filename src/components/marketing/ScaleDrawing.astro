@@ -18,7 +18,6 @@ const ratio = { '20ft': 6.058 / 2.591, '40ft': 12.192 / 2.591 };
     <a
       class:list={['scale-box', type === '20ft' ? 'is-20' : 'is-40']}
       href={`${localePath(locale, '/contact')}?container=${type}`}
-      aria-label={`${t.sizes[type].action} (${t.lengthLabel.toLowerCase()} ${t.sizes[type].length})`}
     >
       <AspectRatio ratio={ratio[type]}>
         <span class="scale-body">
@@ -26,6 +25,8 @@ const ratio = { '20ft': 6.058 / 2.591, '40ft': 12.192 / 2.591 };
         </span>
       </AspectRatio>
       <span class="scale-dim">{t.sizes[type].length}</span>
+      {/* The visible size and length start the link's name (WCAG 2.5.3); the action follows. */}
+      <span class="sr-only">, {t.sizes[type].action}</span>
     </a>
   ))}
 </div>

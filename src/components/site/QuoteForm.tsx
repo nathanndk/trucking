@@ -144,10 +144,18 @@ export default function QuoteForm({
                       />
                     </span>
                     <ChoiceboxItemHeader>
-                      <ChoiceboxItemTitle>{container.name}</ChoiceboxItemTitle>
-                      <ChoiceboxItemDescription>{container.detail}</ChoiceboxItemDescription>
+                      <ChoiceboxItemTitle id={`container-${container.value}-name`}>
+                        {container.name}
+                      </ChoiceboxItemTitle>
+                      <ChoiceboxItemDescription id={`container-${container.value}-length`}>
+                        {container.detail}
+                      </ChoiceboxItemDescription>
                     </ChoiceboxItemHeader>
-                    <ChoiceboxIndicator id={`container-${container.value}`} />
+                    <ChoiceboxIndicator
+                      id={`container-${container.value}`}
+                      aria-labelledby={`container-${container.value}-name`}
+                      aria-describedby={`container-${container.value}-length`}
+                    />
                   </ChoiceboxItem>
                 ))}
               </Choicebox>

@@ -1,7 +1,8 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import CTA from '../components/marketing/CTA.astro';
-import { AspectRatio } from '../components/ui/aspect-ratio';
+import ArticleIndex from '../components/marketing/ArticleIndex.astro';
+import DateMark from '../components/marketing/DateMark.astro';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,10 +11,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '../components/ui/breadcrumb';
-import { Separator } from '../components/ui/separator';
 import type { ContentRecord } from '../lib/content-config';
-import { getPublicSettings } from '../lib/repository';
-import { formatDate, localePath, toLocale } from '../i18n';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { localePath, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
 interface Props {
   article: ContentRecord;
@@ -28,37 +28,39 @@ const paragraphs = article.description
   .map((paragraph) => paragraph.trim())
   .filter(Boolean);
 const summary = article.shortDescription || paragraphs[0]?.slice(0, 160) || t.articles.intro;
+const others = getPublicContent('articles', locale)
+  .filter((other) => other.slug !== article.slug)
+  .slice(0, 3);
 ---
 
 <PublicLayout title={article.title} description={summary} image={article.image || undefined}>
-  <section class="section">
+  <section class="section article-page">
     <div class="wrap">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href={localePath(locale, '/articles')}>
+              {t.articles.back}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{article.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <article class="article">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href={localePath(locale, '/articles')}>
-                {t.articles.back}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{article.title}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <h1 class="mt-6">{article.title}</h1>
-        <p class="mt-4 text-sm text-muted-foreground">
-          <time datetime={article.createdAt.toISOString()}>
-            {formatDate(article.createdAt, locale)}
-          </time>
-        </p>
-        {article.image ? (
-          <AspectRatio ratio={16 / 9} className="my-8 overflow-hidden rounded-lg bg-muted">
+        <header class="article-head">
+          <DateMark date={article.createdAt} />
+          <div>
+            <h1>{article.title}</h1>
+            {article.shortDescription && <p class="article-summary">{article.shortDescription}</p>}
+          </div>
+        </header>
+        {article.image && (
+          <div class="article-photo">
             <img class="photo" src={article.image} alt="" width="1280" height="720" />
-          </AspectRatio>
-        ) : (
-          <Separator className="my-8" />
+          </div>
         )}
         <div class="article-body">
           {paragraphs.map((paragraph) => (
@@ -68,5 +70,13 @@ const summary = article.shortDescription || paragraphs[0]?.slice(0, 160) || t.ar
       </article>
     </div>
   </section>
+  {others.length > 0 && (
+    <section class="section tint">
+      <div class="wrap">
+        <h2 class="mb-8">{t.articles.more}</h2>
+        <ArticleIndex items={others} />
+      </div>
+    </section>
+  )}
   <CTA text={s.ctaText} />
 </PublicLayout>

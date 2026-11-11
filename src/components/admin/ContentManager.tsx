@@ -53,7 +53,14 @@ import {
 } from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -355,15 +362,18 @@ export default function ContentManager({
               className="max-w-full pl-9 sm:w-64"
             />
           </div>
-          <NativeSelect
-            aria-label="Filter by publication"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <NativeSelectOption value="all">All statuses</NativeSelectOption>
-            <NativeSelectOption value="published">Published</NativeSelectOption>
-            <NativeSelectOption value="draft">Draft</NativeSelectOption>
-          </NativeSelect>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger aria-label="Filter by publication" className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectGroup>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
         <Button
           onClick={() => {
@@ -518,7 +528,9 @@ export default function ContentManager({
               <EmptyDescription>
                 {items.length
                   ? 'Try a different search or filter.'
-                  : `The website shows a “to be updated” note until the first ${config.singular} is published.`}
+                  : collection === 'services'
+                    ? 'The Services page shows a short note until the first service is published.'
+                    : `This section stays hidden on the website until the first ${config.singular} is published.`}
               </EmptyDescription>
             </EmptyHeader>
             {!items.length && (

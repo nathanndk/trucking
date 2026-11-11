@@ -1,20 +1,11 @@
 ---
-import { Badge } from '../ui/badge';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '../ui/empty';
-import { toLocale } from '../../i18n';
-import { ui } from '../../lib/copy';
-/** Shown where the company has not supplied content yet. */
-const { text, marker = true } = Astro.props as { text: string; marker?: boolean };
-const t = ui(toLocale(Astro.currentLocale));
+import { Empty, EmptyHeader, EmptyTitle } from '../ui/empty';
+/** Shown where a list is empty on a page that always exists (Services). */
+const { text } = Astro.props as { text: string };
 ---
 
 <Empty className="border md:p-8">
   <EmptyHeader>
     <EmptyTitle className="text-base">{text}</EmptyTitle>
-    {marker && (
-      <EmptyDescription>
-        <Badge variant="secondary">{t.toBeUpdated}</Badge>
-      </EmptyDescription>
-    )}
   </EmptyHeader>
 </Empty>

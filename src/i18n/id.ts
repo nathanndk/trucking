@@ -3,7 +3,6 @@ export const id = {
   htmlLang: 'id',
   ogLocale: 'id_ID',
   dateLocale: 'id-ID',
-  toBeUpdated: 'Segera diperbarui',
   skip: 'Langsung ke konten',
   nav: {
     home: 'Beranda',
@@ -14,6 +13,7 @@ export const id = {
     contact: 'Kontak',
     main: 'Navigasi utama',
     open: 'Buka navigasi',
+    close: 'Tutup navigasi',
     mobile: 'Navigasi seluler',
     language: 'Pilihan bahasa',
     brandHome: 'Beranda',
@@ -32,7 +32,6 @@ export const id = {
     imageAlt: 'Dua orang berjabat tangan',
   },
   route: {
-    heading: 'Alur pengiriman',
     stops: [
       { title: 'Pabrik atau gudang', text: 'Kontainer dimuat di lokasi Anda.' },
       { title: 'Truk kontainer', text: 'Ukuran 20 atau 40 feet, sesuai muatan.' },
@@ -81,7 +80,6 @@ export const id = {
     mainValue: 'Jakarta dan sekitarnya',
     port: 'Pelabuhan utama',
     portValue: 'Tanjung Priok, Jakarta',
-    other: 'Area lainnya',
   },
   home: {
     title: 'Angkutan Kontainer ke Tanjung Priok',
@@ -94,10 +92,8 @@ export const id = {
     servicesHeading: 'Lima layanan, satu alur pengiriman.',
     servicesAll: 'Semua layanan',
     projectsHeading: 'Proyek dan klien',
-    projectsEmpty: 'Dokumentasi proyek dan daftar klien sedang kami siapkan.',
     projectsLink: 'Lihat proyek',
     articlesHeading: 'Artikel terbaru',
-    articlesEmpty: 'Belum ada artikel yang terbit.',
     articlesLink: 'Semua artikel',
   },
   quick: {
@@ -184,9 +180,7 @@ export const id = {
     h1: 'Proyek dan klien kami.',
     intro: 'Pengalaman pengiriman dan perusahaan yang bekerja sama dengan kami.',
     projectsHeading: 'Proyek',
-    projectsEmpty: 'Dokumentasi proyek sedang kami siapkan.',
     clientsHeading: 'Klien dan partner',
-    clientsEmpty: 'Daftar klien ditampilkan setelah mendapat izin dari tiap perusahaan.',
     imageAlt: 'Foto proyek {title}',
   },
   articles: {
@@ -194,8 +188,8 @@ export const id = {
     description: 'Kabar terbaru dari {name} dan informasi seputar pengiriman kontainer.',
     h1: 'Artikel dan berita perusahaan.',
     intro: 'Kabar terbaru dan informasi seputar pengiriman kontainer.',
-    empty: 'Belum ada artikel yang terbit.',
     back: 'Semua artikel',
+    more: 'Artikel lainnya',
   },
   contact: {
     title: 'Kontak dan Penawaran',
@@ -209,8 +203,11 @@ export const id = {
     email: 'Email',
     office: 'Kantor',
     maps: 'Lihat di Google Maps',
+    whatsappCta: 'Chat lewat WhatsApp',
     formHeading: 'Form penawaran',
     required: 'Kolom bertanda * wajib diisi.',
+    shipmentHeading: 'Detail pengiriman',
+    detailsHeading: 'Data Anda',
     fullName: 'Nama lengkap',
     company: 'Nama perusahaan',
     phoneField: 'Nomor WhatsApp',
@@ -229,7 +226,7 @@ export const id = {
     successText: 'Tim kami akan menghubungi Anda lewat kontak yang Anda berikan.',
     errors: {
       invalid: 'Periksa kembali isian form. Semua kolom bertanda * wajib diisi dengan benar.',
-      BAD_REQUEST: 'Form sudah kedaluwarsa. Muat ulang halaman, lalu kirim lagi.',
+      BAD_REQUEST: 'Form sudah kedaluwarsa. Isian Anda masih ada; kirim lagi sekarang.',
       TOO_MANY_REQUESTS: 'Terlalu banyak permintaan. Coba lagi dalam satu jam.',
       CONFLICT: 'Form ini sudah dikirim. Muat ulang halaman untuk permintaan baru.',
       generic: 'Permintaan belum terkirim. Coba lagi.',
@@ -241,6 +238,15 @@ export const id = {
     h1: 'Halaman ini tidak ada.',
     text: 'Alamatnya mungkin berubah atau salah ketik.',
     back: 'Kembali ke beranda',
+  },
+  mail: {
+    subject: 'Permintaan penawaran Anda sudah kami terima',
+    greeting: 'Halo {name},',
+    intro:
+      'Terima kasih telah menghubungi {company}. Permintaan penawaran Anda sudah kami terima dengan detail berikut:',
+    outro:
+      'Tim kami akan menghubungi Anda lewat WhatsApp atau email untuk menyampaikan penawarannya. Jika ada yang ingin ditambahkan, balas saja email ini.',
+    signature: 'Salam,\n{company}',
   },
 };
 export type Dictionary = typeof id;

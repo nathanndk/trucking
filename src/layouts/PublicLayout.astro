@@ -2,9 +2,8 @@
 import '../styles/global.css';
 import Brand from '../components/Brand.astro';
 import SiteHeader from '../components/site/SiteHeader';
-import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
-import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { getPublicContent, getPublicSettings, visibleSections } from '../lib/repository';
 import { origin } from '../lib/env';
 import { locales, localePath, stripLocale, toLocale, type Locale } from '../i18n';
 import { ui } from '../lib/copy';
@@ -24,14 +23,21 @@ const t = ui(locale);
 const s = getPublicSettings(locale);
 const path = noAlternates ? '/' : stripLocale(Astro.url.pathname).path;
 const href = (target: string) => localePath(locale, target);
-const nav = [
-  ['/', t.nav.home],
-  ['/about', t.nav.about],
-  ['/services', t.nav.services],
-  ['/projects', t.nav.projects],
-  ['/articles', t.nav.articles],
-  ['/contact', t.nav.contact],
-] as const;
+// Projects and Articles drop out of every menu while nothing is published there.
+const visible = visibleSections();
+const nav = (
+  [
+    ['/', t.nav.home],
+    ['/about', t.nav.about],
+    ['/services', t.nav.services],
+    ['/projects', t.nav.projects],
+    ['/articles', t.nav.articles],
+    ['/contact', t.nav.contact],
+  ] as const
+).filter(
+  ([target]) =>
+    (target !== '/projects' || visible.projects) && (target !== '/articles' || visible.articles),
+);
 const current = (target: string) =>
   !noAlternates && (path === target || (target !== '/' && path.startsWith(`${target}/`)))
     ? 'page'
@@ -55,6 +61,34 @@ const languages: Record<Locale, { code: string; name: string }> = {
 // Google notranslate tag below stop browsers offering machine translation.
 const pageTitle = `${title} | ${s.companyName}`;
 const phoneHref = s.phone ? `tel:${s.phone.replace(/[^+\d]/g, '')}` : '';
+// Footer contacts: only what is filled in under Settings appears, nothing marks a gap.
+const footerContacts = [
+  s.whatsapp && {
+    label: t.footer.whatsapp,
+    value: `+${s.whatsapp}`,
+    href: `https://wa.me/${s.whatsapp}`,
+  },
+  s.email && { label: t.footer.email, value: s.email, href: `mailto:${s.email}` },
+  s.phone && { label: t.footer.phone, value: s.phone, href: phoneHref },
+  s.instagram && { label: '', value: 'Instagram', href: s.instagram },
+  s.linkedin && { label: '', value: 'LinkedIn', href: s.linkedin },
+].filter((contact) => !!contact);
+// Direct contacts for the header, only the ones filled in under Settings.
+const contacts = [
+  s.whatsapp && {
+    kind: 'whatsapp' as const,
+    label: t.contact.whatsapp,
+    value: `+${s.whatsapp}`,
+    href: `https://wa.me/${s.whatsapp}`,
+  },
+  s.phone && { kind: 'phone' as const, label: t.contact.phone, value: s.phone, href: phoneHref },
+  s.email && {
+    kind: 'email' as const,
+    label: t.contact.email,
+    value: s.email,
+    href: `mailto:${s.email}`,
+  },
+].filter((contact) => !!contact);
 const structured = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -139,12 +173,15 @@ const structured = JSON.stringify({
         href: localePath(code, path),
         current: code === locale,
       }))}
+      contacts={contacts}
       cta={{ href: href('/contact'), label: s.ctaText }}
       labels={{
         main: t.nav.main,
         open: t.nav.open,
+        close: t.nav.close,
         mobile: t.nav.mobile,
         language: t.nav.language,
+        contact: t.contact.infoHeading,
       }}
     />
     <main id="main" tabindex="-1">
@@ -167,65 +204,27 @@ const structured = JSON.stringify({
               ))}
             </ul>
           </div>
-          <div>
-            <h2>{t.footer.contact}</h2>
-            <ul class="footer-contact">
-              <li>
-                <span>{t.footer.whatsapp}</span>
-                {s.whatsapp ? (
-                  <a href={`https://wa.me/${s.whatsapp}`} rel="noopener noreferrer">
-                    +{s.whatsapp}
-                  </a>
-                ) : (
-                  <span>
-                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
-                  </span>
-                )}
-              </li>
-              <li>
-                <span>{t.footer.email}</span>
-                {s.email ? (
-                  <a href={`mailto:${s.email}`}>{s.email}</a>
-                ) : (
-                  <span>
-                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
-                  </span>
-                )}
-              </li>
-              <li>
-                <span>{t.footer.phone}</span>
-                {s.phone ? (
-                  <a href={phoneHref}>{s.phone}</a>
-                ) : (
-                  <span>
-                    <Badge variant="secondary">{t.toBeUpdated}</Badge>
-                  </span>
-                )}
-              </li>
-              {s.instagram && (
-                <li>
-                  <a href={s.instagram} rel="noopener noreferrer">
-                    Instagram
-                  </a>
-                </li>
-              )}
-              {s.linkedin && (
-                <li>
-                  <a href={s.linkedin} rel="noopener noreferrer">
-                    LinkedIn
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
-          <div>
-            <h2>{t.footer.office}</h2>
-            {s.address ? (
+          {footerContacts.length > 0 && (
+            <div>
+              <h2>{t.footer.contact}</h2>
+              <ul class="footer-contact">
+                {footerContacts.map((contact) => (
+                  <li>
+                    {contact.label && <span>{contact.label}</span>}
+                    <a href={contact.href} rel="noopener noreferrer">
+                      {contact.value}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {s.address && (
+            <div>
+              <h2>{t.footer.office}</h2>
               <p class="footer-address">{s.address}</p>
-            ) : (
-              <Badge variant="secondary">{t.toBeUpdated}</Badge>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <Separator className="mt-14" />
         <div class="footer-bottom">

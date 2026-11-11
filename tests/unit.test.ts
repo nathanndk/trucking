@@ -338,17 +338,18 @@ test('dashboard figures: status counts, weekly buckets, container split and the 
     established: '',
     credentials: '',
   };
-  const empty = websiteChecklist(blank, {
-    projects: 0,
-    clients: 0,
-    articles: 0,
-    servicesWithoutEnglish: 0,
-  });
+  const empty = websiteChecklist(
+    blank,
+    { projects: 0, clients: 0, articles: 0, servicesWithoutEnglish: 0 },
+    { mailReady: false },
+  );
   assert.deepEqual(
     empty.filter((item) => item.done).map((item) => item.id),
     ['email', 'services-english'],
   );
   assert.equal(empty.find((item) => item.id === 'projects')?.href, '/admin/projects');
+  // Email delivery is server configuration, so it has no admin page to link to.
+  assert.equal(empty.find((item) => item.id === 'quote-email')?.href, undefined);
   const complete = websiteChecklist(
     {
       whatsapp: '628123456789',
@@ -365,4 +366,83 @@ test('dashboard figures: status counts, weekly buckets, container split and the 
     complete.every((item) => item.done),
     true,
   );
+});
+
+test('quote emails: team copy with every field, customer confirmation in their language, nothing injectable', async () => {
+  const { quoteEmails, sendQuoteEmails } = await import('../src/lib/mail');
+  const { defaults } = await import('../src/i18n');
+  const request = {
+    fullName: 'Dewi <b>Pratama</b>',
+    company: 'PT Uji\r\nBcc: evil@example.com',
+    phone: '+62 812 3456 7890',
+    email: 'dewi@example.com',
+    pickup: 'Bekasi',
+    destination: 'Tanjung Priok',
+    containerType: '40ft' as const,
+    message: 'Kunjungi http://spam.example sekarang',
+  };
+  const build = (locale: 'id' | 'en') =>
+    quoteEmails(request, {
+      team: defaults('id'),
+      customer: defaults(locale),
+      service: {
+        team: 'Angkutan Kontainer',
+        customer: locale === 'en' ? 'Container Transportation' : 'Angkutan Kontainer',
+      },
+      company: 'PT Genesis Trans Indonesia',
+      quoteTo: 'info@genesistransindo.com',
+      origin: 'https://genesistransindo.com',
+    });
+  const { team, customer } = build('id');
+  // The team gets every field and replies straight to the customer.
+  assert.equal(team.to, 'info@genesistransindo.com');
+  assert.equal(team.replyTo, 'dewi@example.com');
+  for (const value of [
+    '+62 812 3456 7890',
+    'Bekasi',
+    'Tanjung Priok',
+    '40 feet',
+    'Angkutan Kontainer',
+    'spam.example',
+  ])
+    assert.ok(team.text.includes(value), value);
+  assert.ok(team.text.includes('https://genesistransindo.com/admin/inquiries'));
+  // Headers stay on one line and markup typed into the form is shown, never rendered.
+  assert.doesNotMatch(team.subject, /[\r\n]/);
+  assert.ok(team.html.includes('Dewi &lt;b&gt;Pratama&lt;/b&gt;'));
+  assert.ok(!team.html.includes('<b>Pratama'));
+  // The customer is answered by the team and never receives the free-text message.
+  assert.equal(customer.to, 'dewi@example.com');
+  assert.equal(customer.replyTo, 'info@genesistransindo.com');
+  assert.ok(!customer.text.includes('spam.example'));
+  assert.ok(!customer.html.includes('spam.example'));
+  assert.ok(customer.text.startsWith('Halo Dewi <b>Pratama</b>,'));
+  assert.ok(customer.text.includes('PT Genesis Trans Indonesia'));
+  assert.ok(!customer.text.includes('{'));
+  // English pages get the English confirmation and English service and container names.
+  const english = build('en').customer;
+  assert.equal(english.subject, defaults('en').mail.subject);
+  assert.ok(english.text.includes('Container Transportation'));
+  assert.ok(english.text.includes('40-foot'));
+  // With MAIL_TRANSPORT=json both emails land in the outbox, team first.
+  const { readdirSync, readFileSync } = await import('node:fs');
+  process.env.MAIL_TRANSPORT = 'json';
+  process.env.MAIL_OUTBOX = path.join(dir, 'outbox');
+  assert.deepEqual(await sendQuoteEmails({ team, customer }), { team: true, customer: true });
+  const sent = readdirSync(process.env.MAIL_OUTBOX)
+    .sort()
+    .map((file) => JSON.parse(readFileSync(path.join(process.env.MAIL_OUTBOX!, file), 'utf8')));
+  assert.deepEqual(
+    sent.map((mail) => mail.to[0].address),
+    ['info@genesistransindo.com', 'dewi@example.com'],
+  );
+  // An unreachable mail server is reported as false, never thrown.
+  delete process.env.MAIL_TRANSPORT;
+  process.env.SMTP_HOST = '127.0.0.1';
+  process.env.SMTP_PORT = '9';
+  process.env.MAIL_FROM = 'info@genesistransindo.com';
+  assert.deepEqual(await sendQuoteEmails({ team, customer }), { team: false, customer: false });
+  delete process.env.SMTP_HOST;
+  delete process.env.SMTP_PORT;
+  delete process.env.MAIL_FROM;
 });

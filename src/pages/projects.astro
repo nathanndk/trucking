@@ -1,5 +1,8 @@
 ---
 import ProjectsView from '../views/ProjectsView.astro';
+import { visibleSections } from '../lib/repository';
+// Hidden while nothing is published: the localized 404 page answers instead.
+if (!visibleSections().projects) return new Response(null, { status: 404 });
 ---
 
 <ProjectsView />

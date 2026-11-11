@@ -11,9 +11,12 @@ import {
   quoteInput,
   settingsInput,
 } from '../lib/validation';
-import { defaults, flattenText } from '../i18n';
+import { defaults, flattenText, stripLocale, toLocale } from '../i18n';
 import { contentConfig, mediaFolders } from '../lib/content-config';
-import { tables } from '../lib/repository';
+import { getPublicSettings, tables } from '../lib/repository';
+import { ui } from '../lib/copy';
+import { mailSettings, origin } from '../lib/env';
+import { quoteEmails, sendQuoteEmails } from '../lib/mail';
 import { assertMediaReference, saveImage } from '../lib/media';
 import { allowRequest, verifyToken } from '../lib/spam';
 async function requireAdmin(request: Request) {
@@ -221,7 +224,7 @@ export const server = {
       if (!allowRequest(`quote:${address}`, 5, 60 * 60 * 1000))
         throw new ActionError({ code: 'TOO_MANY_REQUESTS', message: 'Too many requests.' });
       const service = db
-        .select({ title: services.title })
+        .select({ title: services.title, titleEn: services.titleEn })
         .from(services)
         .where(and(eq(services.slug, input.serviceType), eq(services.published, true)))
         .get();
@@ -234,10 +237,31 @@ export const server = {
         db.insert(inquiries)
           .values({ ...values, serviceType: service.title })
           .run();
-        return { success: true };
       } catch (e) {
         safeError(e);
       }
+      // The request is stored, so the visitor sees success whatever the mail server does.
+      // Emails go out in the background; a failure is logged and the request stays in the admin.
+      try {
+        const locale = toLocale(
+          context.currentLocale ?? stripLocale(new URL(context.request.url).pathname).locale,
+        );
+        const emails = quoteEmails(values, {
+          team: ui('id'),
+          customer: ui(locale),
+          service: {
+            team: service.title,
+            customer: (locale === 'en' && service.titleEn) || service.title,
+          },
+          company: getPublicSettings(locale).legalName,
+          quoteTo: mailSettings().quoteTo,
+          origin,
+        });
+        void sendQuoteEmails(emails);
+      } catch (e) {
+        console.error('Quote emails were not prepared:', e instanceof Error ? e.name : 'Unknown');
+      }
+      return { success: true };
     },
   }),
 };

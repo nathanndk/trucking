@@ -1,5 +1,6 @@
 import { test as base, expect, type Page, type Cookie } from '@playwright/test';
 import Database from 'better-sqlite3';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
   adminSession: [
@@ -20,7 +21,9 @@ const test = base.extend<{ consoleGuard: void }, { adminSession: Cookie[] }>({
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('console', (m) => {
-        if (m.type() === 'error') errors.push(m.text());
+        // A refused form action answers 400 by design and the page shows the reason; the
+        // browser logs that status, which is not an application error.
+        if (m.type() === 'error' && !m.text().includes('(AstroActionError)')) errors.push(m.text());
       });
       await use();
       expect(errors, 'No browser application errors').toEqual([]);
@@ -47,6 +50,24 @@ async function login(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill(process.env.ADMIN_PASSWORD!);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
+}
+/** Quote emails the test server wrote to its outbox for one customer address, oldest first. */
+function outbox(customer: string) {
+  const dir = process.env.MAIL_OUTBOX!;
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .sort()
+    .map((file) => JSON.parse(readFileSync(path.join(dir, file), 'utf8')))
+    .filter((mail) =>
+      [...mail.to, ...(mail.replyTo ?? [])].some(
+        (to: { address: string }) => to.address === customer,
+      ),
+    ) as {
+    to: { address: string }[];
+    replyTo: { address: string }[];
+    subject: string;
+    text: string;
+  }[];
 }
 function database() {
   return new Database(process.env.DATABASE_PATH!);
@@ -96,6 +117,122 @@ for (const [name, width, height] of [
     }
   });
 }
+// The header's phone and desktop layouts are chosen by global.css from its stable class
+// names, so they hold on every page even if server and browser markup ever differ.
+test('the header lays out the same on every public page, at phone and desktop width', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+  for (const [width, height] of [
+    [375, 812],
+    [1440, 900],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    const phone = width < 1024;
+    for (const route of publicRoutes) {
+      await page.goto(route);
+      await page.locator('astro-island:not([ssr]) .navbar').waitFor();
+      const header = await page.evaluate(() => {
+        const shown = (selector: string) => {
+          const el = document.querySelector(selector);
+          return (
+            !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0
+          );
+        };
+        return {
+          strip: shown('.nav-strip'),
+          menu: shown('.desktop-nav'),
+          trigger: shown('.mobile-nav-trigger'),
+          quote: shown('.nav-cta'),
+          tall: document.querySelector('.nav-bar')!.getBoundingClientRect().height > 80,
+          overflow: [...document.querySelectorAll('.navbar *')].some(
+            (el) => el.getBoundingClientRect().right > innerWidth + 1,
+          ),
+        };
+      });
+      expect(header, `${route} at ${width}px`).toEqual({
+        strip: !phone,
+        menu: !phone,
+        trigger: phone,
+        quote: true,
+        tall: false,
+        overflow: false,
+      });
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
+test('data that is not there is not shown: no markers, no empty sections, no dead links', async ({
+  page,
+  request,
+}) => {
+  const db = database();
+  const settings = db
+    .prepare(
+      'SELECT phone, whatsapp, address, established, credentials, credentials_en FROM site_settings WHERE id=1',
+    )
+    .get() as Record<string, string>;
+  const published = Object.fromEntries(
+    ['projects', 'clients', 'articles'].map((table) => [
+      table,
+      (db.prepare(`SELECT id FROM ${table} WHERE published=1`).all() as { id: number }[]).map(
+        (row) => row.id,
+      ),
+    ]),
+  );
+  try {
+    db.prepare(
+      "UPDATE site_settings SET phone='', whatsapp='', address='', established='', credentials='', credentials_en='' WHERE id=1",
+    ).run();
+    for (const table of ['projects', 'clients', 'articles'])
+      db.prepare(`UPDATE ${table} SET published=0`).run();
+    // Empty pages are not served and not listed anywhere.
+    for (const route of ['/projects', '/en/projects', '/articles', '/en/articles'])
+      expect((await request.get(route)).status(), route).toBe(404);
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+    expect(sitemap).not.toMatch(/\/(projects|articles)</);
+    for (const route of ['/', '/about', '/contact', '/en']) {
+      await page.goto(route);
+      // No link anywhere on the page (header, mobile menu, footer, sections) leads to them.
+      await expect(page.locator('a[href$="/projects"], a[href$="/articles"]'), route).toHaveCount(
+        0,
+      );
+      const text = await page.locator('body').innerText();
+      expect(text, route).not.toMatch(/Segera diperbarui|To be updated/);
+      // Missing contact details simply do not appear.
+      expect(text, route).not.toMatch(/Telepon|\bPhone\b|\bKantor\b|\bOffice\b/);
+    }
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Proyek dan klien' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Artikel terbaru' })).toHaveCount(0);
+    await expect(page.getByText('Area lain')).toHaveCount(0);
+    await page.goto('/about');
+    const plate = page.locator('.door-plate');
+    await expect(plate).toContainText('PT Genesis Trans Indonesia');
+    await expect(plate).not.toContainText('Tahun berdiri');
+    await expect(plate).not.toContainText('Legalitas');
+  } finally {
+    db.prepare(
+      'UPDATE site_settings SET phone=?, whatsapp=?, address=?, established=?, credentials=?, credentials_en=? WHERE id=1',
+    ).run(
+      settings.phone,
+      settings.whatsapp,
+      settings.address,
+      settings.established,
+      settings.credentials,
+      settings.credentials_en,
+    );
+    for (const [table, ids] of Object.entries(published))
+      for (const id of ids) db.prepare(`UPDATE ${table} SET published=1 WHERE id=?`).run(id);
+    db.close();
+  }
+});
+
 test('SEO, private routes, mutation authorization and path protection', async ({ request }) => {
   for (const route of adminRoutes) {
     const r = await request.get(route, { maxRedirects: 0 });
@@ -117,7 +254,14 @@ test('SEO, private routes, mutation authorization and path protection', async ({
   }
   const sitemap = await request.get('/sitemap.xml');
   const sitemapXml = await sitemap.text();
-  expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length);
+  // Every public page plus each published article, in both languages.
+  const articles = database();
+  const publishedArticles = (
+    articles.prepare('SELECT COUNT(*) AS n FROM articles WHERE published=1').get() as { n: number }
+  ).n;
+  articles.close();
+  expect(sitemapXml.match(/<url>/g)).toHaveLength(publicRoutes.length + publishedArticles * 2);
+  expect(sitemapXml).toContain('/en/projects</loc>');
   expect(sitemapXml).toContain('/en/services</loc>');
   expect(sitemapXml).not.toContain('/fleet');
   // Fleet and coverage were removed from the website and the CMS.
@@ -353,6 +497,88 @@ test('complete CMS CRUD, publication, ordering and uploads for every collection'
     after.close();
   }
 });
+test('dropdowns open the website list and the form sends the chosen value', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const quick = page.locator('.quick-quote');
+  // Once loaded, the quick quote's dropdowns are listboxes, not the system menu.
+  await quick.locator('#quick-service[role="combobox"]').waitFor();
+  await page.getByRole('combobox', { name: 'Jenis layanan' }).click();
+  await page.getByRole('option', { name: 'Trucking Domestik' }).click();
+  await page.getByRole('combobox', { name: 'Jenis kontainer' }).click();
+  await page.getByRole('option', { name: '40 feet' }).click();
+  await quick.getByRole('button', { name: 'Lanjut ke form' }).click();
+  await expect(page).toHaveURL(/\/contact\?service=domestic-trucking&container=40ft$/);
+  // The contact form shows the choice in its own dropdown and submits the same value.
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  await expect(page.locator('#serviceType')).toHaveText('Trucking Domestik');
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+  await page.getByRole('combobox', { name: /Jenis layanan yang dibutuhkan/ }).click();
+  await page.getByRole('option', { name: 'Bantuan Customs Clearance' }).click();
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('customs-clearance-assistance');
+  // Nothing chosen still blocks sending, and the dropdown is marked.
+  await page.goto('/contact');
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact$/);
+  await expect(page.locator('#serviceType')).toHaveAttribute('aria-invalid', 'true');
+});
+
+test('arrow keys move the container choice on the quote form', async ({ page }) => {
+  await page.goto('/contact');
+  await page.locator('astro-island:not([ssr]) form').waitFor();
+  const twenty = page.getByRole('radio', { name: /20 feet/ });
+  const forty = page.getByRole('radio', { name: /40 feet/ });
+  // Tab reaches the choice from the destination field; arrows then move and select at once,
+  // even when keydown and keyup arrive together as they do here.
+  await page.locator('[name="destination"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(twenty).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(forty).toBeFocused();
+  await expect(forty).toBeChecked();
+  await page.keyboard.press('ArrowLeft');
+  await expect(twenty).toBeFocused();
+  await expect(twenty).toBeChecked();
+  await expect(forty).not.toBeChecked();
+});
+
+test('a rejected quote request keeps everything the visitor typed', async ({ page }) => {
+  await page.goto('/contact');
+  await page.locator('#serviceType[role="combobox"]').waitFor();
+  const values = {
+    fullName: 'Rina Tertolak',
+    company: 'PT Coba Lagi',
+    phone: '+62 812 0000 1111',
+    email: 'rina@example.com',
+    pickup: 'Cikarang',
+    destination: 'Tanjung Priok',
+    message: 'Dua kontainer, minggu depan.',
+  };
+  for (const [name, value] of Object.entries(values))
+    await page.locator(`[name="${name}"]`).fill(value);
+  await page.getByRole('combobox', { name: /Jenis layanan yang dibutuhkan/ }).click();
+  await page.getByRole('option', { name: 'Trucking Domestik' }).click();
+  await page.getByRole('radio', { name: /40 feet/ }).click();
+  // An expired form is refused by the server; the visitor should not have to type it all again.
+  await page
+    .locator('[name="token"]')
+    .evaluate((input: HTMLInputElement) => (input.value = 'expired'));
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page.getByText('Form sudah kedaluwarsa')).toBeVisible();
+  for (const [name, value] of Object.entries(values))
+    await expect(page.locator(`[name="${name}"]`), name).toHaveValue(value);
+  await expect(page.locator('[name="serviceType"]')).toHaveValue('domestic-trucking');
+  await expect(page.getByRole('radio', { name: /40 feet/ })).toBeChecked();
+  // The refilled form goes through once sent again.
+  await page.waitForTimeout(2100);
+  await page.getByRole('button', { name: 'Kirim permintaan' }).click();
+  await expect(page).toHaveURL(/\/contact\?sent=1$/);
+  const db = database();
+  db.prepare('DELETE FROM inquiries WHERE email=?').run(values.email);
+  db.close();
+});
+
 test('quotation persists privately, appears to admin, and status changes', async ({
   page,
   adminSession,
@@ -376,6 +602,15 @@ test('quotation persists privately, appears to admin, and status changes', async
   await page.getByRole('button', { name: 'Kirim permintaan' }).click();
   await expect(page).toHaveURL(/\/contact\?sent=1$/);
   await expect(page.getByRole('status')).toContainText('Permintaan Anda berhasil dikirim');
+  // The team is emailed with a reply going to the customer; the customer gets a confirmation.
+  await expect.poll(() => outbox(values.email).length).toBe(2);
+  const [toTeam, toCustomer] = outbox(values.email);
+  expect(toTeam.to[0].address).toBe('info@genesistransindo.com');
+  expect(toTeam.replyTo[0].address).toBe(values.email);
+  expect(toTeam.text).toContain('Delivery next week.');
+  expect(toCustomer.to[0].address).toBe(values.email);
+  expect(toCustomer.subject).toBe('Permintaan penawaran Anda sudah kami terima');
+  expect(toCustomer.text).not.toContain('Delivery next week.');
   const db = database();
   const row = db.prepare('SELECT * FROM inquiries WHERE email=?').get(values.email) as {
     id: number;
@@ -400,7 +635,8 @@ test('quotation persists privately, appears to admin, and status changes', async
   await expect(page.getByRole('dialog')).toContainText(values.message);
   await expect(page.getByRole('dialog')).toContainText('Angkutan Kontainer');
   await expect(page.getByRole('dialog')).toContainText('40ft');
-  await page.getByLabel('Inquiry status', { exact: true }).selectOption('quoted');
+  await page.getByRole('combobox', { name: 'Inquiry status', exact: true }).click();
+  await page.getByRole('option', { name: 'Quoted' }).click();
   await page.getByRole('button', { name: 'Update status' }).click();
   await expect(
     page.getByRole('status').filter({ hasText: 'Inquiry status updated' }),
@@ -416,6 +652,35 @@ test('quotation persists privately, appears to admin, and status changes', async
   });
   after.close();
 });
+test('board cards point screen readers at drag instructions that exist, on every load', async ({
+  page,
+  adminSession,
+}) => {
+  const db = database();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO inquiries (full_name, company, phone, email, pickup, destination, cargo, weight, service_type, container_type, status, created_at, updated_at)
+     VALUES ('Board Check', 'PT Board', '081200000000', 'board@example.com', 'Bekasi', 'Tanjung Priok', '', '', 'Angkutan Kontainer', '20ft', 'new', ?, ?)`,
+  ).run(now, now);
+  try {
+    await page.context().addCookies(adminSession);
+    // The server renders the board many times; ids must still match what the browser builds.
+    for (let load = 0; load < 3; load++) {
+      await page.goto('/admin/inquiries');
+      await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
+      const broken = await page.evaluate(() =>
+        [...document.querySelectorAll('[aria-describedby^="DndDescribedBy"]')]
+          .map((card) => card.getAttribute('aria-describedby')!)
+          .filter((id) => !document.getElementById(id)),
+      );
+      expect(broken, `load ${load + 1}`).toEqual([]);
+    }
+  } finally {
+    db.prepare("DELETE FROM inquiries WHERE email='board@example.com'").run();
+    db.close();
+  }
+});
+
 test('dragging an inquiry card to another column changes its status', async ({
   page,
   adminSession,
@@ -491,6 +756,9 @@ test('English pages, language switching and the English quote flow', async ({ pa
   await page.getByRole('button', { name: 'Send request' }).click();
   await expect(page).toHaveURL(/\/en\/contact\?sent=1$/);
   await expect(page.getByRole('status')).toContainText('Your request has been sent');
+  // A visitor on the English page gets the English confirmation.
+  await expect.poll(() => outbox(values.email).length).toBe(2);
+  expect(outbox(values.email)[1].subject).toBe('We have received your quote request');
   const db = database();
   expect(
     db
@@ -617,6 +885,25 @@ test('home: quick quote, services menu and common questions, in both languages',
   await expect(plain).toHaveURL(/\/services$/);
   await context.close();
 });
+test('home strengths: the containers, route and coordination appear once, inside the bento', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const prefix of ['', '/en']) {
+    await page.goto(`${prefix}/`);
+    // The route strip and the separate container section are gone from Home.
+    await expect(page.locator('.route')).toHaveCount(0);
+    await expect(page.locator('#container')).toHaveCount(0);
+    await expect(page.locator('main .scale')).toHaveCount(1);
+    // Every stop is wired to the company mark once the drawing is on screen.
+    const beam = page.locator('astro-island[component-url*="CoordinationBeam"]');
+    await beam.scrollIntoViewIfNeeded();
+    await expect(beam.locator('svg path[d^="M"]')).not.toHaveCount(0);
+    await page.locator('main .scale-box.is-40').click();
+    await expect(page).toHaveURL(new RegExp(`${prefix}/contact\\?container=40ft$`));
+  }
+});
+
 test('the first page follows the visitor, and a manual language choice is remembered', async ({
   browser,
   page,

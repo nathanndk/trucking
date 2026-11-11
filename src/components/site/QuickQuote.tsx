@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import FormSelect from './FormSelect';
 
 /**
  * The first two answers of the quote form, asked in the hero. It is a plain GET form: the
- * contact page reads both choices from the address, so this needs no JavaScript.
+ * contact page reads both choices from the address, so it works without JavaScript; once
+ * loaded, the dropdowns open the site's own list.
  */
 export default function QuickQuote({
   action,
@@ -41,25 +42,21 @@ export default function QuickQuote({
         <CardContent className="grid gap-4 px-5 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="quick-service">{labels.service}</FieldLabel>
-            <NativeSelect id="quick-service" name="service" defaultValue="" className="w-full">
-              <NativeSelectOption value="">{labels.servicePlaceholder}</NativeSelectOption>
-              {services.map((service) => (
-                <NativeSelectOption key={service.slug} value={service.slug}>
-                  {service.title}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            <FormSelect
+              id="quick-service"
+              name="service"
+              placeholder={labels.servicePlaceholder}
+              options={services.map(({ slug, title }) => ({ value: slug, label: title }))}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="quick-container">{labels.container}</FieldLabel>
-            <NativeSelect id="quick-container" name="container" defaultValue="" className="w-full">
-              <NativeSelectOption value="">{labels.containerPlaceholder}</NativeSelectOption>
-              {containers.map((container) => (
-                <NativeSelectOption key={container.value} value={container.value}>
-                  {container.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            <FormSelect
+              id="quick-container"
+              name="container"
+              placeholder={labels.containerPlaceholder}
+              options={containers.map(({ value, name }) => ({ value, label: name }))}
+            />
           </Field>
         </CardContent>
         <CardFooter className="hero-actions px-5">

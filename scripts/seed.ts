@@ -8,7 +8,7 @@ if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'tr
   );
 // Starting content for PT Genesis Trans Indonesia, taken from the company brief.
 // Details the company has not confirmed yet (phone, WhatsApp, address, year established,
-// clients, projects) are left blank; the website marks them as "to be updated".
+// clients, projects) are left blank; the website hides whatever is blank.
 db.transaction((tx) => {
   tx.insert(siteSettings)
     .values({

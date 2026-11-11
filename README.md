@@ -113,6 +113,27 @@ pnpm db:migrate    # apply tracked migrations; back up production first
 
 There is no schema synchronization on server startup and no destructive production push. Deploy code and migrations together. Never place `DATA_DIR` or `DATABASE_PATH` in `dist`, `public`, or a release folder.
 
+## Quote request emails
+
+Every quote request is stored first, then two emails go out in the background:
+
+- **To the team** (`QUOTE_MAIL_TO`, default `info@genesistransindo.com`), in Indonesian, with every field and a link to the admin. Replying answers the customer directly.
+- **To the customer**, in the language of the page they used, confirming the service, container and route. The free-text message is never repeated to the customer, so the form cannot carry arbitrary text to someone else's address. The wording is edited under Page text → Contact → Confirmation email to the customer.
+
+If the mail server is down or misconfigured the visitor still sees success, the request stays in the admin, and the server log notes which email failed. The admin dashboard checklist shows when email is not configured.
+
+Setup, with the SMTP account of the domain's mailbox (fill these in `.env`, or `/etc/lintas.env` in production):
+
+| Mail host                   | SMTP_HOST                                           | Port / SMTP_SECURE |
+| --------------------------- | --------------------------------------------------- | ------------------ |
+| cPanel or other web hosting | `mail.genesistransindo.com` (see the hosting panel) | 465 / true         |
+| Google Workspace            | `smtp.gmail.com` (use an App Password)              | 465 / true         |
+| Microsoft 365               | `smtp.office365.com`                                | 587 / false        |
+
+`MAIL_FROM` must be an address on genesistransindo.com that the SMTP account may send as, so SPF and DKIM pass and the mail does not land in spam. Then run `pnpm mail:test`: it connects, sends one test email to `QUOTE_MAIL_TO` and prints the result or the exact error (for example a wrong password).
+
+Locally, `MAIL_TRANSPORT=json` writes each email as a JSON file to `MAIL_OUTBOX` instead of sending it. The end-to-end tests use this.
+
 ## Security & privacy
 
 Better Auth validates sessions server-side. Middleware redirects unauthenticated admin requests, and each protected action independently validates the admin session. All mutations use Zod validation and same-origin checks. URLs and media references are constrained; database queries are parameterized. User text is rendered as text, not raw HTML. Session cookies become Secure on the configured HTTPS origin. Admin/auth responses are private and unindexed. The public website does not link to or name the admin area: there is no footer link, `robots.txt` lists no private paths (the `X-Robots-Tag: noindex` header keeps them out of search results instead), and administrators open `/admin/login` directly. Every action except the public quotation is refused in middleware with a bare 401 for anyone who is not a signed-in administrator, before input validation runs, so error replies do not describe the CMS data model. Basic security headers and a CSP are set in middleware; inline script/style allowances support Astro's hydration and structured metadata, with no eval or external script sources.

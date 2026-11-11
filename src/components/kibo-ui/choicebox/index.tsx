@@ -18,8 +18,35 @@ import {
 
 export type ChoiceboxProps = ComponentProps<typeof RadioGroup>;
 
-export const Choicebox = ({ className, ...props }: ChoiceboxProps) => (
-  <RadioGroup className={cn("w-full", className)} {...props} />
+const ARROW_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+
+/**
+ * Local change: selection always follows arrow-key focus. Radix moves focus to the next radio
+ * in a timeout after keydown, but only checks it if the arrow key is still held at that
+ * moment; a keydown and keyup sent together (automation, some assistive tools) moved focus
+ * without choosing anything. This runs after Radix's timeout and clicks the newly focused
+ * radio if it is not checked yet, so a held key (already checked by Radix) is left alone.
+ */
+export const Choicebox = ({ className, onKeyDown, ...props }: ChoiceboxProps) => (
+  <RadioGroup
+    className={cn("w-full", className)}
+    onKeyDown={(event) => {
+      onKeyDown?.(event);
+      if (!ARROW_KEYS.includes(event.key)) return;
+      const group = event.currentTarget;
+      setTimeout(() => {
+        const focused = document.activeElement;
+        if (
+          focused instanceof HTMLElement &&
+          group.contains(focused) &&
+          focused.getAttribute("role") === "radio" &&
+          focused.getAttribute("aria-checked") !== "true"
+        )
+          focused.click();
+      });
+    }}
+    {...props}
+  />
 );
 
 type ChoiceboxItemContextValue = {

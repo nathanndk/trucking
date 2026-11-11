@@ -30,7 +30,14 @@ import {
 } from '@/components/ui/empty';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -245,18 +252,21 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
           )}
         </TabsContent>
         <TabsContent value="table" className="flex flex-col gap-4">
-          <NativeSelect
-            aria-label="Filter inquiry status"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <NativeSelectOption value="all">All statuses</NativeSelectOption>
-            {inquiryStatuses.map((s) => (
-              <NativeSelectOption key={s} value={s}>
-                {statusLabels[s]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger aria-label="Filter inquiry status" className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectGroup>
+                <SelectItem value="all">All statuses</SelectItem>
+                {inquiryStatuses.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {statusLabels[s]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <Card className="overflow-hidden py-0">
             <Table>
               <TableHeader>
@@ -354,18 +364,20 @@ export default function Inquiries({ items }: { items: Inquiry[] }) {
               <Separator />
               <Field>
                 <FieldLabel htmlFor="status">Inquiry status</FieldLabel>
-                <NativeSelect
-                  id="status"
-                  className="w-full"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as InquiryStatus)}
-                >
-                  {inquiryStatuses.map((s) => (
-                    <NativeSelectOption key={s} value={s}>
-                      {statusLabels[s]}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                <Select value={status} onValueChange={(s) => setStatus(s as InquiryStatus)}>
+                  <SelectTrigger id="status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectGroup>
+                      {inquiryStatuses.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {statusLabels[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </Field>
               {error && (
                 <Alert variant="destructive">

@@ -56,13 +56,13 @@ export type ChecklistItem = {
   id: string;
   label: string;
   done: boolean;
-  /** Admin screen where the detail is filled in. */
-  href: string;
+  /** Admin screen where the detail is filled in; none when the fix is server configuration. */
+  href?: string;
   where: string;
 };
 /**
- * What the public website still shows as "to be updated" or leaves empty, with the
- * place to fix each one.
+ * What the public website still leaves out because it is blank, with the place to fix
+ * each one.
  */
 export function websiteChecklist(
   settings: {
@@ -75,6 +75,8 @@ export function websiteChecklist(
     credentials: string;
   },
   content: { projects: number; clients: number; articles: number; servicesWithoutEnglish: number },
+  /** Whether quote requests are emailed (SMTP configured on the server). */
+  system: { mailReady: boolean } = { mailReady: true },
 ): ChecklistItem[] {
   const filled = (value: string) => value.trim().length > 0;
   const setting = (id: string, label: string, value: string): ChecklistItem => ({
@@ -119,6 +121,12 @@ export function websiteChecklist(
       done: content.servicesWithoutEnglish === 0,
       href: '/admin/services',
       where: 'Services',
+    },
+    {
+      id: 'quote-email',
+      label: 'Quote requests emailed to the team',
+      done: system.mailReady,
+      where: 'Set SMTP_HOST, SMTP_USER, SMTP_PASS and MAIL_FROM in the server environment',
     },
   ];
 }

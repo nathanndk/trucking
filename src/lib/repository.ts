@@ -43,6 +43,17 @@ function localize(record: ContentRecord, locale: Locale): ContentRecord {
   };
 }
 /** Published records in the visitor's language. */
+/**
+ * Which optional pages have something to show. A page with nothing published is hidden with its
+ * menu link (and answers 404) instead of showing an empty box.
+ */
+export function visibleSections() {
+  const published = (collection: Collection) => listContent(collection, true).length;
+  return {
+    projects: published('projects') + published('clients') > 0,
+    articles: published('articles') > 0,
+  };
+}
 export function getPublicContent(collection: Collection, locale: Locale): ContentRecord[] {
   return listContent(collection, true).map((record) => localize(record, locale));
 }

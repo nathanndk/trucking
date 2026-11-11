@@ -4,6 +4,8 @@ import ContactView from '../../views/ContactView.astro';
 // Only a route file may answer with a redirect, so the result is read here.
 const result = Astro.getActionResult(actions.quote);
 if (result?.data?.success) return Astro.redirect('/en/contact?sent=1', 303);
+// A refused request comes back with what the visitor typed, so nothing has to be retyped.
+const submitted = result?.error ? (Astro.locals.quoteSubmitted ?? {}) : {};
 ---
 
-<ContactView error={result?.error} />
+<ContactView error={result?.error} submitted={submitted} />

@@ -1,10 +1,7 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
-import ProjectGrid from '../components/marketing/ProjectGrid.astro';
-import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
-import { Card, CardContent } from '../components/ui/card';
 import { getPublicContent, getPublicSettings } from '../lib/repository';
 import { fill, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
@@ -13,6 +10,8 @@ const t = ui(locale);
 const s = getPublicSettings(locale);
 const projects = getPublicContent('projects', locale);
 const clients = getPublicContent('clients', locale);
+// Projects read as a ledger of shipments: each entry opens with its year, set wide like the
+// markings on a container door, and the client the goods were moved for.
 ---
 
 <PublicLayout
@@ -20,23 +19,48 @@ const clients = getPublicContent('clients', locale);
   description={fill(t.projects.description, { name: s.legalName })}
 >
   <PageHero label={t.nav.projects} title={t.projects.h1} description={t.projects.intro} />
-  <section class="section">
-    <div class="wrap">
-      <h2 class="mb-8">{t.projects.projectsHeading}</h2>
-      {projects.length > 0 ? (
-        <ProjectGrid items={projects} full />
-      ) : (
-        <Placeholder text={t.projects.projectsEmpty} />
-      )}
-    </div>
-  </section>
-  <section class="section tint">
-    <div class="wrap">
-      <h2 data-motion="heading" class="mb-8">
-        {t.projects.clientsHeading}
-      </h2>
-      {clients.length > 0 ? (
-        <div class="client-grid">
+  {projects.length > 0 && (
+    <section class="section">
+      <div class="wrap">
+        <h2 class="mb-10">{t.projects.projectsHeading}</h2>
+        <ol class="ledger">
+          {projects.map((project) => (
+            <li class="ledger-entry" id={project.slug}>
+              <div class="ledger-head">
+                {project.projectYear && <span class="ledger-year">{project.projectYear}</span>}
+                {project.clientName && <span class="ledger-client">{project.clientName}</span>}
+              </div>
+              <div class:list={['ledger-body', !project.image && 'ledger-body-text']}>
+                {project.image && (
+                  <div class="ledger-photo">
+                    <img
+                      class="photo"
+                      src={project.image}
+                      alt={fill(t.projects.imageAlt, { title: project.title })}
+                      width="1280"
+                      height="800"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div class="ledger-copy">
+                  <h3>{project.title}</h3>
+                  <p>{project.description || project.shortDescription}</p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )}
+  {clients.length > 0 && (
+    <section class="section tint">
+      <div class="wrap">
+        <h2 data-motion="heading" class="mb-8">
+          {t.projects.clientsHeading}
+        </h2>
+        <ul class="client-list">
           {clients.map((client) => {
             const mark = client.image ? (
               <img src={client.image} alt={client.title} width="240" height="80" loading="lazy" />
@@ -44,24 +68,20 @@ const clients = getPublicContent('clients', locale);
               client.title
             );
             return (
-              <Card className="justify-center py-5">
-                <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
-                  {client.website ? (
-                    <a href={client.website} rel="noopener noreferrer">
-                      {mark}
-                    </a>
-                  ) : (
-                    mark
-                  )}
-                </CardContent>
-              </Card>
+              <li>
+                {client.website ? (
+                  <a href={client.website} rel="noopener noreferrer">
+                    {mark}
+                  </a>
+                ) : (
+                  mark
+                )}
+              </li>
             );
           })}
-        </div>
-      ) : (
-        <Placeholder text={t.projects.clientsEmpty} />
-      )}
-    </div>
-  </section>
+        </ul>
+      </div>
+    </section>
+  )}
   <CTA text={s.ctaText} />
 </PublicLayout>

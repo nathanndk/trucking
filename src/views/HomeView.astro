@@ -1,15 +1,12 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import RouteLine from '../components/marketing/RouteLine.astro';
-import ContainerScale from '../components/marketing/ContainerScale.astro';
 import ServiceGrid from '../components/marketing/ServiceGrid.astro';
 import ProjectGrid from '../components/marketing/ProjectGrid.astro';
 import ArticleList from '../components/marketing/ArticleList.astro';
 import RuledList from '../components/marketing/RuledList.astro';
 import QuickQuote from '../components/site/QuickQuote';
-import StrengthsBento from '../components/site/StrengthsBento';
+import StrengthsBento from '../components/site/StrengthsBento.astro';
 import Faq from '../components/site/Faq';
-import Placeholder from '../components/marketing/Placeholder.astro';
 import CTA from '../components/marketing/CTA.astro';
 import { AspectRatio } from '../components/ui/aspect-ratio';
 import { buttonVariants } from '../components/ui/button';
@@ -63,6 +60,7 @@ const faqStructured = JSON.stringify({
         <h1>{t.home.h1}</h1>
         <p class="hero-text">{s.shortDescription}</p>
         <QuickQuote
+          client:idle
           action={href('/contact')}
           services={services.map(({ slug, title }) => ({ slug, title }))}
           containers={containerTypes.map((type) => ({
@@ -75,7 +73,6 @@ const faqStructured = JSON.stringify({
       </div>
     </div>
   </section>
-  <RouteLine />
   <section class="section">
     <div class="wrap intro-grid">
       <div class="intro-copy">
@@ -106,8 +103,11 @@ const faqStructured = JSON.stringify({
       </h2>
       <StrengthsBento
         items={t.strengths.items}
-        sizes={containerTypes.map((type) => t.container.sizes[type].name)}
-        route={t.route.stops.map((stop) => stop.title)}
+        route={t.route.stops}
+        statistics={s.statistics}
+        mark={s.favicon || '/images/genesis/favicon.png'}
+        name={s.companyName}
+        numberLocale={locale === 'id' ? 'id-ID' : 'en-US'}
       />
     </div>
   </section>
@@ -122,7 +122,6 @@ const faqStructured = JSON.stringify({
       <ServiceGrid items={services} />
     </div>
   </section>
-  <ContainerScale />
   <section class="section tint">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.area.heading}</h2>
@@ -130,59 +129,57 @@ const faqStructured = JSON.stringify({
         rows={[
           { label: t.area.main, title: t.area.mainValue },
           { label: t.area.port, title: t.area.portValue },
-          { label: t.area.other, pending: true },
         ]}
       />
     </div>
   </section>
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <h2 data-motion="heading">{t.home.projectsHeading}</h2>
-        <a href={href('/projects')} class={link}>
-          {t.home.projectsLink}
-        </a>
-      </div>
-      {projects.length > 0 && <ProjectGrid items={projects} />}
-      {clients.length > 0 && (
-        <div class:list={['client-grid', projects.length > 0 && 'mt-10']}>
-          {clients.map((client) => (
-            <Card className="justify-center py-5">
-              <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
-                {client.image ? (
-                  <img
-                    src={client.image}
-                    alt={client.title}
-                    width="240"
-                    height="80"
-                    loading="lazy"
-                  />
-                ) : (
-                  client.title
-                )}
-              </CardContent>
-            </Card>
-          ))}
+  {(projects.length > 0 || clients.length > 0) && (
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-motion="heading">{t.home.projectsHeading}</h2>
+          <a href={href('/projects')} class={link}>
+            {t.home.projectsLink}
+          </a>
         </div>
-      )}
-      {projects.length === 0 && clients.length === 0 && <Placeholder text={t.home.projectsEmpty} />}
-    </div>
-  </section>
-  <section class="section tint">
-    <div class="wrap">
-      <div class="section-head">
-        <h2 data-motion="heading">{t.home.articlesHeading}</h2>
-        <a href={href('/articles')} class={link}>
-          {t.home.articlesLink}
-        </a>
+        {projects.length > 0 && <ProjectGrid items={projects} />}
+        {clients.length > 0 && (
+          <div class:list={['client-grid', projects.length > 0 && 'mt-10']}>
+            {clients.map((client) => (
+              <Card className="justify-center py-5">
+                <CardContent className="flex min-h-16 items-center justify-center text-center font-semibold">
+                  {client.image ? (
+                    <img
+                      src={client.image}
+                      alt={client.title}
+                      width="240"
+                      height="80"
+                      loading="lazy"
+                    />
+                  ) : (
+                    client.title
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-      {articles.length > 0 ? (
+    </section>
+  )}
+  {articles.length > 0 && (
+    <section class="section tint">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-motion="heading">{t.home.articlesHeading}</h2>
+          <a href={href('/articles')} class={link}>
+            {t.home.articlesLink}
+          </a>
+        </div>
         <ArticleList items={articles} />
-      ) : (
-        <Placeholder text={t.home.articlesEmpty} />
-      )}
-    </div>
-  </section>
+      </div>
+    </section>
+  )}
   <section class="section" id="faq">
     <div class="wrap split-list">
       <h2 data-motion="heading">{t.faq.heading}</h2>

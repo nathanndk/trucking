@@ -65,7 +65,7 @@ export const settingsInput = z.object({
   vision: z.string().trim().min(5).max(3000),
   mission: z.string().trim().min(5).max(5000),
   // Contact details may stay blank until the company confirms them; the public
-  // website then shows a "to be updated" marker instead of a link.
+  // website then leaves them out.
   established: blankOr(z.string().regex(/^(19|20)\d{2}$/)),
   phone: blankOr(
     z

@@ -25,6 +25,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
   useContext,
+  useId,
   useState,
 } from "react";
 import { createPortal } from "react-dom";
@@ -211,6 +212,10 @@ export const KanbanProvider = <
   ...props
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  // dnd-kit numbers its screen-reader ids from a module counter, which on the server keeps
+  // counting across requests while each browser starts at zero: from the second page view on,
+  // the cards' aria-describedby pointed at an id that did not exist. useId matches on both sides.
+  const fallbackId = useId();
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -309,6 +314,7 @@ export const KanbanProvider = <
   return (
     <KanbanContext.Provider value={{ columns, data, activeCardId }}>
       <DndContext
+        id={fallbackId}
         accessibility={{ announcements }}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}

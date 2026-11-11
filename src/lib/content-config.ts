@@ -82,7 +82,7 @@ export const settingSections: { title: string; description: string; fields: Fiel
   },
   {
     title: 'Contact',
-    description: 'Details left blank show as “to be updated” on the website.',
+    description: 'Details left blank are hidden on the website.',
     fields: [
       { name: 'whatsapp', label: 'WhatsApp (international digits)' },
       { name: 'phone', label: 'Phone' },

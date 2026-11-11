@@ -111,15 +111,14 @@ test('reveals play once and stay visible after scrolling up and resizing', async
   await page.waitForTimeout(1900);
   const hero = await position(page, '.hero-photo');
   expect(hero.scale).toBeCloseTo(1.15, 2);
-  for (const selector of ['[data-motion="heading"]', '.service-tile', '[data-motion="route"]']) {
+  for (const selector of ['[data-motion="heading"]', '.service-tile']) {
     const top = await documentTop(page, selector);
     await scroll(page, top - 650);
     await page.waitForTimeout(900);
-    const sample = selector === '[data-motion="route"]' ? '[data-motion-path]' : selector;
+    const sample = selector;
     const revealed = await position(page, sample);
     expect(revealed.opacity).toBe(1);
     expect(revealed.y).toBe(0);
-    if (sample === '[data-motion-path]') expect(revealed.dash).toBe(0);
     await scroll(page, 0);
     near(await position(page, sample), revealed);
     await scroll(page, top - 650);
@@ -140,10 +139,10 @@ test('reveals play once and stay visible after scrolling up and resizing', async
 
 test('content visible on arrival is never pulled back to an animation start', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  // Both elements sit in the first screen: the first service row and the route stops.
+  // Both elements sit in the first screen: the first service row and the quick quote.
   for (const [route, selector] of [
     ['/services', '.service-tile'],
-    ['/', '[data-motion-marker]'],
+    ['/', '.quick-quote'],
   ] as const) {
     await page.goto(route);
     await expect(page.locator(selector).first()).toBeInViewport();

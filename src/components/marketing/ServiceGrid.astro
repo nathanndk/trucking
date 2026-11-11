@@ -7,14 +7,14 @@ import type { ContentRecord } from '../../lib/content-config';
 import { cn } from '../../lib/utils';
 import { localePath, toLocale } from '../../i18n';
 import { ui } from '../../lib/copy';
-const { items, full = false } = Astro.props as { items: ContentRecord[]; full?: boolean };
+const { items } = Astro.props as { items: ContentRecord[] };
 const locale = toLocale(Astro.currentLocale);
 const t = ui(locale);
 /** Bundled photos ship in two widths; uploaded media has a single file. */
 const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
 ---
 
-<div class={full ? 'service-rows' : 'services-grid'} data-motion="group">
+<div class="services-grid" data-motion="group">
   {items.map((item) => (
     <Card className="service-tile gap-4 overflow-hidden pt-0" data-motion-item id={item.slug}>
       <AspectRatio ratio={16 / 10} className="tile-photo overflow-hidden bg-muted">
@@ -38,22 +38,22 @@ const small = (image: string) => image.replace(/-1280\.webp$/, '-640.webp');
       </AspectRatio>
       <CardHeader>
         <CardTitle>
-          {full ? <h2 class="text-2xl">{item.title}</h2> : <h3>{item.title}</h3>}
+          <h3>{item.title}</h3>
         </CardTitle>
         <CardDescription className="text-[15px] whitespace-pre-line">
-          {full ? item.description || item.shortDescription : item.shortDescription}
+          {item.shortDescription}
         </CardDescription>
       </CardHeader>
       <CardFooter className="mt-auto">
         <a
           class={cn(buttonVariants({ variant: 'link' }), 'h-auto p-0')}
           href={`${localePath(locale, '/contact')}?service=${item.slug}`}
-          aria-label={full ? undefined : `${t.services.quoteShort}: ${item.title}`}
+          aria-label={`${t.services.quoteShort}: ${item.title}`}
         >
-          {full ? t.services.quote : t.services.quoteShort}
+          {t.services.quoteShort}
         </a>
       </CardFooter>
     </Card>
   ))}
 </div>
-{items.length === 0 && <Placeholder text={t.services.empty} marker={false} />}
+{items.length === 0 && <Placeholder text={t.services.empty} />}

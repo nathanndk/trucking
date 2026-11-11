@@ -4,6 +4,7 @@ import { origin } from './lib/env';
 import { allowRequest } from './lib/spam';
 import { detectLocale } from './lib/geo';
 import { isPublicPage, localePath, stripLocale, type Locale } from './i18n';
+import { submittedQuote } from './lib/quote-refill';
 const languageCookie = 'lang';
 const publicActions = new Set(['quote']);
 // Search engines and link previews must always receive the page they asked for.
@@ -95,6 +96,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     !context.locals.admin
   )
     return context.redirect('/admin/login', 303);
+  // Keep a copy of a quote post's fields before anything reads the body, so a refused request
+  // can show the form filled in again.
+  if (request.method === 'POST' && url.searchParams.get('_action') === 'quote')
+    context.locals.quoteSubmitted = await submittedQuote(request.clone());
   const response = await next();
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');

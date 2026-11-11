@@ -1,9 +1,7 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import PageHero from '../components/marketing/PageHero.astro';
-import RuledList from '../components/marketing/RuledList.astro';
 import CTA from '../components/marketing/CTA.astro';
-import { AspectRatio } from '../components/ui/aspect-ratio';
 import { getPublicSettings } from '../lib/repository';
 import { fill, toLocale } from '../i18n';
 import { ui } from '../lib/copy';
@@ -15,68 +13,102 @@ const lines = (text: string) =>
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
+// The profile's first paragraph leads; the rest sit in columns beside the photo.
+const [lead, ...rest] = s.about
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
+// Only the facts the company has supplied are listed.
+const facts = (
+  [
+    { label: t.about.legalName, value: s.legalName },
+    { label: t.about.established, value: s.established },
+    { label: t.area.main, value: t.area.mainValue },
+    { label: t.area.port, value: t.area.portValue },
+    { label: t.about.credentials, value: s.credentials.trim() },
+  ] as { label: string; value?: string }[]
+).filter((fact): fact is { label: string; value: string } => !!fact.value);
 ---
 
 <PublicLayout title={t.about.title} description={fill(t.about.description, { name: s.legalName })}>
   <PageHero label={t.nav.about} title={t.about.h1} description={s.tagline} />
   <section class="section">
-    <div class="wrap split">
-      <AspectRatio ratio={4 / 3} className="overflow-hidden rounded-lg">
+    <div class="wrap profile">
+      <div class="profile-copy">
+        <h2>{t.about.profileHeading}</h2>
+        {lead && <p class="profile-lead">{lead}</p>}
+        {rest.length > 0 && (
+          <div class="profile-columns">
+            {rest.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+        )}
+      </div>
+      <div class="profile-photo">
         <img
           class="photo"
           src="/images/genesis/about-team-1280.webp"
           srcset="/images/genesis/about-team-640.webp 640w, /images/genesis/about-team-1280.webp 1280w"
-          sizes="(max-width: 767px) 100vw, 50vw"
+          sizes="(max-width: 1023px) 100vw, 40vw"
           alt={t.about.imageAlt}
           width="1280"
           height="720"
         />
-      </AspectRatio>
-      <div>
-        <h2>{t.about.profileHeading}</h2>
-        <p class="prose-block mt-5">{s.about}</p>
       </div>
     </div>
   </section>
   <section class="section dark-section dark">
-    <div class="wrap split">
+    <div class="wrap purpose">
       <div>
         <h2 data-motion="heading">{t.about.vision}</h2>
-        <p data-motion="copy" class="mt-5 max-w-[52ch] text-muted-foreground">
+        <p data-motion="copy" class="purpose-vision">
           {s.vision}
         </p>
       </div>
       <div>
-        <h2 data-motion="heading" class="mb-2">
-          {t.about.mission}
-        </h2>
-        <RuledList rows={lines(s.mission).map((text) => ({ text }))} />
+        <h2 data-motion="heading">{t.about.mission}</h2>
+        <ul class="purpose-missions">
+          {lines(s.mission).map((mission) => (
+            <li>{mission}</li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>
-  <section class="section">
-    <div class="wrap split-list">
-      <h2 data-motion="heading">{t.strengths.heading}</h2>
-      <RuledList rows={t.strengths.items} />
-    </div>
-  </section>
   <section class="section tint">
-    <div class="wrap split-list">
-      <h2 data-motion="heading">{t.about.factsHeading}</h2>
-      <RuledList
-        rows={[
-          { label: t.about.legalName, title: s.legalName },
-          s.established
-            ? { label: t.about.established, title: s.established }
-            : { label: t.about.established, pending: true },
-          { label: t.area.main, title: t.area.mainValue },
-          { label: t.area.port, title: t.area.portValue },
-          s.credentials.trim()
-            ? { label: t.about.credentials, title: s.credentials.trim() }
-            : { label: t.about.credentials, pending: true },
-          ...s.statistics.map((stat) => ({ label: stat.label, title: stat.value })),
-        ]}
-      />
+    <div class="wrap">
+      <h2 data-motion="heading" class="mb-8">
+        {t.about.factsHeading}
+      </h2>
+      {/* The company record drawn as a container door: the data plate on the left leaf,
+          the figures painted on the right one, as on the doors that arrive at the port. */}
+      <div class:list={['door', s.statistics.length === 0 && 'door-single']}>
+        <div class="door-leaf">
+          <span class="door-rods" aria-hidden="true"></span>
+          <dl class="door-plate">
+            {facts.map((fact) => (
+              <div>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        {s.statistics.length > 0 && (
+          <div class="door-leaf">
+            <span class="door-rods" aria-hidden="true"></span>
+            <dl class="door-figures">
+              {s.statistics.map((stat) => (
+                <div>
+                  <dt>{stat.label}</dt>
+                  <dd>{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+      </div>
     </div>
   </section>
   <CTA text={s.ctaText} />

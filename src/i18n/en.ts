@@ -4,7 +4,6 @@ export const en: Dictionary = {
   htmlLang: 'en',
   ogLocale: 'en_US',
   dateLocale: 'en-GB',
-  toBeUpdated: 'To be updated',
   skip: 'Skip to content',
   nav: {
     home: 'Home',
@@ -15,6 +14,7 @@ export const en: Dictionary = {
     contact: 'Contact',
     main: 'Main navigation',
     open: 'Open navigation',
+    close: 'Close navigation',
     mobile: 'Mobile navigation',
     language: 'Language',
     brandHome: 'Home',
@@ -33,7 +33,6 @@ export const en: Dictionary = {
     imageAlt: 'Two people shaking hands',
   },
   route: {
-    heading: 'How a shipment moves',
     stops: [
       { title: 'Factory or warehouse', text: 'The container is loaded at your site.' },
       { title: 'Container truck', text: '20 or 40-foot, matched to your cargo.' },
@@ -90,7 +89,6 @@ export const en: Dictionary = {
     mainValue: 'Greater Jakarta',
     port: 'Main port',
     portValue: 'Tanjung Priok, Jakarta',
-    other: 'Other areas',
   },
   home: {
     title: 'Container Trucking to Tanjung Priok',
@@ -103,10 +101,8 @@ export const en: Dictionary = {
     servicesHeading: 'Five services, one shipping flow.',
     servicesAll: 'All services',
     projectsHeading: 'Projects and clients',
-    projectsEmpty: 'Project records and our client list are being prepared.',
     projectsLink: 'View projects',
     articlesHeading: 'Latest articles',
-    articlesEmpty: 'No articles have been published yet.',
     articlesLink: 'All articles',
   },
   quick: {
@@ -193,9 +189,7 @@ export const en: Dictionary = {
     h1: 'Our projects and clients.',
     intro: 'Our shipping experience and the companies we work with.',
     projectsHeading: 'Projects',
-    projectsEmpty: 'Project records are being prepared.',
     clientsHeading: 'Clients and partners',
-    clientsEmpty: 'Clients are listed once each company has given permission.',
     imageAlt: 'Photo of the project {title}',
   },
   articles: {
@@ -203,8 +197,8 @@ export const en: Dictionary = {
     description: 'News from {name} and practical information about container shipping.',
     h1: 'Company articles and news.',
     intro: 'Recent news and practical information about container shipping.',
-    empty: 'No articles have been published yet.',
     back: 'All articles',
+    more: 'More articles',
   },
   contact: {
     title: 'Contact and Quotes',
@@ -218,8 +212,11 @@ export const en: Dictionary = {
     email: 'Email',
     office: 'Office',
     maps: 'View on Google Maps',
+    whatsappCta: 'Chat on WhatsApp',
     formHeading: 'Quote form',
     required: 'Fields marked * are required.',
+    shipmentHeading: 'Shipment details',
+    detailsHeading: 'Your details',
     fullName: 'Full name',
     company: 'Company name',
     phoneField: 'WhatsApp number',
@@ -238,7 +235,7 @@ export const en: Dictionary = {
     successText: 'Our team will contact you using the details you provided.',
     errors: {
       invalid: 'Please check the form. All fields marked * must be filled in correctly.',
-      BAD_REQUEST: 'This form has expired. Reload the page and send it again.',
+      BAD_REQUEST: 'This form has expired. Your details are still here; send it again now.',
       TOO_MANY_REQUESTS: 'Too many requests. Please try again in an hour.',
       CONFLICT: 'This form was already sent. Reload the page for a new request.',
       generic: 'Your request was not sent. Please try again.',
@@ -250,5 +247,14 @@ export const en: Dictionary = {
     h1: 'This page does not exist.',
     text: 'The address may have changed or been mistyped.',
     back: 'Back to home',
+  },
+  mail: {
+    subject: 'We have received your quote request',
+    greeting: 'Hello {name},',
+    intro:
+      'Thank you for contacting {company}. We have received your quote request with these details:',
+    outro:
+      'Our team will contact you by WhatsApp or email with the quote. If you would like to add anything, simply reply to this email.',
+    signature: 'Kind regards,\n{company}',
   },
 };

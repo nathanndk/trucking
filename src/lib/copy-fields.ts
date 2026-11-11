@@ -72,11 +72,9 @@ export const copyPages: CopyPage[] = [
         ],
       },
       {
-        title: 'Shipping route',
-        fields: [
-          { key: 'route.heading', label: 'Section name (screen readers)' },
-          ...items('route.stops', 'Step', 4),
-        ],
+        title: 'Shipping route (in Strengths)',
+        note: 'Shown inside strength 2 as four numbered stops, and as the four points wired to the company mark in strength 4.',
+        fields: [...items('route.stops', 'Step', 4)],
       },
       {
         title: 'About the company',
@@ -89,8 +87,8 @@ export const copyPages: CopyPage[] = [
         ],
       },
       {
-        title: 'Strengths (also on About)',
-        note: 'On Home, strength 1 is drawn with the two container sizes and strength 2 with the route to the port.',
+        title: 'Strengths',
+        note: 'On Home each strength has a drawing: 1 the two container sizes to scale (links to the quote form), 2 the shipping route, 3 the customs paperwork, 4 every stop linked to the company, 5 the first two figures from Settings → Statistics.',
         fields: [
           { key: 'strengths.heading', label: 'Heading' },
           ...items('strengths.items', 'Strength', 5),
@@ -128,7 +126,6 @@ export const copyPages: CopyPage[] = [
           { key: 'area.mainValue', label: 'Main area' },
           { key: 'area.port', label: 'Main port label' },
           { key: 'area.portValue', label: 'Main port' },
-          { key: 'area.other', label: 'Other areas label' },
         ],
       },
       {
@@ -146,7 +143,6 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'home.projectsHeading', label: 'Heading' },
           { key: 'home.projectsLink', label: 'Link text' },
-          { key: 'home.projectsEmpty', label: 'Text while there are none', multiline: true },
         ],
       },
       {
@@ -154,7 +150,6 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'home.articlesHeading', label: 'Heading' },
           { key: 'home.articlesLink', label: 'Link text' },
-          { key: 'home.articlesEmpty', label: 'Text while there are none', multiline: true },
         ],
       },
     ],
@@ -247,16 +242,12 @@ export const copyPages: CopyPage[] = [
         title: 'Projects',
         fields: [
           { key: 'projects.projectsHeading', label: 'Heading' },
-          { key: 'projects.projectsEmpty', label: 'Text while there are none', multiline: true },
           { key: 'projects.imageAlt', label: 'Photo description', hint: keep('title') },
         ],
       },
       {
         title: 'Clients and partners',
-        fields: [
-          { key: 'projects.clientsHeading', label: 'Heading' },
-          { key: 'projects.clientsEmpty', label: 'Text while there are none', multiline: true },
-        ],
+        fields: [{ key: 'projects.clientsHeading', label: 'Heading' }],
       },
     ],
   },
@@ -277,8 +268,8 @@ export const copyPages: CopyPage[] = [
       {
         title: 'Article list',
         fields: [
-          { key: 'articles.empty', label: 'Text while there are none', multiline: true },
           { key: 'articles.back', label: 'Link back to the list' },
+          { key: 'articles.more', label: 'Heading above other articles' },
         ],
       },
     ],
@@ -303,6 +294,7 @@ export const copyPages: CopyPage[] = [
           { key: 'contact.email', label: 'Email label' },
           { key: 'contact.office', label: 'Office label' },
           { key: 'contact.maps', label: 'Map link text' },
+          { key: 'contact.whatsappCta', label: 'WhatsApp button' },
         ],
       },
       {
@@ -310,6 +302,8 @@ export const copyPages: CopyPage[] = [
         fields: [
           { key: 'contact.formHeading', label: 'Heading' },
           { key: 'contact.required', label: 'Required fields note' },
+          { key: 'contact.shipmentHeading', label: 'Shipment group heading' },
+          { key: 'contact.detailsHeading', label: 'Your details group heading' },
           { key: 'contact.fullName', label: 'Full name field' },
           { key: 'contact.company', label: 'Company field' },
           { key: 'contact.phoneField', label: 'WhatsApp field' },
@@ -345,6 +339,17 @@ export const copyPages: CopyPage[] = [
           { key: 'contact.errors.generic', label: 'Error: anything else', multiline: true },
         ],
       },
+      {
+        title: 'Confirmation email to the customer',
+        note: 'Sent to the customer after a quote request, in the language of the page they used. Their service, container, origin and destination are listed between the introduction and the closing text.',
+        fields: [
+          { key: 'mail.subject', label: 'Subject' },
+          { key: 'mail.greeting', label: 'Greeting', hint: keep('name') },
+          { key: 'mail.intro', label: 'Introduction', multiline: true, hint: keep('company') },
+          { key: 'mail.outro', label: 'Closing text', multiline: true },
+          { key: 'mail.signature', label: 'Signature', multiline: true, hint: keep('company') },
+        ],
+      },
     ],
   },
   {
@@ -363,6 +368,7 @@ export const copyPages: CopyPage[] = [
           { key: 'nav.main', label: 'Menu name (screen readers)' },
           { key: 'nav.mobile', label: 'Mobile menu name (screen readers)' },
           { key: 'nav.open', label: 'Open menu button (screen readers)' },
+          { key: 'nav.close', label: 'Close menu button (screen readers)' },
           { key: 'nav.language', label: 'Language switch name (screen readers)' },
           { key: 'nav.brandHome', label: 'Logo link description' },
           { key: 'skip', label: 'Skip link (keyboard users)' },
@@ -388,10 +394,6 @@ export const copyPages: CopyPage[] = [
           { key: 'footer.email', label: 'Email label' },
           { key: 'footer.phone', label: 'Phone label' },
         ],
-      },
-      {
-        title: 'Missing information',
-        fields: [{ key: 'toBeUpdated', label: 'Marker for details not supplied yet' }],
       },
       {
         title: 'Page not found',

@@ -1,10 +1,14 @@
 import type { APIRoute } from 'astro';
 import { origin } from '../lib/env';
-import { listContent } from '../lib/repository';
+import { listContent, visibleSections } from '../lib/repository';
 import { locales, localePath, publicPages } from '../i18n';
 export const GET: APIRoute = () => {
+  const visible = visibleSections();
   const paths = [
-    ...publicPages,
+    ...publicPages.filter(
+      (path) =>
+        (path !== '/projects' || visible.projects) && (path !== '/articles' || visible.articles),
+    ),
     ...listContent('articles', true).map((article) => `/articles/${article.slug}`),
   ];
   const urls = paths.flatMap((path) =>

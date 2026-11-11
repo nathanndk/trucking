@@ -43,6 +43,7 @@ import {
   weeklyRequests,
 } from '../../lib/dashboard';
 import { getSettings, listContent } from '../../lib/repository';
+import { mailReady } from '../../lib/mail';
 import { cn } from '../../lib/utils';
 
 const requests = db.select().from(inquiries).orderBy(desc(inquiries.createdAt)).all();
@@ -65,14 +66,18 @@ const content = collections.map((collection) => {
 });
 const published = (collection: Collection) =>
   content.find((entry) => entry.collection === collection)!.published;
-const checklist = websiteChecklist(getSettings(), {
-  projects: published('projects'),
-  clients: published('clients'),
-  articles: published('articles'),
-  servicesWithoutEnglish: content[0].items.filter(
-    (item) => item.published && (!item.titleEn.trim() || !item.descriptionEn.trim()),
-  ).length,
-});
+const checklist = websiteChecklist(
+  getSettings(),
+  {
+    projects: published('projects'),
+    clients: published('clients'),
+    articles: published('articles'),
+    servicesWithoutEnglish: content[0].items.filter(
+      (item) => item.published && (!item.titleEn.trim() || !item.descriptionEn.trim()),
+    ).length,
+  },
+  { mailReady: mailReady() },
+);
 const todo = checklist.filter((item) => !item.done);
 const done = checklist.length - todo.length;
 
@@ -159,7 +164,7 @@ const link = cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto p-0');
         <CardTitle>Website checklist</CardTitle>
         <CardDescription>
           {todo.length
-            ? 'Visitors see “to be updated” where these are missing.'
+            ? 'Missing details are hidden on the website until filled in.'
             : 'Nothing on the public website is waiting for information.'}
         </CardDescription>
       </CardHeader>
@@ -191,17 +196,20 @@ const link = cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto p-0');
                     {item.label}
                   </ItemTitle>
                 </ItemContent>
-                {!item.done && (
-                  <ItemActions>
-                    <a
-                      href={item.href}
-                      class={buttonVariants({ variant: 'outline', size: 'xs' })}
-                      aria-label={`${item.label}: open ${item.where}`}
-                    >
-                      {item.where}
-                    </a>
-                  </ItemActions>
-                )}
+                {!item.done &&
+                  (item.href ? (
+                    <ItemActions>
+                      <a
+                        href={item.href}
+                        class={buttonVariants({ variant: 'outline', size: 'xs' })}
+                        aria-label={`${item.label}: open ${item.where}`}
+                      >
+                        {item.where}
+                      </a>
+                    </ItemActions>
+                  ) : (
+                    <ItemDescription className="line-clamp-none">{item.where}</ItemDescription>
+                  ))}
               </Item>
             </>
           ))}

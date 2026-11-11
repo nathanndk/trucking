@@ -151,36 +151,6 @@ export function mountScrollMotion() {
             reveal(item, timeline);
           });
         }
-        for (const map of all<HTMLElement>('[data-motion="route"]')) {
-          const route = map.querySelector<SVGPathElement>('[data-motion-path]');
-          if (!route || alreadyVisible(map)) continue;
-          const length = route.getTotalLength();
-          const timeline = gsap.timeline({ paused: true });
-          timeline.fromTo(
-            route,
-            { strokeDasharray: length, strokeDashoffset: length },
-            {
-              strokeDashoffset: 0,
-              duration: 1.4,
-              ease: 'power2.inOut',
-            },
-            0,
-          );
-          all<SVGGElement>('[data-motion-marker]', map).forEach((marker, i) => {
-            timeline.fromTo(
-              marker,
-              { opacity: 0.1, y: desktop ? 12 : 8 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.35,
-                ease: 'power2.out',
-              },
-              i * 0.18,
-            );
-          });
-          reveal(map, timeline);
-        }
       });
       ScrollTrigger.refresh();
       root.dataset.motionState = 'ready';

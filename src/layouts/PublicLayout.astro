@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { ArrowUpRight, Menu } from 'lucide-react';
 import Brand from '../components/Brand.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import { getSettings } from '../lib/repository';
 import { origin } from '../lib/env';
 interface Props {
@@ -158,10 +159,15 @@ const structured = JSON.stringify({
               ? 'Website demo · profil, proyek, dan klien adalah ilustrasi.'
               : 'Menghubungkan bisnis. Menggerakkan Indonesia.'}
           </span>
+          <a href="/cookies">Informasi cookies</a>
+          <button type="button" id="cookie-footer-open" data-cookie-open hidden>
+            Pengaturan cookies
+          </button>
           <a href="/admin/login">Admin ↗</a>
         </div>
       </div>
     </footer>
+    <CookieConsent />
     <script>
       import { mountScrollMotion } from '../scripts/scroll-motion';
       const dispose = mountScrollMotion();

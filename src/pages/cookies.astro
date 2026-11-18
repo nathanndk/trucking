@@ -1,0 +1,65 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+---
+
+<PublicLayout
+  title="Informasi Cookies"
+  description="Informasi cookies wajib dan pengaturan keputusan cookies di website ini."
+>
+  <PageHero
+    label="COOKIES"
+    title="Penggunaan cookies."
+    description="Kenali cookies yang digunakan dan cara mengatur keputusan Anda."
+  />
+  <section class="section">
+    <div class="wrap cookie-information">
+      <h2>Cookies yang diperlukan</h2>
+      <p>
+        Cookies adalah data kecil yang disimpan browser untuk mendukung fungsi website. Saat ini
+        website hanya menggunakan cookies wajib, tanpa cookies analitik atau pemasaran.
+      </p>
+      <h3>Keputusan cookies</h3>
+      <p>
+        Cookie <code>lintas_cookie_consent</code> menyimpan pilihan, versi kebijakan, dan waktu
+        keputusan selama 180 hari. Cookie ini tidak menyimpan data pribadi dan dapat dibaca
+        JavaScript untuk menampilkan pengaturan Anda.
+      </p>
+      <p>
+        Tombol “Terima semua”, “Hanya yang diperlukan”, dan “Simpan pengaturan” saat ini hanya
+        menggunakan cookies wajib. Kategori analitik dan pemasaran belum digunakan.
+      </p>
+      <h3>Sesi login admin</h3>
+      <p>
+        Saat admin masuk, sistem autentikasi menggunakan cookies yang diperlukan untuk mengenali
+        sesi login. Sesi admin dikonfigurasi selama 8 jam dan dapat diperbarui saat digunakan.
+        Pengaturan persetujuan cookies tidak menonaktifkan cookies autentikasi ini.
+      </p>
+      <h3>Mengubah keputusan</h3>
+      <p>
+        Buka “Pengaturan cookies” di footer untuk meninjau dan menyimpan ulang keputusan. Banner
+        muncul kembali jika cookie dihapus, kedaluwarsa, tidak valid, atau versi kebijakan berubah.
+      </p>
+      <p>
+        Anda juga dapat menghapus atau memblokir cookies melalui pengaturan browser. Jika
+        penyimpanan diblokir, website publik tetap dapat digunakan, tetapi keputusan mungkin diminta
+        kembali ketika Anda berpindah halaman atau memuat ulang. Memblokir cookies autentikasi dapat
+        mengganggu login admin.
+      </p>
+    </div>
+  </section>
+</PublicLayout>
+<style>
+  .cookie-information {
+    max-width: 820px;
+  }
+  h3 {
+    margin-top: 32px;
+  }
+  p {
+    margin-top: 16px;
+  }
+  code {
+    overflow-wrap: anywhere;
+  }
+</style>

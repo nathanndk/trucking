@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const cookieName = 'lintas_cookie_consent';
+const cookieName = 'genesis_cookie_consent';
 for (const choice of ['Terima semua', 'Hanya yang diperlukan']) {
   test(`decision persists: ${choice}`, async ({ page, context }) => {
     await page.goto('/');

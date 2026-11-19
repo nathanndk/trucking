@@ -1,0 +1,10 @@
+---
+import ServiceView from '../../../views/ServiceView.astro';
+import { getPublicBySlug } from '../../../lib/repository';
+import { toLocale } from '../../../i18n';
+const service = getPublicBySlug('services', Astro.params.slug ?? '', toLocale(Astro.currentLocale));
+// Missing and unpublished services fall through to the localized 404 page.
+if (!service) return new Response(null, { status: 404 });
+---
+
+<ServiceView service={service} />

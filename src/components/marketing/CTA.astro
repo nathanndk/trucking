@@ -1,21 +1,44 @@
 ---
-import { ArrowUpRight } from 'lucide-react';
-const { text = 'Minta Penawaran' } = Astro.props;
+import { MessageCircle } from 'lucide-react';
+import { buttonVariants } from '../ui/button';
+import { getPublicSettings } from '../../lib/repository';
+import { cn } from '../../lib/utils';
+import { localePath, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
+/**
+ * The closing call to action on every page: the two ways to start, a quote request and (when a
+ * number is set) WhatsApp. No stock photo; a ribbed container strip runs along the bottom edge.
+ */
+const { text } = Astro.props as { text: string };
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
 ---
 
-<section class="cta-band">
-  <div class="wrap" data-motion="group">
-    <div data-motion-item>
-      <div class="eyebrow">MARI BERGERAK BERSAMA</div>
-      <h2>
-        Muatan Anda.
-        <br />
-        Komitmen kami.
-      </h2>
+<section class="cta-band dark">
+  <div class="wrap cta-inner">
+    <div class="cta-copy">
+      <h2>{t.cta.heading}</h2>
+      <p>{t.cta.text}</p>
     </div>
-    <a href="/contact" class="cta dark" data-motion-item>
-      {text}
-      <ArrowUpRight size={20} />
-    </a>
+    <div class="cta-actions">
+      <a
+        href={localePath(locale, '/contact')}
+        class={buttonVariants({ variant: 'secondary', size: 'lg' })}
+      >
+        {text}
+      </a>
+      {s.whatsapp && (
+        <a
+          href={`https://wa.me/${s.whatsapp}`}
+          rel="noopener noreferrer"
+          class={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}
+        >
+          <MessageCircle data-icon="inline-start" />
+          {t.contact.whatsappCta}
+        </a>
+      )}
+    </div>
   </div>
+  <div class="cta-strip" aria-hidden="true"></div>
 </section>

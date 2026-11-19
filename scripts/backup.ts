@@ -12,7 +12,7 @@ const inside = (parent: string, child: string) => {
 };
 if (inside(process.cwd(), root) || inside(dataDir, root))
   throw new Error('Backups must be outside the application and persistent data directories.');
-const target = path.join(root, `lintas-${new Date().toISOString().replaceAll(':', '-')}`);
+const target = path.join(root, `genesis-trans-${new Date().toISOString().replaceAll(':', '-')}`);
 await mkdir(target, { recursive: true, mode: 0o700 });
 try {
   await sqlite.backup(path.join(target, 'app.db'));
@@ -28,7 +28,7 @@ try {
         createdAt: new Date().toISOString(),
         database: 'app.db',
         uploads: 'uploads',
-        application: 'lintas-logistics',
+        application: 'genesis-trans-website',
         note: 'Restore database and uploads together. See README.',
       },
       null,

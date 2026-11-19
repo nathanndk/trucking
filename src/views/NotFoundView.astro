@@ -1,0 +1,35 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import { buttonVariants } from '../components/ui/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '../components/ui/empty';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+---
+
+<PublicLayout title={t.notFound.title} description={t.notFound.description} noAlternates>
+  <section class="section">
+    <div class="wrap">
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>
+            <h1 class="text-3xl">{t.notFound.h1}</h1>
+          </EmptyTitle>
+          <EmptyDescription>{t.notFound.text}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <a class={buttonVariants({ size: 'lg' })} href={localePath(locale, '/')}>
+            {t.notFound.back}
+          </a>
+        </EmptyContent>
+      </Empty>
+    </div>
+  </section>
+</PublicLayout>

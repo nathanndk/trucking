@@ -1,0 +1,31 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import { buttonVariants } from '../components/ui/button';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+---
+
+<PublicLayout
+  title={t.cookies.title}
+  description={t.cookies.description}
+  crumbs={[{ name: t.footer.cookies }]}
+>
+  <PageHero label={t.footer.cookies} title={t.cookies.h1} description={t.cookies.intro} />
+  <section class="section">
+    <div class="wrap legal">
+      {/* Required cookies only: lang (language) and genesis_cookie_consent (cookie choice). */}
+      {t.cookies.sections.map((section) => (
+        <div>
+          <h2>{section.title}</h2>
+          <p>{section.text}</p>
+        </div>
+      ))}
+      <a class={buttonVariants({ variant: 'outline' })} href={localePath(locale, '/contact')}>
+        {t.nav.contact}
+      </a>
+    </div>
+  </section>
+</PublicLayout>

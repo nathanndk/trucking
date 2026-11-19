@@ -1,112 +1,60 @@
 ---
 import '../styles/global.css';
-import Brand from '../components/Brand.astro';
-import Logout from '../components/admin/Logout';
-import {
-  LayoutDashboard,
-  Truck,
-  Package,
-  MapPin,
-  FolderKanban,
-  Building2,
-  Inbox,
-  Settings,
-  ArrowUpRight,
-  Menu,
-} from 'lucide-react';
+import { count, eq } from 'drizzle-orm';
+import AdminShell from '../components/admin/AdminShell';
+import { db } from '../db';
+import { inquiries } from '../db/schema';
+import { getSettings, tables } from '../lib/repository';
 interface Props {
   title: string;
   description: string;
 }
 const { title, description } = Astro.props;
-const links = [
-  { href: '/admin', label: 'Overview', Icon: LayoutDashboard },
-  { href: '/admin/services', label: 'Services', Icon: Package },
-  { href: '/admin/fleet', label: 'Fleet', Icon: Truck },
-  { href: '/admin/coverage', label: 'Coverage', Icon: MapPin },
-  { href: '/admin/projects', label: 'Projects', Icon: FolderKanban },
-  { href: '/admin/clients', label: 'Clients', Icon: Building2 },
-  { href: '/admin/inquiries', label: 'Inquiries', Icon: Inbox },
-  { href: '/admin/settings', label: 'Settings', Icon: Settings },
-];
+const s = getSettings();
+const total = (table: (typeof tables)[keyof typeof tables]) =>
+  db.select({ value: count() }).from(table).get()!.value;
+const counts = {
+  services: total(tables.services),
+  projects: total(tables.projects),
+  clients: total(tables.clients),
+  articles: total(tables.articles),
+  newInquiries: db
+    .select({ value: count() })
+    .from(inquiries)
+    .where(eq(inquiries.status, 'new'))
+    .get()!.value,
+};
+const admin = Astro.locals.admin;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="google" content="notranslate" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>{title} · Lintas CMS</title>
-    <link rel="icon" href="/favicon.svg" />
+    <title>{title} · {s.companyName} admin</title>
+    <link rel="icon" href={s.favicon || '/favicon.png'} />
   </head>
-  <body class="admin-body">
+  <body>
     <a
       href="#admin-content"
       class="sr-only focus:not-sr-only focus:fixed focus:z-50 focus:bg-white focus:p-4"
     >
       Skip to content
     </a>
-    <aside class="admin-sidebar">
-      <Brand href="/admin" />
-      <p class="mb-4 px-3 text-[10px] font-semibold tracking-widest text-muted-foreground">
-        WORKSPACE
-      </p>
-      <nav aria-label="Admin navigation">
-        {links.map(({ href, label, Icon }) => (
-          <a
-            href={href}
-            class:list={[{ active: Astro.url.pathname === href }]}
-            aria-current={Astro.url.pathname === href ? 'page' : undefined}
-          >
-            <Icon />
-            {label}
-          </a>
-        ))}
-      </nav>
-      <div class="mt-auto rounded-lg bg-muted p-4">
-        <p class="text-xs font-semibold">Your website, up to date.</p>
-        <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Manage content and respond to new opportunities.
-        </p>
-        <a href="/" class="mt-4 inline-flex items-center gap-2 text-xs font-semibold">
-          View website
-          <ArrowUpRight size={14} />
-        </a>
-      </div>
-    </aside>
-    <div class="admin-main">
-      <header class="admin-header">
-        <div class="flex gap-3 text-xs text-muted-foreground">
-          <a href="/admin">Workspace</a>
-          <span>/</span>
-          <span class="font-medium text-foreground">{title}</span>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="hidden text-xs text-muted-foreground sm:block">
-            {Astro.locals.admin?.name}
-          </span>
-          <Logout client:load />
-        </div>
-        <details class="admin-mobile">
-          <summary>
-            <Menu size={18} />
-            CMS navigation
-          </summary>
-          <nav aria-label="Mobile admin navigation">
-            {links.map(({ href, label }) => (
-              <a href={href}>{label}</a>
-            ))}
-          </nav>
-        </details>
-      </header>
-      <main id="admin-content" class="admin-content">
-        <div class="admin-title">
-          <h1>{title}</h1>
-          <p>{description}</p>
-        </div>
-        <slot />
-      </main>
-    </div>
+    <AdminShell
+      title={title}
+      description={description}
+      pathname={Astro.url.pathname}
+      user={admin ? { name: admin.name, email: admin.email } : undefined}
+      companyName={s.companyName}
+      mark={s.favicon || '/favicon.png'}
+      counts={counts}
+      client:load
+    >
+      <slot />
+    </AdminShell>
   </body>
 </html>

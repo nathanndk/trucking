@@ -1,0 +1,87 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import PageHero from '../components/marketing/PageHero.astro';
+import ServiceGrid from '../components/marketing/ServiceGrid.astro';
+import ContainerScale from '../components/marketing/ContainerScale.astro';
+import CTA from '../components/marketing/CTA.astro';
+import { buttonVariants } from '../components/ui/button';
+import type { ContentRecord } from '../lib/content-config';
+import { getPublicContent, getPublicSettings } from '../lib/repository';
+import { origin } from '../lib/env';
+import { responsive } from '../lib/images';
+import { clip, serviceSchema } from '../lib/seo';
+import { cn } from '../lib/utils';
+import { localePath, toLocale } from '../i18n';
+import { ui } from '../lib/copy';
+interface Props {
+  service: ContentRecord;
+}
+const { service } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = ui(locale);
+const s = getPublicSettings(locale);
+// Descriptions are plain text. Blank lines separate paragraphs; Astro escapes the content.
+const paragraphs = (service.description || service.shortDescription)
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
+const summary = clip(service.shortDescription || paragraphs[0] || t.services.intro);
+const url = new URL(localePath(locale, `/services/${service.slug}`), origin).href;
+const others = getPublicContent('services', locale).filter((other) => other.slug !== service.slug);
+---
+
+<PublicLayout
+  title={service.title}
+  description={summary}
+  crumbs={[{ name: t.nav.services, path: '/services' }, { name: service.title }]}
+  schema={[
+    serviceSchema(
+      { title: service.title, description: summary, image: service.image },
+      url,
+      origin,
+    ),
+  ]}
+>
+  <PageHero
+    label={service.title}
+    title={service.title}
+    description={service.shortDescription}
+    parent={{ label: t.nav.services, href: localePath(locale, '/services') }}
+  />
+  <section class="section">
+    <div class={cn('wrap service-detail', !service.image && 'service-detail-plain')}>
+      <div class="service-detail-copy">
+        {paragraphs.map((paragraph) => (
+          <p>{paragraph}</p>
+        ))}
+        <a
+          class={cn(buttonVariants({ size: 'lg' }), 'mt-4 justify-self-start')}
+          href={`${localePath(locale, '/contact')}?service=${service.slug}`}
+        >
+          {t.services.quote}
+        </a>
+      </div>
+      {service.image && (
+        <div class="service-detail-photo">
+          <img
+            class="photo"
+            {...responsive(service.image, '(max-width: 1023px) 100vw, 520px')}
+            alt=""
+            width="1280"
+            height="960"
+          />
+        </div>
+      )}
+    </div>
+  </section>
+  <ContainerScale />
+  {others.length > 0 && (
+    <section class="section">
+      <div class="wrap">
+        <h2 class="mb-12">{t.services.more}</h2>
+        <ServiceGrid items={others} />
+      </div>
+    </section>
+  )}
+  <CTA text={s.ctaText} />
+</PublicLayout>

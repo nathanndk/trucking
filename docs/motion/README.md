@@ -1,25 +1,14 @@
-# Automatic, one-time scroll reveals
+# Motion
 
-The public Astro layout loads `src/scripts/scroll-motion.ts`. GSAP and ScrollTrigger are dynamically imported without adding React islands. Server-rendered content remains visible if JavaScript is disabled or loading fails.
+The public layout loads `src/scripts/scroll-motion.ts`, which dynamically imports GSAP and ScrollTrigger. Server-rendered content is complete and visible without JavaScript; the script only adds motion.
 
-Scroll animation starts automatically. There is no activation button and old session choices are ignored. Per the current requested behavior, the public scroll reveals also run when the browser requests reduced motion; decorative CSS animations still follow the device preference.
+There is one orchestrated moment: **the hero photo settles once as the page opens** (a slow zoom and drift, at most 1.05 and 8px on phones). Headings, paragraphs and cards are static: they are fully in place when they scroll into view and never fade or slide in. Two small motions answer the visitor or carry meaning rather than decorate:
 
-- The hero gently zooms once when it enters the viewport.
-- Headings, paragraphs, cards, statistics and CTA reveal on entry, then remain fully visible when scrolling up.
-- The route draws once and its city markers remain visible afterward.
-- Scrolling is normal document scrolling, without pinned scenes or reversible scrub timelines.
-- Mobile/tablet translation is at most 24px and image zoom at most 1.05.
-- A per-page WeakSet remembers started scenes across viewport/font rebuilds, so resizing does not hide previously revealed content. A new page visit can play the reveals again.
-- Direct anchors and fast scrolling finish passed scenes. Contact fields remain stationary.
+- On Home, the coordination drawing's beams flow towards the company mark while it is on screen, and the two company figures count up once (`motion/react`, Magic UI). Both stand still when the device asks for reduced motion.
+- Header links grow their ribbed container marker on hover, and dropdowns and the mobile menu open with their component animations.
 
-## Verification and evidence
+Direct anchors land below the pinned header (`scroll-padding-top`), and contact fields never move.
 
-`tests/motion.spec.ts` covers automatic activation with reduced motion and an old disabled preference, persistent visibility after scrolling upward and resizing, all seven routes at 375/768/1440px, keyboard/direct-anchor navigation, stable contact fields, unavailable scripts, and empty/changing/oversized CMS content.
+## Verification
 
-Current evidence:
-
-- `automatic-desktop.png`: automatic animation with reduced motion enabled and no control button.
-- `once-mobile.png`: previously revealed content stays revealed after a resize.
-- `scroll-once.webm`: scrolling down and back up without reversing the reveals.
-
-Other images and the older `scroll-down-up.webm` document earlier iterations. Tests use isolated demo data and Chromium. Run `pnpm build`, `pnpm test`, `pnpm check`, and `pnpm format:check` to verify the application.
+`tests/motion.spec.ts` covers the hero, content being in place the moment it scrolls into view, all public routes at 375/768/1440px during fast two-way scrolling, a failed animation chunk, keyboard and anchor navigation, the no-JavaScript fallback and empty/changing/oversized CMS content. Screenshots and the down/up scroll recording are written to each test's folder under `test-results/` (not to the repository), so a test run leaves the working tree clean.

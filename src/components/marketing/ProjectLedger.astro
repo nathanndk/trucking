@@ -1,0 +1,49 @@
+---
+import type { ContentRecord } from '../../lib/content-config';
+import { fill, toLocale } from '../../i18n';
+import { ui } from '../../lib/copy';
+import { responsive } from '../../lib/images';
+/**
+ * Projects as a ledger of shipments: each entry opens with its year, set wide like the markings
+ * on a container door, and the client the goods were moved for. Used on Projects and on Home.
+ */
+const { items, summary = false } = Astro.props as {
+  items: ContentRecord[];
+  /** Short description instead of the full one (Home). */
+  summary?: boolean;
+};
+const t = ui(toLocale(Astro.currentLocale));
+---
+
+<ol class="ledger">
+  {items.map((project) => (
+    <li class="ledger-entry" id={project.slug}>
+      <div class="ledger-head">
+        {project.projectYear && <span class="ledger-year">{project.projectYear}</span>}
+        {project.clientName && <span class="ledger-client">{project.clientName}</span>}
+      </div>
+      <div class:list={['ledger-body', !project.image && 'ledger-body-text']}>
+        {project.image && (
+          <div class="ledger-photo">
+            <img
+              class="photo"
+              {...responsive(project.image, '(max-width: 1023px) 100vw, 680px')}
+              alt={fill(t.projects.imageAlt, { title: project.title })}
+              width="1280"
+              height="800"
+              loading="lazy"
+            />
+          </div>
+        )}
+        <div class="ledger-copy">
+          <h3>{project.title}</h3>
+          <p>
+            {summary
+              ? project.shortDescription || project.description
+              : project.description || project.shortDescription}
+          </p>
+        </div>
+      </div>
+    </li>
+  ))}
+</ol>

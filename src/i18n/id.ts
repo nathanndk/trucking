@@ -26,6 +26,8 @@ export const id = {
     email: 'Email',
     phone: 'Telepon',
     privacy: 'Kebijakan Privasi',
+    cookies: 'Informasi cookies',
+    cookieSettings: 'Pengaturan cookies',
   },
   cta: {
     heading: 'Punya kontainer yang perlu dikirim?',
@@ -240,9 +242,55 @@ export const id = {
     },
   },
   consent: {
-    label: 'Pemberitahuan cookie',
-    text: 'Situs ini hanya memakai cookie yang diperlukan untuk mengingat pilihan bahasa Anda. Tidak ada pelacakan atau iklan.',
-    accept: 'Mengerti',
+    label: 'Persetujuan cookies',
+    heading: 'Cookies di website ini',
+    text: 'Kami hanya menggunakan cookies yang diperlukan. Belum ada cookies analitik atau pemasaran, sehingga kedua pilihan di bawah hanya menggunakan cookies wajib.',
+    link: 'Pelajari penggunaan cookies',
+    acceptAll: 'Terima semua',
+    necessary: 'Hanya yang diperlukan',
+    settings: 'Pengaturan',
+    settingsTitle: 'Pengaturan cookies',
+    settingsText:
+      'Saat ini hanya cookies wajib yang digunakan, yaitu yang diperlukan agar situs berfungsi.',
+    required: 'Wajib',
+    alwaysOn: 'Selalu aktif',
+    requiredText: 'Mengingat pilihan bahasa dan keputusan cookies Anda.',
+    analytics: 'Analitik',
+    analyticsText: 'Tidak ada cookies analitik yang dipasang.',
+    marketing: 'Pemasaran',
+    marketingText: 'Tidak ada cookies pemasaran yang dipasang.',
+    unused: 'Belum digunakan',
+    kept: 'Keputusan disimpan selama 180 hari.',
+    save: 'Simpan pengaturan',
+    close: 'Tutup',
+  },
+  cookies: {
+    title: 'Informasi Cookies',
+    description: 'Cookies yang dipakai website ini dan cara mengatur keputusan cookies Anda.',
+    h1: 'Penggunaan cookies.',
+    intro: 'Kenali cookies yang digunakan dan cara mengatur keputusan Anda.',
+    sections: [
+      {
+        title: 'Cookies yang diperlukan',
+        text: 'Cookies adalah data kecil yang disimpan browser untuk mendukung fungsi website. Saat ini website hanya menggunakan cookies wajib, tanpa cookies analitik atau pemasaran.',
+      },
+      {
+        title: 'Pilihan bahasa',
+        text: 'Cookie lang mengingat bahasa yang Anda pilih (Indonesia atau Inggris) selama satu tahun, supaya halaman berikutnya terbuka dalam bahasa yang sama.',
+      },
+      {
+        title: 'Keputusan cookies',
+        text: 'Cookie genesis_cookie_consent menyimpan pilihan, versi kebijakan, dan waktu keputusan selama 180 hari. Cookie ini tidak menyimpan data pribadi. Tombol “Terima semua”, “Hanya yang diperlukan”, dan “Simpan pengaturan” saat ini hanya menggunakan cookies wajib.',
+      },
+      {
+        title: 'Mengubah keputusan',
+        text: 'Buka “Pengaturan cookies” di footer untuk meninjau dan menyimpan ulang keputusan. Banner muncul kembali jika cookie dihapus, kedaluwarsa, tidak valid, atau versi kebijakan berubah.',
+      },
+      {
+        title: 'Memblokir cookies',
+        text: 'Anda dapat menghapus atau memblokir cookies melalui pengaturan browser. Jika penyimpanan diblokir, website tetap dapat digunakan, tetapi keputusan mungkin diminta kembali ketika Anda berpindah halaman atau memuat ulang.',
+      },
+    ],
   },
   legal: {
     title: 'Kebijakan Privasi dan Ketentuan',
@@ -257,7 +305,7 @@ export const id = {
       },
       {
         title: 'Cookie',
-        text: 'Situs ini memakai satu cookie untuk mengingat pilihan bahasa Anda selama satu tahun. Bahasa awal dipilih dari negara asal koneksi atau bahasa browser Anda; pemeriksaan ini dilakukan di server kami. Browser Anda juga mencatat bahwa pemberitahuan cookie sudah ditutup. Situs ini tidak memakai cookie analitik atau iklan.',
+        text: 'Situs ini memakai satu cookie untuk mengingat pilihan bahasa Anda selama satu tahun. Bahasa awal dipilih dari negara asal koneksi atau bahasa browser Anda; pemeriksaan ini dilakukan di server kami. Pilihan Anda di banner cookies disimpan dalam cookie selama 180 hari; rinciannya ada di halaman Informasi cookies. Situs ini tidak memakai cookie analitik atau iklan.',
       },
       {
         title: 'Email pemasaran',

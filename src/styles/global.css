@@ -863,6 +863,18 @@
     justify-content: space-between;
     gap: 12px 24px;
   }
+  /* "Cookie settings" is a button (it opens a dialog) styled like the links beside it. */
+  .footer-bottom button {
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .footer-bottom a:hover,
+  .footer-bottom button:hover {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
   .page-hero {
     position: relative;
     overflow: hidden;

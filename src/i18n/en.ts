@@ -27,6 +27,8 @@ export const en: Dictionary = {
     email: 'Email',
     phone: 'Phone',
     privacy: 'Privacy Policy',
+    cookies: 'Cookie information',
+    cookieSettings: 'Cookie settings',
   },
   cta: {
     heading: 'Have a container to move?',
@@ -248,9 +250,54 @@ export const en: Dictionary = {
     },
   },
   consent: {
-    label: 'Cookie notice',
-    text: 'This site only uses the cookie needed to remember your language choice. No tracking, no advertising.',
-    accept: 'Got it',
+    label: 'Cookie consent',
+    heading: 'Cookies on this website',
+    text: 'We only use the cookies the site needs. There are no analytics or marketing cookies yet, so both choices below use only the required ones.',
+    link: 'Learn how cookies are used',
+    acceptAll: 'Accept all',
+    necessary: 'Only necessary',
+    settings: 'Settings',
+    settingsTitle: 'Cookie settings',
+    settingsText: 'Only required cookies are in use: the ones the site needs to work.',
+    required: 'Required',
+    alwaysOn: 'Always on',
+    requiredText: 'Remember your language and your cookie choice.',
+    analytics: 'Analytics',
+    analyticsText: 'No analytics cookies are set.',
+    marketing: 'Marketing',
+    marketingText: 'No marketing cookies are set.',
+    unused: 'Not used',
+    kept: 'Your choice is kept for 180 days.',
+    save: 'Save settings',
+    close: 'Close',
+  },
+  cookies: {
+    title: 'Cookie Information',
+    description: 'The cookies this website uses and how to change your cookie choice.',
+    h1: 'How cookies are used.',
+    intro: 'The cookies in use and how to manage your choice.',
+    sections: [
+      {
+        title: 'Required cookies',
+        text: 'Cookies are small pieces of data a browser keeps so a website can work. This website only uses required cookies, with no analytics or marketing cookies.',
+      },
+      {
+        title: 'Language',
+        text: 'The lang cookie remembers the language you chose (Indonesian or English) for one year, so the next page opens in the same language.',
+      },
+      {
+        title: 'Your cookie choice',
+        text: 'The genesis_cookie_consent cookie stores your choice, the policy version and when you chose, for 180 days. It holds no personal data. “Accept all”, “Only necessary” and “Save settings” currently all use required cookies only.',
+      },
+      {
+        title: 'Changing your choice',
+        text: 'Open “Cookie settings” in the footer to review and save your choice again. The banner returns if the cookie is deleted, expires, is invalid or the policy version changes.',
+      },
+      {
+        title: 'Blocking cookies',
+        text: 'You can delete or block cookies in your browser settings. If storage is blocked the website still works, but your choice may be asked for again when you move to another page or reload.',
+      },
+    ],
   },
   legal: {
     title: 'Privacy Policy and Terms',
@@ -264,7 +311,7 @@ export const en: Dictionary = {
       },
       {
         title: 'Cookies',
-        text: 'This site uses one cookie to remember your language choice for one year. The first language is chosen from the country of your connection or your browser language; this check runs on our own server. Your browser also records that the cookie notice has been closed. This site uses no analytics or advertising cookies.',
+        text: 'This site uses one cookie to remember your language choice for one year. The first language is chosen from the country of your connection or your browser language; this check runs on our own server. Your choice in the cookie banner is kept in a cookie for 180 days; the cookie information page has the details. This site uses no analytics or advertising cookies.',
       },
       {
         title: 'Marketing email',

@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import Brand from '../components/Brand.astro';
 import SiteHeader from '../components/site/SiteHeader';
-import CookieNotice from '../components/site/CookieNotice';
+import CookieConsent from '../components/CookieConsent.astro';
 import { Separator } from '../components/ui/separator';
 import { getPublicContent, getPublicSettings, visibleSections } from '../lib/repository';
 import { googleSiteVerification, origin } from '../lib/env';
@@ -287,20 +287,16 @@ const verification = googleSiteVerification();
         <div class="footer-bottom">
           <span>{`© ${new Date().getFullYear()} ${s.legalName}`}</span>
           <a href={href('/privacy')}>{t.footer.privacy}</a>
+          <a href={href('/cookies')}>{t.footer.cookies}</a>
+          {/* Shown by the consent script; it reopens the cookie settings. */}
+          <button type="button" id="cookie-footer-open" data-cookie-open hidden>
+            {t.footer.cookieSettings}
+          </button>
           <span>{s.tagline}</span>
         </div>
       </div>
     </footer>
-    <CookieNotice
-      client:idle
-      href={href('/privacy')}
-      labels={{
-        name: t.consent.label,
-        text: t.consent.text,
-        link: t.footer.privacy,
-        accept: t.consent.accept,
-      }}
-    />
+    <CookieConsent />
     <script>
       import { mountScrollMotion } from '../scripts/scroll-motion';
       const dispose = mountScrollMotion();

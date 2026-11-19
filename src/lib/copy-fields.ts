@@ -372,6 +372,22 @@ export const copyPages: CopyPage[] = [
     ],
   },
   {
+    id: 'cookies',
+    title: 'Cookie information',
+    href: '/cookies',
+    sections: [
+      pageHeader('cookies', [
+        { key: 'cookies.intro', label: 'Introduction', multiline: true },
+        { key: 'cookies.description', label: 'Search engine description', multiline: true },
+      ]),
+      {
+        title: 'Sections',
+        note: 'Keep these true to the cookies the site sets: lang (language) and genesis_cookie_consent (cookie choice).',
+        fields: [...items('cookies.sections', 'Section', 5)],
+      },
+    ],
+  },
+  {
     id: 'shared',
     title: 'Shared',
     sections: [
@@ -412,15 +428,39 @@ export const copyPages: CopyPage[] = [
           { key: 'footer.email', label: 'Email label' },
           { key: 'footer.phone', label: 'Phone label' },
           { key: 'footer.privacy', label: 'Privacy policy link' },
+          { key: 'footer.cookies', label: 'Cookie information link' },
+          { key: 'footer.cookieSettings', label: 'Cookie settings button' },
         ],
       },
       {
-        title: 'Cookie notice',
-        note: 'Shown at the bottom of every page until the visitor closes it. The link text is the footer privacy policy link.',
+        title: 'Cookie banner',
+        note: 'Shown at the bottom of every page until the visitor makes a choice, which is kept for 180 days. Keep it true to what the site does: required cookies only.',
         fields: [
+          { key: 'consent.heading', label: 'Heading' },
           { key: 'consent.text', label: 'Text', multiline: true },
-          { key: 'consent.accept', label: 'Button' },
-          { key: 'consent.label', label: 'Notice name (screen readers)' },
+          { key: 'consent.link', label: 'Link to cookie information' },
+          { key: 'consent.acceptAll', label: 'Accept all button' },
+          { key: 'consent.necessary', label: 'Only necessary button' },
+          { key: 'consent.settings', label: 'Settings button' },
+          { key: 'consent.label', label: 'Banner name (screen readers)' },
+        ],
+      },
+      {
+        title: 'Cookie settings dialog',
+        fields: [
+          { key: 'consent.settingsTitle', label: 'Heading' },
+          { key: 'consent.settingsText', label: 'Text', multiline: true },
+          { key: 'consent.required', label: 'Required cookies' },
+          { key: 'consent.alwaysOn', label: 'Required: status' },
+          { key: 'consent.requiredText', label: 'Required: description', multiline: true },
+          { key: 'consent.analytics', label: 'Analytics cookies' },
+          { key: 'consent.analyticsText', label: 'Analytics: description', multiline: true },
+          { key: 'consent.marketing', label: 'Marketing cookies' },
+          { key: 'consent.marketingText', label: 'Marketing: description', multiline: true },
+          { key: 'consent.unused', label: 'Status for unused cookies' },
+          { key: 'consent.kept', label: 'How long the choice is kept' },
+          { key: 'consent.save', label: 'Save button' },
+          { key: 'consent.close', label: 'Close button' },
         ],
       },
       {

@@ -79,6 +79,7 @@ export const publicPages = [
   '/articles',
   '/contact',
   '/privacy',
+  '/cookies',
 ];
 export function isPublicPage(path: string): boolean {
   return publicPages.includes(path) || /^\/(articles|services)\/[a-z0-9-]+$/.test(path);

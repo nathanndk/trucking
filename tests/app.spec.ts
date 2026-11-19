@@ -42,6 +42,7 @@ const pages = [
   '/articles',
   '/contact',
   '/privacy',
+  '/cookies',
 ];
 // Every page exists in Indonesian (no prefix) and English (/en).
 const publicRoutes = [...pages, ...pages.map((p) => (p === '/' ? '/en' : `/en${p}`))];
@@ -663,26 +664,36 @@ test('search engines get titles, descriptions and structured data for every kind
   expect(article.find('BreadcrumbList')?.itemListElement).toHaveLength(3);
 });
 
-test('the cookie notice shows until closed, and the privacy page is linked', async ({ page }) => {
-  await page.goto('/');
-  const notice = page.getByRole('complementary', { name: 'Pemberitahuan cookie' });
-  await expect(notice).toBeVisible();
-  await expect(notice.getByRole('link', { name: 'Kebijakan Privasi' })).toHaveAttribute(
+test('the cookie banner speaks the page language, and the footer links the policies', async ({
+  page,
+}) => {
+  // Nathan's tests/cookies.spec.ts covers the Indonesian banner, the settings dialog and the stored
+  // choice; this checks the English wording and the footer links in both languages.
+  await page.goto('/en');
+  const banner = page.getByRole('region', { name: 'Cookie consent' });
+  await expect(banner).toBeVisible();
+  await expect(banner.getByRole('link', { name: 'Learn how cookies are used' })).toHaveAttribute(
     'href',
-    '/privacy',
+    '/en/cookies',
   );
-  await notice.getByRole('button', { name: 'Mengerti' }).click();
-  await expect(notice).toHaveCount(0);
-  // Closed once, it stays closed on other pages and in the other language.
+  await banner.getByRole('button', { name: 'Accept all', exact: true }).click();
+  await expect(banner).toBeHidden();
+  const footer = page.getByRole('contentinfo');
+  await expect(footer.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+    'href',
+    '/en/privacy',
+  );
+  await footer.getByRole('link', { name: 'Cookie information' }).click();
+  await expect(page).toHaveURL(/\/en\/cookies$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How cookies are used.');
+  // The choice is kept on other pages; the footer button reopens the settings in English.
   await page.goto('/en/privacy');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Privacy policy and terms of use.',
   );
-  await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
-  await expect(page.getByRole('complementary', { name: 'Cookie notice' })).toHaveCount(0);
-  await expect(
-    page.getByRole('contentinfo').getByRole('link', { name: 'Privacy Policy' }),
-  ).toHaveAttribute('href', '/en/privacy');
+  await expect(page.getByRole('region', { name: 'Cookie consent' })).toBeHidden();
+  await page.getByRole('button', { name: 'Cookie settings', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Cookie settings' })).toBeVisible();
 });
 
 test('a rejected quote request keeps everything the visitor typed', async ({ page }) => {
